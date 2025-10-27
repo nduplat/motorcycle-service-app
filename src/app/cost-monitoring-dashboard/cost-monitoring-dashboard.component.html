@@ -1,0 +1,299 @@
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            Monitoreo de Costos AI
+          </h1>
+          <p class="text-gray-600">
+            Control en tiempo real de gastos en servicios de inteligencia artificial
+          </p>
+        </div>
+        <button mat-raised-button color="primary" (click)="refreshData()">
+          <mat-icon>refresh</mat-icon>
+          Actualizar
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert Banner -->
+    <mat-card *ngIf="budgetPercentage > 80" class="mb-6 border-l-4 border-red-500 bg-red-50">
+      <mat-card-content class="flex items-center p-4">
+        <mat-icon class="text-red-600 mr-3">warning</mat-icon>
+        <div>
+          <p class="font-semibold text-red-800">
+            Alerta: Presupuesto al {{budgetPercentage.toFixed(1)}}%
+          </p>
+          <p class="text-red-700 text-sm">
+            Considera aumentar el cache hit rate o reducir consultas AI directas
+          </p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Active Alerts Section -->
+    <mat-card *ngIf="activeAlerts.length > 0" class="mb-6">
+      <mat-card-header>
+        <mat-card-title class="flex items-center">
+          <mat-icon class="text-red-600 mr-2">warning</mat-icon>
+          Alertas Activas ({{activeAlerts.length}})
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="space-y-3">
+          <div *ngFor="let alert of activeAlerts" class="flex items-center justify-between p-3 border rounded-lg"
+               [ngClass]="getAlertSeverityColor(alert.severity)">
+            <div class="flex items-center space-x-3">
+              <mat-icon [fontIcon]="getAlertCategoryIcon(alert.category)"></mat-icon>
+              <div>
+                <p class="font-medium">{{alert.message}}</p>
+                <p class="text-sm opacity-75">{{alert.service}} • {{alert.timestamp | date:'short'}}</p>
+              </div>
+            </div>
+            <div class="flex space-x-2">
+              <button mat-button *ngIf="escalationCandidates.includes(alert)" (click)="escalateAlert(alert.id)">
+                <mat-icon>arrow_upward</mat-icon>
+                Escalar
+              </button>
+              <button mat-button (click)="resolveAlert(alert.id)">
+                <mat-icon>check</mat-icon>
+                Resolver
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Alert Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <mat-card class="p-4">
+        <div class="text-center">
+          <mat-icon class="text-blue-600 text-2xl">analytics</mat-icon>
+          <h4 class="font-semibold">Alertas Activas</h4>
+          <p class="text-2xl font-bold text-blue-600">{{alertStats.totalActive}}</p>
+        </div>
+      </mat-card>
+      <mat-card class="p-4">
+        <div class="text-center">
+          <mat-icon class="text-orange-600 text-2xl">escalator_warning</mat-icon>
+          <h4 class="font-semibold">Escaladas</h4>
+          <p class="text-2xl font-bold text-orange-600">{{alertStats.escalatedCount}}</p>
+        </div>
+      </mat-card>
+      <mat-card class="p-4">
+        <div class="text-center">
+          <mat-icon class="text-green-600 text-2xl">history</mat-icon>
+          <h4 class="font-semibold">Historial (24h)</h4>
+          <p class="text-2xl font-bold text-green-600">{{alertStats.recentHistory}}</p>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Test Alert Buttons (Development Only) -->
+    <mat-card class="mb-6 bg-yellow-50">
+      <mat-card-header>
+        <mat-card-title class="text-yellow-800">🧪 Herramientas de Prueba (Desarrollo)</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="flex flex-wrap gap-2">
+          <button mat-raised-button color="warn" (click)="triggerBudgetAlert(85)">
+            <mat-icon>warning</mat-icon>
+            Alerta Presupuesto 85%
+          </button>
+          <button mat-raised-button color="warn" (click)="triggerBudgetAlert(105)">
+            <mat-icon>error</mat-icon>
+            Alerta Presupuesto 105%
+          </button>
+          <button mat-raised-button color="accent" (click)="triggerCacheAlert(45)">
+            <mat-icon>cached</mat-icon>
+            Alerta Cache 45%
+          </button>
+          <button mat-raised-button color="accent" (click)="triggerRateLimitAlert('test-user')">
+            <mat-icon>speed</mat-icon>
+            Alerta Rate Limit
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Current Cost -->
+      <mat-card class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <mat-icon [class]="getStatusColor(budgetPercentage)" class="text-3xl">attach_money</mat-icon>
+          <mat-icon *ngIf="budgetStatus" [class]="budgetStatus.color === 'green' ? 'text-green-600' :
+                                                  budgetStatus.color === 'yellow' ? 'text-yellow-600' : 'text-red-600'">
+            {{budgetStatus.icon}}
+          </mat-icon>
+        </div>
+        <h3 class="text-gray-500 text-sm font-medium mb-1">Costo Mes Actual</h3>
+        <p class="text-3xl font-bold text-gray-900">${{costData?.currentMonth.toFixed(2)}}</p>
+        <p class="text-sm text-gray-600 mt-2">
+          de ${{costData?.budget}} presupuesto ({{budgetPercentage.toFixed(1)}}%)
+        </p>
+        <mat-progress-bar
+          [value]="budgetPercentage > 100 ? 100 : budgetPercentage"
+          [class]="budgetStatus?.color === 'green' ? 'bg-green-600' :
+                   budgetStatus?.color === 'yellow' ? 'bg-yellow-600' : 'bg-red-600'"
+          class="mt-3">
+        </mat-progress-bar>
+      </mat-card>
+
+      <!-- Projected Cost -->
+      <mat-card class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <mat-icon class="text-blue-600 text-3xl">trending_up</mat-icon>
+        </div>
+        <h3 class="text-gray-500 text-sm font-medium mb-1">Proyección Fin de Mes</h3>
+        <p class="text-3xl font-bold text-gray-900">${{projectedMonthEnd.toFixed(2)}}</p>
+        <p class="text-sm text-gray-600 mt-2">
+          Basado en tendencia actual
+        </p>
+        <p [class]="projectedMonthEnd > (costData?.budget || 0) ? 'text-red-600' : 'text-green-600'" class="text-xs mt-2">
+          {{projectedMonthEnd > (costData?.budget || 0) ? '⚠️ Excede presupuesto' : '✓ Dentro de presupuesto'}}
+        </p>
+      </mat-card>
+
+      <!-- AI Calls -->
+      <mat-card class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <mat-icon class="text-purple-600 text-3xl">flash_on</mat-icon>
+        </div>
+        <h3 class="text-gray-500 text-sm font-medium mb-1">Llamadas AI</h3>
+        <p class="text-3xl font-bold text-gray-900">{{costData?.aiCalls.toLocaleString()}}</p>
+        <p class="text-sm text-gray-600 mt-2">
+          {{costData?.cachedResponses.toLocaleString()}} desde cache
+        </p>
+        <p class="text-xs text-green-600 mt-2">
+          Total consultas: {{totalCalls.toLocaleString()}}
+        </p>
+      </mat-card>
+
+      <!-- Cache Hit Rate -->
+      <mat-card class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <mat-icon class="text-green-600 text-3xl">check_circle</mat-icon>
+        </div>
+        <h3 class="text-gray-500 text-sm font-medium mb-1">Cache Hit Rate</h3>
+        <p class="text-3xl font-bold text-gray-900">{{costData?.cacheHitRate}}%</p>
+        <p class="text-sm text-gray-600 mt-2">
+          Ahorro: ${{savingsFromCache.toFixed(2)}}
+        </p>
+        <p class="text-xs text-gray-500 mt-2">
+          Objetivo: >70%
+        </p>
+      </mat-card>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Daily Cost Trend -->
+      <mat-card class="p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Tendencia de Costos Diarios
+        </h3>
+        <canvas baseChart
+                [data]="lineChartData"
+                [options]="lineChartOptions"
+                [type]="'line'">
+        </canvas>
+      </mat-card>
+
+      <!-- Calls by Context -->
+      <mat-card class="p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Llamadas por Contexto
+        </h3>
+        <canvas baseChart
+                [data]="barChartData"
+                [options]="barChartOptions"
+                [type]="'bar'">
+        </canvas>
+      </mat-card>
+    </div>
+
+    <!-- Detailed Breakdown -->
+    <mat-card class="overflow-hidden mb-8">
+      <div class="p-6 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">
+          Detalle por Contexto
+        </h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table mat-table [dataSource]="costData?.byContext || []" class="w-full">
+          <!-- Context Column -->
+          <ng-container matColumnDef="context">
+            <th mat-header-cell *matHeaderCellDef class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Contexto
+            </th>
+            <td mat-cell *matCellDef="let item" class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900">{{item.name}}</div>
+            </td>
+          </ng-container>
+
+          <!-- Calls Column -->
+          <ng-container matColumnDef="calls">
+            <th mat-header-cell *matHeaderCellDef class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Llamadas AI
+            </th>
+            <td mat-cell *matCellDef="let item" class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">{{item.calls.toLocaleString()}}</div>
+            </td>
+          </ng-container>
+
+          <!-- Cost Column -->
+          <ng-container matColumnDef="cost">
+            <th mat-header-cell *matHeaderCellDef class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Costo
+            </th>
+            <td mat-cell *matCellDef="let item" class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">${{item.cost.toFixed(2)}}</div>
+            </td>
+          </ng-container>
+
+          <!-- Cache Hit Column -->
+          <ng-container matColumnDef="cacheHit">
+            <th mat-header-cell *matHeaderCellDef class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Cache Hit %
+            </th>
+            <td mat-cell *matCellDef="let item" class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">{{item.cached}}%</div>
+            </td>
+          </ng-container>
+
+          <!-- Efficiency Column -->
+          <ng-container matColumnDef="efficiency">
+            <th mat-header-cell *matHeaderCellDef class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Eficiencia
+            </th>
+            <td mat-cell *matCellDef="let item" class="px-6 py-4 whitespace-nowrap">
+              <mat-chip [class]="getEfficiencyClass(item.cached)">
+                {{getEfficiencyText(item.cached)}}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50"></tr>
+        </table>
+      </div>
+    </mat-card>
+
+    <!-- Recommendations -->
+    <mat-card class="bg-blue-50 p-6">
+      <h3 class="text-lg font-semibold text-blue-900 mb-4">
+        💡 Recomendaciones
+      </h3>
+      <ul class="space-y-2 text-sm text-blue-800">
+        <li *ngFor="let recommendation of recommendations" class="flex items-start">
+          <span class="mr-2">•</span>
+          <span>{{recommendation}}</span>
+        </li>
+      </ul>
+    </mat-card>
+  </div>
+</div>

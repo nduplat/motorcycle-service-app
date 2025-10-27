@@ -1,0 +1,49 @@
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-3xl font-bold">Órdenes de Compra</h1>
+    <a routerLink="/admin/purchase-orders/new" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90">
+      Crear Orden de Compra
+    </a>
+  </div>
+
+  <div class="bg-card rounded-xl border border-border shadow-sm">
+     <div class="border-t border-border overflow-x-auto">
+        <table class="w-full text-sm text-left text-foreground">
+          <thead class="bg-secondary/50">
+            <tr>
+              <th class="px-6 py-3 font-medium">ID de Orden</th>
+              <th class="px-6 py-3 font-medium">Proveedor</th>
+              <th class="px-6 py-3 font-medium">Fecha</th>
+              <th class="px-6 py-3 font-medium text-center">Estado</th>
+              <th class="px-6 py-3 font-medium text-right">Total Estimado</th>
+              <th class="px-6 py-3 font-medium text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(po of purchaseOrders(); track po.id) {
+              <tr class="border-b border-border hover:bg-secondary/50">
+                <td class="px-6 py-4 font-mono text-xs">{{ po.id }}</td>
+                <td class="px-6 py-4 font-medium">{{ po.supplierName }}</td>
+                <td class="px-6 py-4">{{ formatDate(po.createdAt) }}</td>
+                <td class="px-6 py-4 text-center">
+                  <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + getStatusClass(po.status)">
+                    {{ po.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-right font-medium">{{ formatCurrency(po.totalCost) }}</td>
+                <td class="px-6 py-4 text-right">
+                    <a [routerLink]="['/admin/purchase-orders', po.id, 'edit']" class="p-1 text-primary hover:underline text-sm">
+                      Ver/Editar
+                    </a>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="text-center py-16 text-muted-foreground">No se encontraron órdenes de compra.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+  </div>
+</div>

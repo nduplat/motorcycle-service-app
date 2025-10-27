@@ -1,0 +1,133 @@
+<!-- Chatbot for authenticated users -->
+<app-chatbot
+  mode="appointments"
+  [showLoginButtons]="true"
+  (appointmentBooked)="onAppointmentBooked($event)">
+</app-chatbot>
+
+<!-- Appointments booking flow - shown alongside chatbot for authenticated users or as main content for non-authenticated -->
+<div class="container mx-auto px-4 py-12 md:py-16">
+  <div class="max-w-4xl mx-auto">
+    
+    <!-- Step: Select Service -->
+    @if(step() === 'selectService') {
+      <div class="animate-in fade-in-50">
+        <div class="text-center mb-10">
+          <h1 class="text-4xl md:text-5xl font-bold">Agenda tu Cita</h1>
+          <p class="text-lg text-muted-foreground max-w-3xl mx-auto mt-4">
+            Paso 1 de 3: Elige el servicio que necesitas para tu motocicleta.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          @for (service of services(); track service.id) {
+            <button (click)="selectService(service)" class="text-left bg-card rounded-xl border border-border p-6 shadow-sm hover:border-primary hover:bg-secondary/50 transition-all duration-200">
+              <h2 class="text-xl font-semibold text-primary">{{ service.title }}</h2>
+              <p class="text-muted-foreground mt-2 text-sm min-h-[40px]">{{ service.description }}</p>
+              <p class="text-sm font-medium text-foreground mt-4">Duración Aprox: {{ service.estimatedHours }} hora(s)</p>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Step: Select Employee and Slot -->
+    @if (step() === 'selectSlot') {
+      <div class="animate-in fade-in-50">
+        <div class="text-center mb-10">
+           <button (click)="goBackTo('selectService')" class="text-sm text-primary hover:underline mb-2">&larr; Volver a seleccionar servicio</button>
+          <h1 class="text-4xl md:text-5xl font-bold">Selecciona Empleado y Horario</h1>
+          <p class="text-lg text-muted-foreground max-w-3xl mx-auto mt-4">
+            Paso 2 de 3: Elige el empleado y el horario disponible en la semana.
+          </p>
+        </div>
+
+        <app-weekly-availability
+          [service]="selectedService()!"
+          (slotSelected)="onSlotSelected($event)">
+        </app-weekly-availability>
+      </div>
+    }
+
+    <!-- Step: Confirm -->
+    @if (step() === 'confirm' && selectedService() && selectedSlot(); as slot) {
+       <div class="animate-in fade-in-50">
+          <div class="text-center mb-10">
+            <button (click)="goBackTo('selectSlot')" class="text-sm text-primary hover:underline mb-2">&larr; Cambiar horario</button>
+            <h1 class="text-4xl md:text-5xl font-bold">Confirma tu Cita</h1>
+            <p class="text-lg text-muted-foreground max-w-3xl mx-auto mt-4">
+              Paso 3 de 3: Revisa los detalles y completa tu información.
+            </p>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Summary -->
+            <div class="bg-secondary/50 rounded-lg p-6">
+              <h2 class="text-xl font-semibold mb-4 border-b border-border pb-2">Resumen de la Cita</h2>
+              <div class="space-y-3 text-sm">
+                <p><strong>Servicio:</strong><br>{{ selectedService()?.title }}</p>
+                <p><strong>Fecha:</strong><br>{{ slot.date.toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
+                <p><strong>Hora:</strong><br>{{ slot.time }}</p>
+              </div>
+            </div>
+            <!-- Form -->
+            <div class="bg-card rounded-xl border border-border p-6">
+               <h2 class="text-xl font-semibold mb-4">Tus Datos</h2>
+               <form [formGroup]="confirmationForm" (ngSubmit)="confirmAppointment()" class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-foreground">Nombre Completo</label>
+                    <input formControlName="name" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                  </div>
+                   <div>
+                    <label class="block text-sm font-medium text-foreground">Teléfono de Contacto</label>
+                    <input formControlName="phone" type="tel" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                  </div>
+                   <div>
+                    <label class="block text-sm font-medium text-foreground">Selecciona tu Moto</label>
+                    @if(userVehicleOptions().length > 0) {
+                      <select formControlName="vehicle" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                        <option value="">Selecciona una moto...</option>
+                        @for (option of userVehicleOptions(); track option.id) {
+                          <option [value]="option.value">{{ option.label }}</option>
+                        }
+                      </select>
+                    } @else {
+                      <input formControlName="vehicle" placeholder="Ej: Yamaha MT-07" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                      <p class="text-xs text-muted-foreground mt-1">No tienes motos registradas. Puedes registrar una en tu cuenta.</p>
+                    }
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-foreground">Notas Adicionales (Opcional)</label>
+                    <textarea formControlName="notes" rows="2" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm"></textarea>
+                  </div>
+                  <div class="pt-2">
+                    <button type="submit" [disabled]="isLoading()" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50">
+                      @if(isLoading()){
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
+                      } @else {
+                        <span>Confirmar y Agendar Cita</span>
+                      }
+                    </button>
+                  </div>
+               </form>
+            </div>
+          </div>
+       </div>
+    }
+
+     <!-- Step: Success -->
+    @if (step() === 'success') {
+       <div class="text-center py-16 animate-in fade-in-50">
+         <div class="mb-4 text-6xl">🎉</div>
+         <h1 class="text-4xl font-bold text-primary">¡Cita Agendada con Éxito!</h1>
+         <p class="text-muted-foreground mt-4 text-lg">Hemos recibido tu solicitud. Recibirás una confirmación por parte de nuestro equipo pronto.</p>
+         <p class="text-muted-foreground text-sm">Te esperamos en Blue Dragon Motors.</p>
+         <div class="mt-8">
+           <button (click)="startOver()" class="px-6 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90">
+             Agendar otra cita
+           </button>
+         </div>
+       </div>
+    }
+
+  </div>
+</div>

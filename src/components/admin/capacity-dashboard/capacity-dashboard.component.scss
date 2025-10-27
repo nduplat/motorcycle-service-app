@@ -1,0 +1,63 @@
+.capacity-dashboard {
+  .alerts-card {
+    border-left: 4px solid #f59e0b;
+  }
+
+  .alert-item {
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      transform: translateX(2px);
+    }
+  }
+
+  .capacity-overview {
+    .capacity-meter {
+      .capacity-details {
+        font-size: 0.875rem;
+
+        > div {
+          padding: 0.25rem 0;
+        }
+      }
+    }
+  }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+  }
+
+  // Material progress bar customization
+  ::ng-deep .mat-mdc-progress-bar {
+    height: 8px;
+    border-radius: 4px;
+  }
+
+  // Custom colors for progress bar
+  ::ng-deep .mat-mdc-progress-bar-primary .mdc-linear-progress__primary-bar {
+    background-color: #22c55e; // green
+  }
+
+  ::ng-deep .mat-mdc-progress-bar-accent .mdc-linear-progress__primary-bar {
+    background-color: #f59e0b; // orange
+  }
+
+  ::ng-deep .mat-mdc-progress-bar-warn .mdc-linear-progress__primary-bar {
+    background-color: #ef4444; // red
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .capacity-dashboard {
+    .grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .chart-container {
+      height: 250px;
+    }
+  }
+}

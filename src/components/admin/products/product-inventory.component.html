@@ -1,0 +1,93 @@
+<div class="bg-card/80 backdrop-blur-sm p-8 rounded-2xl border border-border/50 shadow-lg space-y-6">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="p-3 bg-blue-100 rounded-xl">
+      <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+      </svg>
+    </div>
+    <div>
+      <h2 class="text-2xl font-semibold">Control de Inventario</h2>
+      <p class="text-muted-foreground">Gestión de stock y ubicaciones</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="space-y-6">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-foreground">Existencias Actuales *</label>
+          <input formControlName="stock" type="number" min="0"
+            [class]="'w-full px-4 py-3 bg-background/50 border rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary ' +
+              (isFieldInvalid('stock') ? 'border-red-500 bg-red-50/50' : 'border-border hover:border-border/80')">
+          @if (isFieldInvalid('stock')) {
+            <p class="text-red-500 text-xs mt-1">{{ getFieldError('stock') }}</p>
+          }
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-foreground">Stock Mínimo</label>
+          <input formControlName="minStock" type="number" min="0"
+            class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-sm font-semibold text-foreground">Ubicación en Taller</label>
+        <select formControlName="workshopLocationId"
+          class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          <option value="">Seleccionar ubicación</option>
+          @for(location of workshopLocations(); track location.id) {
+            <option [value]="location.id">{{ location.name }} - {{ location.city }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-sm font-semibold text-foreground">Proveedores</label>
+        <select formControlName="suppliers" multiple
+          class="w-full h-32 px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          @for(sup of suppliers(); track sup.id) {
+            <option [value]="sup.id">{{sup.name}}</option>
+          }
+        </select>
+        <p class="text-xs text-muted-foreground">Mantén Ctrl/Cmd para seleccionar varios</p>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <!-- Stock Status Indicator -->
+      <div class="p-6 bg-gradient-to-br from-secondary/50 to-secondary/30 rounded-xl border border-border/50">
+        <h3 class="font-semibold mb-4">Estado del Stock</h3>
+        <div class="space-y-3">
+          <div class="flex items-center gap-3 p-3 rounded-lg" [class]="stockStatusColor()">
+            @if (stockStatus() === 'out_of_stock') {
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            } @else if (stockStatus() === 'low_stock') {
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+              </svg>
+            } @else {
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            }
+            <span class="font-medium">{{ stockStatusMessage() }}</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <div class="text-center p-3 bg-background rounded-lg">
+              <p class="text-2xl font-bold text-primary">{{ productForm().get('stock')?.value || 0 }}</p>
+              <p class="text-sm text-muted-foreground">Unidades</p>
+            </div>
+            <div class="text-center p-3 bg-background rounded-lg">
+              <p class="text-2xl font-bold text-orange-600">{{ productForm().get('minStock')?.value || 0 }}</p>
+              <p class="text-sm text-muted-foreground">Mínimo</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

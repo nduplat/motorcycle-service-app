@@ -1,0 +1,197 @@
+.capacity-heatmap {
+  .heatmap-container {
+    .legend {
+      padding: 1rem;
+      background-color: #f8fafc;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+    }
+
+    .heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .cell-content {
+        text-align: center;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+        .utilization-text {
+          font-size: 0.875rem;
+          font-weight: 700;
+          margin-bottom: 0.125rem;
+        }
+
+        .details-text {
+          font-size: 0.625rem;
+          opacity: 0.9;
+
+          div {
+            line-height: 1;
+          }
+        }
+      }
+
+      &.large {
+        height: 80px;
+        aspect-ratio: auto;
+
+        .cell-content {
+          font-size: 0.875rem;
+
+          .utilization-text {
+            font-size: 1rem;
+          }
+
+          .details-text {
+            font-size: 0.75rem;
+          }
+        }
+      }
+    }
+
+    .hourly-heatmap {
+      .grid-cols-24 {
+        display: grid;
+        grid-template-columns: repeat(24, 1fr);
+        gap: 0.25rem;
+      }
+
+      .hour-labels {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 0.25rem;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 500;
+
+        .hour-label {
+          padding: 0.25rem;
+        }
+      }
+    }
+
+    .daily-heatmap {
+      .grid-cols-7 {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1rem;
+      }
+
+      .daily-cell {
+        .day-name {
+          font-size: 0.875rem;
+          color: #374151;
+          margin-bottom: 0.5rem;
+        }
+      }
+    }
+  }
+
+  // Material chip customization
+  ::ng-deep .mat-mdc-chip {
+    &.mat-primary {
+      --mdc-chip-container-color: #dbeafe;
+      --mdc-chip-label-text-color: #1e40af;
+    }
+
+    &.mat-accent {
+      --mdc-chip-container-color: #fef3c7;
+      --mdc-chip-label-text-color: #92400e;
+    }
+
+    &.mat-warn {
+      --mdc-chip-container-color: #fee2e2;
+      --mdc-chip-label-text-color: #991b1b;
+    }
+  }
+
+  // Tooltip customization
+  ::ng-deep .mat-mdc-tooltip {
+    font-size: 0.875rem;
+    background-color: rgba(0, 0, 0, 0.9);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .capacity-heatmap {
+    .heatmap-container {
+      .hourly-heatmap {
+        .grid-cols-24 {
+          grid-template-columns: repeat(12, 1fr);
+          gap: 0.125rem;
+        }
+
+        .heatmap-cell {
+          .cell-content {
+            font-size: 0.625rem;
+
+            .utilization-text {
+              font-size: 0.75rem;
+            }
+
+            .details-text {
+              display: none; // Hide details on mobile
+            }
+          }
+        }
+
+        .hour-labels {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      .daily-heatmap {
+        .grid-cols-7 {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.5rem;
+        }
+      }
+
+      .legend {
+        .flex {
+          flex-direction: column;
+          gap: 0.5rem;
+
+          > div:last-child {
+            flex-wrap: wrap;
+            justify-content: center;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .capacity-heatmap {
+    .heatmap-container {
+      .hourly-heatmap {
+        .grid-cols-24 {
+          grid-template-columns: repeat(6, 1fr);
+        }
+      }
+
+      .daily-heatmap {
+        .grid-cols-7 {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
+  }
+}

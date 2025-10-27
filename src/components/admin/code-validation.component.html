@@ -1,0 +1,79 @@
+<div class="code-validation-container">
+  <div class="validation-header">
+    <h2>Validación de Código QR</h2>
+    <p>Ingrese el código de 4 dígitos del cliente para validar y crear la orden de trabajo</p>
+  </div>
+
+  <div class="validation-form">
+    <div class="input-group">
+      <label for="codeInput">Código de Validación</label>
+      <input
+        id="codeInput"
+        type="text"
+        [value]="codeInput()"
+        (input)="updateCodeInput($any($event.target).value)"
+        placeholder="0000"
+        maxlength="4"
+        pattern="[0-9]{4}"
+        class="code-input"
+        [class.error]="validationResult().error"
+        [disabled]="isValidating()"
+        autocomplete="off"
+      />
+      <small class="input-help">Ingrese exactamente 4 dígitos numéricos</small>
+    </div>
+
+    <button
+      type="button"
+      class="validate-btn"
+      [disabled]="codeInput().length !== 4 || isValidating()"
+      (click)="validateCode()"
+    >
+      <span *ngIf="!isValidating()">Validar Código</span>
+      <span *ngIf="isValidating()">Validando...</span>
+    </button>
+  </div>
+
+  <!-- Validation Results -->
+  <div class="validation-result" *ngIf="validationResult().error || validationResult().isValid">
+    <div class="result-card" [class.success]="validationResult().isValid" [class.error]="!validationResult().isValid">
+      <div class="result-icon">
+        <span *ngIf="validationResult().isValid">✓</span>
+        <span *ngIf="!validationResult().isValid">✗</span>
+      </div>
+
+      <div class="result-content">
+        <h3 *ngIf="validationResult().isValid">Validación Exitosa</h3>
+        <h3 *ngIf="!validationResult().isValid">Error de Validación</h3>
+
+        <p class="error-message" *ngIf="validationResult().error">
+          {{ validationResult().error }}
+        </p>
+
+        <div class="result-details" *ngIf="validationResult().isValid">
+          <div class="detail-item" *ngIf="validationResult().entry">
+            <strong>Código:</strong> {{ validationResult().entry.verificationCode }}
+          </div>
+          <div class="detail-item" *ngIf="validationResult().customer">
+            <strong>Cliente:</strong> {{ validationResult().customer.name }}
+          </div>
+          <div class="detail-item" *ngIf="validationResult().motorcycle">
+            <strong>Motocicleta:</strong> {{ validationResult().motorcycle.plate || 'Sin placa' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-actions" *ngIf="!validationResult().isValid">
+      <button type="button" class="retry-btn" (click)="clearValidation()">
+        Intentar de Nuevo
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="isValidating()">
+    <div class="loading-spinner"></div>
+    <p>Validando código y creando orden de trabajo...</p>
+  </div>
+</div>

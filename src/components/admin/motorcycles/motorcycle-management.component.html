@@ -1,0 +1,716 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <h1 class="text-3xl font-bold">Catálogo de Motocicletas</h1>
+    <div class="flex gap-2">
+      <button (click)="exportMotorcycles()" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700">
+        Exportar
+      </button>
+      <button (click)="setActiveTab('add')" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90">
+        Añadir Motocicleta
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="border-b border-border">
+    <nav class="flex space-x-8">
+      <button
+        (click)="setActiveTab('list')"
+        [class]="activeTab() === 'list' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'"
+        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+        Lista de Motocicletas
+      </button>
+      <button
+        (click)="setActiveTab('grouped')"
+        [class]="activeTab() === 'grouped' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'"
+        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+        Agrupadas por Categoría
+      </button>
+      <button
+        (click)="setActiveTab('add')"
+        [class]="activeTab() === 'add' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'"
+        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+        {{ formTitle() }}
+      </button>
+    </nav>
+  </div>
+
+  <!-- List View -->
+  @if (activeTab() === 'list') {
+    <div class="space-y-6">
+      <!-- Search and Filters -->
+      <div class="bg-card rounded-xl border border-border shadow-sm p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <!-- Search -->
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-2">Buscar</label>
+            <input
+              type="text"
+              [value]="searchQuery()"
+              (input)="updateSearch($any($event.target).value)"
+              placeholder="Marca, modelo, descripción..."
+              class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+          </div>
+
+          <!-- Category Filter -->
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-2">Categoría CC</label>
+            <select
+              [value]="selectedCategory()"
+              (change)="filterByCategory($any($event.target).value)"
+              class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              <option value="">Todas las categorías</option>
+              <option value="bajo_cc">Bajo CC (≤250cc)</option>
+              <option value="mediano_cc">Mediano CC (251-650cc)</option>
+              <option value="alto_cc">Alto CC (≥651cc)</option>
+            </select>
+          </div>
+
+          <!-- Type Filter -->
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-2">Tipo</label>
+            <select
+              [value]="selectedType()"
+              (change)="filterByType($any($event.target).value)"
+              class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              <option value="">Todos los tipos</option>
+              @for (type of popularTypes; track type.type) {
+                <option [value]="type.type">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Brand Filter -->
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-2">Marca</label>
+            <select
+              [value]="selectedBrand()"
+              (change)="filterByBrand($any($event.target).value)"
+              class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              <option value="">Todas las marcas</option>
+              @for (brand of popularBrands; track brand) {
+                <option [value]="brand">{{ brand }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Year Filter -->
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-2">Año</label>
+            <select
+              [value]="selectedYear()"
+              (change)="filterByYear($any($event.target).value ? +$any($event.target).value : '')"
+              class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              <option value="">Todos los años</option>
+              @for (year of availableYears(); track year) {
+                <option [value]="year">{{ year }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-4">
+          <button (click)="clearFilters()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80">
+            Limpiar Filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- Bulk Actions Bar -->
+      @if (selectedMotorcycles().size > 0) {
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-blue-800">
+                {{ selectedMotorcycles().size }} motocicleta(s) seleccionada(s)
+              </span>
+            </div>
+            <div class="flex gap-2">
+              <button (click)="bulkActivate()" class="px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                Activar
+              </button>
+              <button (click)="bulkDeactivate()" class="px-3 py-1.5 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700">
+                Desactivar
+              </button>
+              <button (click)="bulkDelete()" class="px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700">
+                Eliminar
+              </button>
+              <button (click)="clearSelection()" class="px-3 py-1.5 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700">
+                Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Motorcycle List -->
+      <div class="bg-card rounded-xl border border-border shadow-sm">
+        <div class="border-t border-border overflow-x-auto">
+          <table class="w-full text-sm text-left text-foreground">
+            <thead class="bg-secondary/50">
+              <tr>
+                <th class="px-6 py-3 font-medium w-12">
+                  <input
+                    type="checkbox"
+                    [checked]="isAllSelected()"
+                    (change)="toggleSelectAll()"
+                    class="rounded border-border">
+                </th>
+                <th class="px-6 py-3 font-medium">
+                  <button (click)="sortBy('brand')" class="flex items-center gap-1 hover:text-primary">
+                    Motocicleta
+                    <span class="text-xs">{{ getSortIcon('brand') }}</span>
+                  </button>
+                </th>
+                <th class="px-6 py-3 font-medium">Placa</th>
+                <th class="px-6 py-3 font-medium">
+                  <button (click)="sortBy('category')" class="flex items-center gap-1 hover:text-primary">
+                    Categoría
+                    <span class="text-xs">{{ getSortIcon('category') }}</span>
+                  </button>
+                </th>
+                <th class="px-6 py-3 font-medium">
+                  <button (click)="sortBy('type')" class="flex items-center gap-1 hover:text-primary">
+                    Tipo
+                    <span class="text-xs">{{ getSortIcon('type') }}</span>
+                  </button>
+                </th>
+                <th class="px-6 py-3 font-medium">
+                  <button (click)="sortBy('displacementCc')" class="flex items-center gap-1 hover:text-primary">
+                    Especificaciones
+                    <span class="text-xs">{{ getSortIcon('displacementCc') }}</span>
+                  </button>
+                </th>
+                <th class="px-6 py-3 font-medium text-center">
+                  <button (click)="sortBy('isActive')" class="flex items-center justify-center gap-1 hover:text-primary">
+                    Estado
+                    <span class="text-xs">{{ getSortIcon('isActive') }}</span>
+                  </button>
+                </th>
+                <th class="px-6 py-3 font-medium text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(motorcycle of paginatedMotorcycles(); track motorcycle.id) {
+                <tr class="border-b border-border hover:bg-secondary/50">
+                  <td class="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      [checked]="isSelected(motorcycle.id)"
+                      (change)="toggleSelectMotorcycle(motorcycle.id)"
+                      class="rounded border-border">
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="h-12 w-12 bg-secondary rounded-lg flex items-center justify-center">
+                        @if (motorcycle.images?.length) {
+                          <img [src]="motorcycle.images[0]" [alt]="motorcycle.model" class="h-full w-full object-cover rounded-lg">
+                        } @else {
+                          <span class="text-lg">🏍️</span>
+                        }
+                      </div>
+                      <div>
+                        <div class="font-medium">{{ motorcycle.brand }} {{ motorcycle.model }}</div>
+                        <div class="text-muted-foreground text-xs">{{ motorcycle.year }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="font-mono text-xs">{{ motorcycle.plate || 'N/A' }}</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    @if (motorcycle.category) {
+                      <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + getCCRangeColor(motorcycle.category)">
+                        {{ getCCRangeLabel(motorcycle.category) }}
+                      </span>
+                    } @else {
+                      <span class="text-muted-foreground">Sin categoría</span>
+                    }
+                  </td>
+                  <td class="px-6 py-4">
+                    @if (motorcycle.type) {
+                      <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + getTypeColor(motorcycle.type)">
+                        {{ getTypeLabel(motorcycle.type) }}
+                      </span>
+                    } @else {
+                      <span class="text-muted-foreground">Sin tipo</span>
+                    }
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="text-xs text-muted-foreground space-y-1">
+                      @if (motorcycle.displacementCc) {
+                        <div>{{ motorcycle.displacementCc }}cc</div>
+                      }
+                      @if (motorcycle.maxPowerHp) {
+                        <div>{{ motorcycle.maxPowerHp }} HP</div>
+                      }
+                      @if (motorcycle.fuelCapacityL) {
+                        <div>{{ motorcycle.fuelCapacityL }}L</div>
+                      }
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    @if(motorcycle.isActive !== false) {
+                      <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Activa</span>
+                    } @else {
+                      <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Inactiva</span>
+                    }
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex gap-2 justify-end">
+                      <button (click)="editMotorcycle(motorcycle)" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-secondary/80">
+                        Editar
+                      </button>
+                      <button (click)="deleteMotorcycle(motorcycle.id)" class="px-3 py-1.5 rounded-md text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200">
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center py-16 text-muted-foreground">
+                    No se encontraron motocicletas que coincidan con los filtros.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <div class="bg-secondary/30 px-6 py-4 border-t border-border">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <label class="text-sm font-medium">Mostrar:</label>
+                  <select
+                    [value]="pageSize()"
+                    (change)="changePageSize(+$any($event.target).value)"
+                    class="px-2 py-1 text-sm border border-border rounded">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+                <div class="text-sm text-muted-foreground">
+                  Mostrando {{ ((currentPage() - 1) * pageSize()) + 1 }} -
+                  {{ Math.min(currentPage() * pageSize(), filteredMotorcycles().length) }} de
+                  {{ filteredMotorcycles().length }} motocicletas
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  (click)="goToPage(currentPage() - 1)"
+                  [disabled]="currentPage() === 1"
+                  class="px-3 py-1 text-sm border border-border rounded hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed">
+                  Anterior
+                </button>
+
+                <div class="flex gap-1">
+                  @for (pageNum of getVisiblePages(); track pageNum) {
+                    <button
+                      (click)="goToPage(pageNum)"
+                      [class]="currentPage() === pageNum ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'"
+                      class="px-3 py-1 text-sm border border-border rounded">
+                      {{ pageNum }}
+                    </button>
+                  }
+                </div>
+
+                <button
+                  (click)="goToPage(currentPage() + 1)"
+                  [disabled]="currentPage() === totalPages()"
+                  class="px-3 py-1 text-sm border border-border rounded hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed">
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Grouped View -->
+  @if (activeTab() === 'grouped') {
+    <div class="space-y-6">
+      <!-- CC Categories -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        @for (category of ['bajo_cc', 'mediano_cc', 'alto_cc']; track category) {
+          <div class="bg-card rounded-xl border border-border shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold" [class]="getCCRangeColor(category)">
+                {{ getCCRangeLabel(category) }}
+              </h3>
+              <span class="text-2xl font-bold text-primary">
+                {{ groupedByCategory()[category]?.length || 0 }}
+              </span>
+            </div>
+            <div class="space-y-2">
+              @for (motorcycle of groupedByCategory()[category] || []; track motorcycle.id) {
+                <div class="flex items-center justify-between p-2 bg-secondary/30 rounded-lg">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm">🏍️</span>
+                    <span class="text-sm font-medium">{{ motorcycle.brand }} {{ motorcycle.model }}</span>
+                  </div>
+                  <span class="text-xs text-muted-foreground">{{ motorcycle.displacementCc }}cc</span>
+                </div>
+              }
+              @if (!(groupedByCategory()[category]?.length)) {
+                <p class="text-sm text-muted-foreground text-center py-4">No hay motocicletas en esta categoría</p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Types -->
+      <div class="bg-card rounded-xl border border-border shadow-sm p-6">
+        <h3 class="text-lg font-semibold mb-4">Por Tipo de Motocicleta</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          @for (type of popularTypes; track type.type) {
+            <div class="text-center">
+              <div [class]="'p-4 rounded-lg ' + getTypeColor(type.type)">
+                <div class="text-2xl font-bold">{{ groupedByType()[type.type]?.length || 0 }}</div>
+                <div class="text-sm font-medium">{{ type.label }}</div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Brands -->
+      <div class="bg-card rounded-xl border border-border shadow-sm p-6">
+        <h3 class="text-lg font-semibold mb-4">Por Marca</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          @for (brand of popularBrands; track brand) {
+            <div class="text-center">
+              <div class="p-4 rounded-lg bg-secondary/50">
+                <div class="text-2xl font-bold">{{ groupedByBrand()[brand]?.length || 0 }}</div>
+                <div class="text-sm font-medium">{{ brand }}</div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Years -->
+      <div class="bg-card rounded-xl border border-border shadow-sm p-6">
+        <h3 class="text-lg font-semibold mb-4">Por Año de Producción</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          @for (year of availableYears(); track year) {
+            <div class="text-center">
+              <div class="p-4 rounded-lg bg-blue-100 text-blue-800">
+                <div class="text-2xl font-bold">{{ motorcycleService.getMotorcyclesByYear(year).length }}</div>
+                <div class="text-sm font-medium">{{ year }}</div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Add/Edit Form -->
+  @if (activeTab() === 'add') {
+    <div class="bg-card rounded-xl border border-border shadow-sm">
+      <form [formGroup]="motorcycleForm" (ngSubmit)="onSubmit()" class="divide-y divide-border">
+        <!-- Basic Information -->
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">Información Básica</h2>
+            <button type="button" (click)="toggleAdvancedForm()" class="text-sm text-primary hover:underline">
+              {{ showAdvancedForm() ? 'Ocultar' : 'Mostrar' }} campos avanzados
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-2">Marca *</label>
+              <select formControlName="brand" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                <option value="">Seleccionar marca</option>
+                @for (brand of popularMotorcycleBrands; track brand) {
+                  <option [value]="brand">{{ brand }}</option>
+                }
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-2">Modelo *</label>
+              <input formControlName="model" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-2">Año *</label>
+              <input formControlName="year" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-2">Placa</label>
+              <input formControlName="plate" placeholder="e.g., ABC-123" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-2">Cilindrada (CC)</label>
+              <input formControlName="displacementCc" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              @if (motorcycleForm.get('displacementCc')?.value) {
+                <div class="mt-1">
+                  <span [class]="'text-xs px-2 py-1 rounded-full ' + getCCRangeColor(motorcycleService.categorizationService.categorizeByCC(motorcycleForm.get('displacementCc')?.value))">
+                    {{ getCCRangeLabel(motorcycleService.categorizationService.categorizeByCC(motorcycleForm.get('displacementCc')?.value)) }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-2">Tipo</label>
+              <select formControlName="type" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                <option value="">Seleccionar tipo</option>
+                @for (type of popularTypes; track type.type) {
+                  <option [value]="type.type">{{ type.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-2">Subtipo</label>
+              <input formControlName="subType" placeholder="ej: Super Sport, Dual Sport" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced Specifications -->
+        @if (showAdvancedForm()) {
+          <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4">Especificaciones Técnicas</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Tipo de Motor</label>
+                <input formControlName="engineType" placeholder="ej: 4-stroke, 4-cylinder, DOHC" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Combustible</label>
+                <select formControlName="fuelType" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                  <option value="gasoline">Gasolina</option>
+                  <option value="electric">Eléctrico</option>
+                  <option value="hybrid">Híbrido</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Transmisión</label>
+                <select formControlName="transmission" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                  <option value="manual">Manual</option>
+                  <option value="automatic">Automática</option>
+                  <option value="semi_automatic">Semi-automática</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Cilindros</label>
+                <input formControlName="cylinders" type="number" min="1" max="6" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Válvulas por Cilindro</label>
+                <input formControlName="valvesPerCylinder" type="number" min="1" max="8" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Refrigeración</label>
+                <select formControlName="cooling" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                  <option value="air">Aire</option>
+                  <option value="liquid">Líquida</option>
+                  <option value="oil">Aceite</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Performance -->
+          <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4">Rendimiento</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Potencia Máxima (HP)</label>
+                <input formControlName="maxPowerHp" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Torque Máximo (Nm)</label>
+                <input formControlName="maxTorqueNm" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Velocidad Máxima (Km/h)</label>
+                <input formControlName="topSpeedKmh" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+            </div>
+          </div>
+
+          <!-- Physical Characteristics -->
+          <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4">Características Físicas</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Peso (Kg)</label>
+                <input formControlName="weightKg" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Capacidad de Combustible (L)</label>
+                <input formControlName="fuelCapacityL" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Autonomía (Km/L)</label>
+                <input formControlName="fuelEfficiencyKml" type="number" step="0.1" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Altura del Asiento (mm)</label>
+                <input formControlName="seatHeightMm" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Distancia entre Ejes (mm)</label>
+                <input formControlName="wheelbaseMm" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Altura Libre al Suelo (mm)</label>
+                <input formControlName="groundClearanceMm" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+            </div>
+          </div>
+
+          <!-- Features -->
+          <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4">Características y Equipamiento</h3>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <label class="flex items-center space-x-2">
+                <input formControlName="abs" type="checkbox" class="rounded border-border">
+                <span class="text-sm">ABS</span>
+              </label>
+
+              <label class="flex items-center space-x-2">
+                <input formControlName="tractionControl" type="checkbox" class="rounded border-border">
+                <span class="text-sm">Control de Tracción</span>
+              </label>
+
+              <label class="flex items-center space-x-2">
+                <input formControlName="quickShifter" type="checkbox" class="rounded border-border">
+                <span class="text-sm">Quick Shifter</span>
+              </label>
+
+              <label class="flex items-center space-x-2">
+                <input formControlName="cruiseControl" type="checkbox" class="rounded border-border">
+                <span class="text-sm">Control Crucero</span>
+              </label>
+
+              <label class="flex items-center space-x-2">
+                <input formControlName="heatedSeats" type="checkbox" class="rounded border-border">
+                <span class="text-sm">Asientos Calefaccionados</span>
+              </label>
+
+              <label class="flex items-center space-x-2">
+                <input formControlName="adjustableSuspension" type="checkbox" class="rounded border-border">
+                <span class="text-sm">Suspensión Ajustable</span>
+              </label>
+
+              <label class="flex items-center space-x-2">
+                <input formControlName="bluetooth" type="checkbox" class="rounded border-border">
+                <span class="text-sm">Bluetooth</span>
+              </label>
+
+              <label class="flex items-center space-x-2">
+                <input formControlName="usbCharging" type="checkbox" class="rounded border-border">
+                <span class="text-sm">Carga USB</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Business Information -->
+          <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4">Información Comercial</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Precio Base</label>
+                <input formControlName="basePrice" type="number" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Moneda</label>
+                <select formControlName="currency" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                  <option value="COP">COP</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <input formControlName="isActive" type="checkbox" class="rounded border-border">
+                <label class="text-sm font-medium">Activa en Catálogo</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Media and Documentation -->
+          <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4">Medios y Documentación</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">URL del Brochure</label>
+                <input formControlName="brochureUrl" type="url" placeholder="https://..." class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">URL del Manual</label>
+                <input formControlName="manualUrl" type="url" placeholder="https://..." class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              </div>
+            </div>
+          </div>
+
+          <!-- Description and Notes -->
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Descripción</label>
+                <textarea formControlName="description" rows="3" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Notas Internas</label>
+                <textarea formControlName="notes" rows="3" class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm"></textarea>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Form Actions -->
+        <div class="p-6 bg-secondary/30">
+          <div class="flex justify-end gap-3">
+            <button type="button" (click)="cancelEdit()" class="px-4 py-2 bg-card border border-border rounded-md font-medium hover:bg-secondary text-sm">
+              Cancelar
+            </button>
+            <button type="submit" [disabled]="isSubmitting() || motorcycleForm.invalid" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 text-sm">
+              @if(isSubmitting()){ <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2"></div> }
+              {{ editingMotorcycleId() ? 'Actualizar' : 'Crear' }} Motocicleta
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  }
+</div>

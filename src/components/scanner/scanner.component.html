@@ -1,0 +1,137 @@
+<!-- History Modal -->
+@if (isHistoryVisible()) {
+  <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center animate-in fade-in-50" (click)="toggleHistory()">
+    <div class="bg-card rounded-xl border border-border shadow-lg w-full max-w-lg m-4" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b border-border flex justify-between items-center">
+        <h2 class="text-xl font-semibold">Historial de Escaneos</h2>
+        <button type="button" (click)="toggleHistory()" class="p-1 rounded-full text-2xl leading-none hover:bg-secondary">&times;</button>
+      </div>
+      <div class="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
+        @for (item of scanHistory(); track $index) {
+          <div class="p-3 border rounded-lg bg-background flex justify-between items-center gap-3">
+            <div class="flex-grow">
+              <p class="font-semibold">{{ item.name || 'Sin Nombre' }}</p>
+              <p class="text-sm text-muted-foreground">{{ item.brand || 'Sin Marca' }} - {{ item.sku || 'Sin SKU' }}</p>
+            </div>
+            <button (click)="selectHistoryItem(item)" class="px-3 py-1.5 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 text-xs flex-shrink-0">
+              Seleccionar
+            </button>
+          </div>
+        } @empty {
+          <p class="text-center text-muted-foreground py-8">El historial está vacío.</p>
+        }
+      </div>
+      @if (scanHistory().length > 0) {
+        <div class="p-4 bg-secondary/30 border-t border-border flex justify-end">
+          <button type="button" (click)="clearHistory()" class="px-4 py-2 bg-destructive text-destructive-foreground rounded-md font-medium hover:bg-destructive/90 text-sm">
+            Limpiar Historial
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<div class="container mx-auto px-4 py-8 flex flex-col items-center">
+  <div class="relative w-full max-w-2xl">
+    <div class="text-center">
+      <h1 class="text-3xl font-bold mb-2">Escáner IA y QR</h1>
+      <p class="text-muted-foreground mb-6 max-w-2xl mx-auto text-center">
+        Apunta tu cámara a un repuesto para identificarlo con IA, o a un código QR para ver sus detalles.
+      </p>
+    </div>
+    <!-- History Button -->
+    @if (scanHistory().length > 0) {
+      <button (click)="toggleHistory()" title="Ver historial" class="absolute top-0 -right-4 sm:right-0 p-2 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    }
+  </div>
+
+
+  <div class="w-full max-w-2xl bg-card rounded-xl border border-border shadow-sm p-4">
+    @if(isCameraError()) {
+      <div class="aspect-video bg-card rounded-lg flex flex-col items-center justify-center text-card-foreground p-6 text-center border-2 border-destructive">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-destructive mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+        <h3 class="text-xl font-semibold">Error de Cámara</h3>
+        <p class="mt-2 text-muted-foreground max-w-sm">{{ error() }}</p>
+        <button (click)="setupCamera()" class="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 text-base">Reintentar</button>
+      </div>
+    } @else {
+      <div class="relative aspect-video bg-black rounded-lg overflow-hidden">
+        <video #videoElement playsinline autoplay class="w-full h-full object-cover"></video>
+
+        @if (isFlashing()) {
+          <div class="absolute inset-0 bg-white/80 animate-in fade-in-0 duration-100 z-20"></div>
+        }
+
+        @if (hasMultipleCameras()) {
+          <button (click)="switchCamera()" title="Cambiar cámara" class="absolute top-2 right-2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 20L20 4" />
+            </svg>
+          </button>
+        }
+
+        @if (!isCameraReady()) {
+          <div class="absolute inset-0 flex items-center justify-center bg-black/50">
+            <app-loader text="'Iniciando cámara...'"></app-loader>
+          </div>
+        }
+
+        @if (isCameraReady() && isScanningQr()) {
+          <div class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1.5 animate-pulse">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6.364 1.636l-.707.707M20 12h-1M4 12H3m13.364 6.364l-.707-.707M12 20v-1m-6.364-1.636l.707-.707" /></svg>
+            <span>Buscando código QR...</span>
+          </div>
+        }
+
+         @if (qrResultText()) {
+            <div class="absolute inset-0 flex items-center justify-center bg-black/70 animate-in fade-in-50">
+                <div class="text-center text-white space-y-4">
+                    <app-loader></app-loader>
+                    <p class="font-medium">{{ qrResultText() }}</p>
+                </div>
+            </div>
+        }
+      </div>
+
+      <div class="mt-4 flex flex-col items-center">
+        @if(error() && !isCameraError()) {
+          <div class="w-full bg-destructive/10 text-destructive-foreground p-4 rounded-lg animate-in fade-in-50">
+              <h3 class="font-semibold text-destructive mb-2">Ocurrió un Error</h3>
+              <p class="text-sm text-destructive/90">{{ error() }}</p>
+              <button (click)="resetScanner()" class="mt-4 w-full px-4 py-2 bg-destructive text-destructive-foreground rounded-md font-medium hover:bg-destructive/90">Intentar de Nuevo</button>
+          </div>
+        } @else if (isProcessing()) {
+           <div class="w-full">
+             <app-loader text="'Analizando repuesto con Gemini...'"></app-loader>
+           </div>
+        } @else if(productData(); as product) {
+          <div class="w-full bg-secondary/30 p-4 rounded-lg animate-in fade-in-50">
+            <h3 class="text-lg font-semibold mb-2">Repuesto Identificado</h3>
+            <div class="space-y-2 text-sm">
+              <p><strong>Nombre:</strong> {{ product.name || 'No encontrado' }}</p>
+              <p><strong>Marca:</strong> {{ product.brand || 'No encontrada' }}</p>
+              <p><strong>SKU/Nro. de Parte:</strong> {{ product.sku || 'No encontrado' }}</p>
+              <p><strong>Descripción:</strong> {{ product.description || 'No encontrada' }}</p>
+              @if (product.compatibility && product.compatibility.length > 0) {
+                <p><strong>Compatibilidad:</strong> {{ product.compatibility.join(', ') }}</p>
+              }
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button (click)="resetScanner()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80 flex-1">Escanear Otro</button>
+                <button (click)="saveScanResult()" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 flex-1">Guardar Repuesto</button>
+            </div>
+          </div>
+        } @else {
+          <button (click)="captureImage()" [disabled]="!isCameraReady() || isProcessing()" class="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center ring-4 ring-primary/30 hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>

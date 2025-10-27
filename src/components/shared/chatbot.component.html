@@ -1,0 +1,353 @@
+<!-- Floating Chatbot Button and Interface -->
+<div class="chatbot-floating-container">
+  <!-- Floating Toggle Button -->
+  <button
+    (click)="toggleChat()"
+    class="chatbot-toggle-btn fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center"
+    [class.animate-bounce]="hasNewMessage()"
+    aria-label="Abrir chat de asistencia"
+    type="button">
+    @if (!isChatOpen()) {
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 12.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+      </svg>
+    }
+    @if (isChatOpen()) {
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    }
+  </button>
+
+  <!-- Chat Interface -->
+  @if (isChatOpen() && (isAuthenticated() || showLoginButtons)) {
+    <section class="chatbot-container fixed bottom-20 right-6 z-40">
+      <div class="chatbot-wrapper glass-effect-premium rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl backdrop-blur-xl overflow-hidden">
+
+    <!-- Header -->
+    <div class="chatbot-header glass-effect-premium px-4 sm:px-6 py-3 sm:py-4 border-b border-white/20">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="relative">
+            <div class="w-3 h-3 bg-blue-400 rounded-full animate-pulse-custom"></div>
+            <div class="absolute inset-0 w-3 h-3 bg-blue-400 rounded-full animate-ping opacity-30"></div>
+          </div>
+          <div>
+            <h3 class="text-white font-semibold text-sm sm:text-base">
+              {{ mode === 'services' ? 'Asistente de Repuestos' :
+                 mode === 'appointments' ? 'Asistente de Citas' :
+                 mode === 'offers' ? 'Asistente de Ofertas' :
+                 'Asistente IA' }}
+            </h3>
+            <p class="text-gray-300 text-xs">
+              {{ isAIThinking() ? 'Escribiendo...' : 'En línea' }}
+            </p>
+          </div>
+        </div>
+        <div class="text-xs text-gray-400">
+          {{ mode | titlecase }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Authentication Section (only if not authenticated and showLoginButtons is true) -->
+    @if (!isAuthenticated() && showLoginButtons) {
+    <div class="p-6">
+      <div class="text-center">
+        <div class="auth-icon mb-6">
+          <div class="relative w-16 h-16 sm:w-20 sm:h-20 mx-auto">
+            <div class="w-full h-full bg-blue-500/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <svg class="w-8 h-8 sm:w-10 sm:h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+            </div>
+            <div class="absolute inset-0 bg-blue-500/10 rounded-full animate-ping"></div>
+          </div>
+        </div>
+
+        <h2 class="text-xl sm:text-2xl font-bold text-white mb-4">Inicia sesión para continuar</h2>
+        <p class="text-gray-300 mb-8 leading-relaxed text-sm sm:text-base">
+          Para acceder al asistente inteligente, por favor inicia sesión con tu cuenta.
+        </p>
+
+        <!-- Authentication Buttons -->
+        <div class="space-y-4 mb-6">
+          <button (click)="onGoogleSignIn()"
+                  [disabled]="isAuthenticating() || !isOnline()"
+                  class="w-full btn-google-enhanced relative px-6 py-4 rounded-xl text-white font-semibold text-base sm:text-lg shadow-2xl flex items-center justify-center space-x-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:transform-none overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative flex items-center space-x-3">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              @if (!isAuthenticating() && isOnline()) {
+                <span>Continuar con Google</span>
+              }
+              @if (!isAuthenticating() && !isOnline()) {
+                <span>Requiere conexión</span>
+              }
+              @if (isAuthenticating()) {
+                <div class="loading-spinner-small"></div>
+              }
+            </div>
+          </button>
+
+          <button (click)="onAppleSignIn()"
+                  [disabled]="isAuthenticating() || !isOnline()"
+                  class="w-full btn-apple-enhanced relative px-6 py-4 rounded-xl text-white font-semibold text-base sm:text-lg shadow-2xl flex items-center justify-center space-x-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:transform-none overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-900 to-black"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative flex items-center space-x-3">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+              @if (!isAuthenticating() && isOnline()) {
+                <span>Continuar con Apple</span>
+              }
+              @if (!isAuthenticating() && !isOnline()) {
+                <span>Requiere conexión</span>
+              }
+              @if (isAuthenticating()) {
+                <div class="loading-spinner-small"></div>
+              }
+            </div>
+          </button>
+        </div>
+
+        <!-- Error Message -->
+        @if (authenticationError()) {
+        <div class="bg-red-500/20 border border-red-500/30 rounded-xl p-4 mb-6 backdrop-blur-sm">
+          <div class="flex items-center space-x-2">
+            <div class="w-5 h-5 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <span class="text-red-300 text-sm">{{ authenticationError() }}</span>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Chat Interface (only if authenticated) -->
+    @if (isAuthenticated()) {
+    <div class="flex flex-col h-96">
+
+      <!-- Messages Container -->
+      <div class="chat-messages flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4" #chatMessagesContainer (scroll)="onScroll($event)">
+
+        <!-- Chat Messages -->
+        @for (message of chatMessages(); track message.id) {
+        <div class="message-wrapper"
+             [class.user-message]="message.type === 'user'"
+             [class.ai-message]="message.type === 'ai'"
+             [attr.aria-label]="message.type === 'ai' ? 'Mensaje del asistente' : 'Tu mensaje'">
+
+          <div class="flex items-start space-x-3" [class.flex-row-reverse]="message.type === 'user'" [class.space-x-reverse]="message.type === 'user'">
+            <!-- Avatar -->
+            <div class="message-avatar flex-shrink-0" aria-hidden="true">
+              <div class="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg">
+                @if (message.type === 'ai') {
+                  <span>AI</span>
+                }
+                @if (message.type === 'user') {
+                  <span>TU</span>
+                }
+                <div class="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent"></div>
+              </div>
+              @if (message.type === 'ai') {
+                <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
+              }
+            </div>
+
+            <!-- Message Content -->
+            <div class="message-content flex-1 min-w-0">
+              <div class="message-bubble p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-lg backdrop-blur-sm border transition-all duration-200 hover:shadow-xl"
+                   [class.bg-primary]="message.type === 'user'"
+                   [class.text-white]="message.type === 'user'"
+                   [class.border-primary/20]="message.type === 'user'"
+                   [class.bg-white/10]="message.type === 'ai'"
+                   [class.text-white]="message.type === 'ai'"
+                   [class.border-white/20]="message.type === 'ai'"
+                   [class.rounded-br-lg]="message.type === 'user'"
+                   [class.rounded-bl-lg]="message.type === 'ai'">
+
+                <div class="message-text text-sm sm:text-base leading-relaxed"
+                     [innerHTML]="formatMessage(message.content)"></div>
+
+                <!-- Options -->
+                @if (message.options && message.options.length > 0) {
+                <div class="message-options mt-4 space-y-2"
+                     role="group" aria-label="Opciones disponibles">
+                  @for (option of message.options; track option) {
+                  <button (click)="onOptionSelect(option)"
+                          (keydown.enter)="onOptionSelect(option)"
+                          (keydown.space)="$event.preventDefault(); onOptionSelect(option)"
+                          class="option-button w-full p-2 sm:p-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 hover:border-white/40 text-white text-sm transition-all duration-200 transform hover:scale-105"
+                          [disabled]="isAIThinking()"
+                          [attr.aria-label]="'Seleccionar opción: ' + option"
+                          [attr.aria-disabled]="isAIThinking()"
+                          type="button">
+                    {{ option }}
+                  </button>
+                  }
+                </div>
+                }
+
+                <!-- Products Display -->
+                @if (message.data?.products && message.data.products.length > 0) {
+                <div class="products-display mt-4 space-y-3">
+                  @for (product of message.data.products; track product.id) {
+                  <div class="product-card bg-white/5 rounded-xl p-4 border border-white/20 hover:bg-white/10 transition-colors duration-200">
+                    <div class="flex justify-between items-start mb-2">
+                      <h4 class="text-white font-semibold text-sm">{{ product.name }}</h4>
+                      <span class="text-blue-400 font-bold text-sm">${{ product.price | number:'1.0-0' }}</span>
+                    </div>
+                    @if (product.description) {
+                    <p class="text-gray-300 text-xs mb-2">{{ product.description }}</p>
+                    }
+                    <div class="flex flex-wrap gap-1 mb-2">
+                      <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">{{ product.category }}</span>
+                      @if (product.brand) {
+                      <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">{{ product.brand }}</span>
+                      }
+                    </div>
+                    @if (product.compatibility && product.compatibility.length > 0) {
+                    <div class="text-xs text-gray-400 mb-3">
+                      Compatible: {{ product.compatibility.join(', ') }}
+                    </div>
+                    }
+                    <button (click)="onProductSelect(product)"
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200">
+                      Ver Detalles
+                    </button>
+                  </div>
+                  }
+                </div>
+                }
+
+                <!-- Offers Display -->
+                @if (message.data?.offers && message.data.offers.length > 0) {
+                <div class="offers-display mt-4 space-y-3">
+                  @for (offer of message.data.offers; track offer.name) {
+                  <div class="offer-card bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl p-4 border border-yellow-500/20">
+                    <div class="flex justify-between items-start mb-2">
+                      <h4 class="text-white font-semibold text-sm">{{ offer.name }}</h4>
+                      <span class="text-yellow-400 font-bold text-sm">-{{ offer.discount }}%</span>
+                    </div>
+                    <p class="text-gray-300 text-xs mb-3">{{ offer.description }}</p>
+                    <button (click)="onOfferApply(offer)"
+                            class="w-full bg-yellow-500 hover:bg-yellow-600 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200">
+                      Aplicar Oferta
+                    </button>
+                  </div>
+                  }
+                </div>
+                }
+
+                <!-- Timestamp -->
+                <div class="message-meta flex items-center justify-between mt-3 text-xs opacity-70">
+                  <span>{{ formatTime(message.timestamp) }}</span>
+                  @if (message.type === 'user') {
+                  <div class="flex items-center space-x-1">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        }
+
+        <!-- Typing Indicator -->
+        @if (isAIThinking()) {
+        <div class="message-wrapper ai-message" aria-live="polite" aria-label="El asistente está escribiendo">
+          <div class="flex items-start space-x-3">
+            <div class="message-avatar flex-shrink-0">
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                <div class="flex space-x-1">
+                  <div class="w-1 h-1 bg-white rounded-full animate-bounce"></div>
+                  <div class="w-1 h-1 bg-white rounded-full animate-bounce delay-100"></div>
+                  <div class="w-1 h-1 bg-white rounded-full animate-bounce delay-200"></div>
+                </div>
+              </div>
+            </div>
+            <div class="message-content flex-1">
+              <div class="bg-white/10 p-4 rounded-2xl rounded-bl-lg border border-white/20 shadow-lg">
+                <div class="typing-indicator flex space-x-1">
+                  <div class="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
+                  <div class="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-100"></div>
+                  <div class="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-200"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Scroll to Bottom Button -->
+      @if (showScrollToBottom()) {
+      <div class="absolute bottom-20 right-4 z-10">
+        <button
+          (click)="scrollToBottom()"
+          class="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110"
+          aria-label="Desplazarse al último mensaje"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </button>
+      </div>
+      }
+
+    <!-- Message Input -->
+      @if (showChatInput()) {
+      <div class="message-input-container">
+        <div class="message-input-wrapper glass-effect-premium p-4 border-t border-white/20">
+          <div class="flex items-end space-x-3">
+            <div class="flex-1 relative">
+              <textarea
+                #messageInput
+                [(ngModel)]="userInput"
+                (keydown)="onKeyPress($event)"
+                [placeholder]="getInputPlaceholder()"
+                [disabled]="isAIThinking()"
+                class="message-input w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-12 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 min-h-[44px] max-h-32"
+                rows="1"
+                autocomplete="off"
+                spellcheck="false"></textarea>
+
+              <button
+                (click)="onSendMessage()"
+                [disabled]="!userInput().trim() || isAIThinking()"
+                class="absolute right-12 bottom-2 w-8 h-8 rounded-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 transform hover:scale-105 disabled:transform-none"
+                type="button"
+                aria-label="Enviar mensaje">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="text-xs text-gray-400 mt-2 text-center">
+            Presiona Enter para enviar • Shift + Enter para nueva línea
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    }
+  </div>
+</section>
+}

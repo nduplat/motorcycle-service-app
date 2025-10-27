@@ -1,0 +1,194 @@
+<!-- Client Flow Container Component Template -->
+
+<div class="client-flow-container">
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Cargando...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Authentication Check -->
+  @if (!isAuthenticated()) {
+    <div class="auth-required">
+      <div class="auth-content">
+        <span class="auth-icon">🔐</span>
+        <h2>Autenticación requerida</h2>
+        <p>Debes iniciar sesión para acceder al sistema de colas.</p>
+        <div class="auth-actions">
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="router.navigate(['/login'])">
+            Iniciar sesión
+          </button>
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="router.navigate(['/'])">
+            Ir al inicio
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Main Flow Content -->
+  @if (isAuthenticated() && !isLoading()) {
+    <!-- Header -->
+    <div class="bg-white shadow-lg sticky top-0 z-10 border-b border-gray-100">
+      <div class="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+        <!-- Top Bar with Back Button -->
+        <div class="flex items-center justify-between mb-4">
+          @if (currentStep() !== 'phone') {
+            <button
+              type="button"
+              class="btn-back"
+              (click)="onPrevious()">
+              <span class="btn-icon">←</span>
+              <span class="btn-text">Atrás</span>
+            </button>
+          } @else {
+            <div class="w-20"></div>
+          }
+          <div class="step-counter-badge">
+            Paso {{ currentStepInfo().number }} de {{ currentStepInfo().total - 1 }}
+          </div>
+        </div>
+
+        <!-- Step Indicator -->
+        <div class="flex items-start gap-3 sm:gap-4 mb-5">
+          <div class="step-icon-container">
+            @if (currentStep() === 'phone') {
+              <span class="step-icon">📱</span>
+            } @else if (currentStep() === 'motorcycle') {
+              <span class="step-icon">🏍️</span>
+            } @else if (currentStep() === 'service') {
+              <span class="step-icon">🔧</span>
+            } @else {
+              <span class="step-icon">🎫</span>
+            }
+          </div>
+          <div class="flex-1 min-w-0">
+            <h1 class="step-title-main">{{ currentStepInfo().title }}</h1>
+            <p class="step-description-main">{{ currentStepInfo().description }}</p>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="relative">
+          <div class="progress-bar-container">
+            <div
+              class="progress-fill"
+              [style.width.%]="flowState().progress">
+              <div class="shimmer-overlay"></div>
+            </div>
+          </div>
+
+          <!-- Step Dots -->
+          <div class="step-dots-container">
+            @for (step of ['phone', 'motorcycle', 'service']; track step; let i = $index) {
+              <div class="step-dot-wrapper">
+                <div
+                  class="step-dot-circle"
+                  [class]="getStepStatus(step)">
+                  @if (getStepNumber(step) < currentStepInfo().number) {
+                    <span class="check-icon">✓</span>
+                  } @else {
+                    <span class="step-number">{{ getStepNumber(step) }}</span>
+                  }
+                </div>
+                <span class="step-dot-label" [class]="getStepStatus(step)">
+                  @if (step === 'phone') {
+                    Teléfono
+                  } @else if (step === 'motorcycle') {
+                    Moto
+                  } @else {
+                    Servicio
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+      <!-- Phone Verification Step -->
+      @if (currentStep() === 'phone') {
+        <div class="animate-fade-in">
+          <app-phone-verification></app-phone-verification>
+        </div>
+      }
+
+      <!-- Motorcycle Selection Step -->
+      @if (currentStep() === 'motorcycle') {
+        <div class="animate-fade-in">
+          <app-motorcycle-selection></app-motorcycle-selection>
+        </div>
+      }
+
+      <!-- Service Selection Step -->
+      @if (currentStep() === 'service') {
+        <div class="animate-fade-in">
+          <app-service-selection></app-service-selection>
+        </div>
+      }
+
+      <!-- Wait Ticket Step -->
+      @if (currentStep() === 'ticket') {
+        <div class="animate-fade-in">
+          <app-wait-ticket></app-wait-ticket>
+        </div>
+      }
+    </div>
+
+    <!-- Fixed Bottom Button -->
+    @if (!isLastStep()) {
+      <div class="fixed-bottom">
+        <button
+          type="button"
+          class="continue-btn"
+          [disabled]="!canGoForward()"
+          (click)="onNext()">
+          @if (currentStep() === 'service') {
+            Unirse a la cola
+          } @else {
+            Continuar
+          }
+          <span class="continue-icon">→</span>
+        </button>
+      </div>
+    }
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="error-overlay">
+      <div class="error-content">
+        <span class="error-icon">⚠️</span>
+        <h2>Error</h2>
+        <p>{{ error() }}</p>
+        <div class="error-actions">
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="onRetry()">
+            Reintentar
+          </button>
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="onDismissError()">
+            Continuar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,129 @@
+<div class="service-selection-container">
+  <!-- Header with search and filters -->
+  <div class="service-selection-header">
+    <h3>Selecciona los Servicios</h3>
+
+    <!-- Search bar -->
+    <div class="search-container">
+      <input
+        type="text"
+        placeholder="Buscar servicios..."
+        [value]="searchQuery()"
+        (input)="onSearchChange($any($event.target).value)"
+        class="search-input"
+      >
+      <span class="search-icon">🔍</span>
+    </div>
+
+    <!-- Category filters -->
+    <div class="category-filters">
+      <button
+        *ngFor="let category of categories"
+        [class.active]="selectedCategory() === category.id"
+        (click)="onCategoryChange(category.id)"
+        class="category-button"
+      >
+        <span *ngIf="category.icon">{{ category.icon }}</span>
+        {{ category.name }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Services grid -->
+  <div class="services-grid">
+    <div
+      *ngFor="let service of filteredServices()"
+      class="service-card"
+      [class.selected]="isServiceSelected(service)"
+      (click)="onServiceToggle(service)"
+    >
+      <div class="service-header">
+        <div class="service-checkbox">
+          <input
+            type="checkbox"
+            [checked]="isServiceSelected(service)"
+            (change)="onServiceToggle(service)"
+            (click)="$event.stopPropagation()"
+          >
+        </div>
+        <div class="service-info">
+          <h4 class="service-title">{{ service.title }}</h4>
+          <div class="service-meta">
+            <span class="service-price">{{ formatCurrency(service.price || 0) }}</span>
+            <span class="service-duration" *ngIf="service.estimatedHours">
+              {{ formatTime(service.estimatedHours) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-description" *ngIf="service.description">
+        {{ service.description }}
+      </div>
+
+      <!-- Service dependencies -->
+      <div class="service-dependencies" *ngIf="getServiceDependencies(service).length > 0">
+        <small class="dependency-label">Requiere:</small>
+        <div class="dependency-list">
+          <span
+            *ngFor="let dep of getServiceDependencies(service)"
+            class="dependency-item"
+          >
+            {{ dep.title }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Service recommendations -->
+      <div class="service-recommendations" *ngIf="getRecommendedServices(service).length > 0 && !isServiceSelected(service)">
+        <small class="recommendation-label">Recomendado con:</small>
+        <div class="recommendation-list">
+          <button
+            *ngFor="let rec of getRecommendedServices(service)"
+            (click)="onAddRecommended(rec); $event.stopPropagation()"
+            class="recommendation-item"
+          >
+            + {{ rec.title }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- No services found -->
+    <div *ngIf="filteredServices().length === 0" class="no-services">
+      <p>No se encontraron servicios que coincidan con tu búsqueda.</p>
+    </div>
+  </div>
+
+  <!-- Selection summary -->
+  <div class="selection-summary" *ngIf="selectedServicesData().length > 0">
+    <div class="summary-header">
+      <h4>Servicios Seleccionados ({{ selectedServicesData().length }})</h4>
+    </div>
+
+    <div class="selected-services-list">
+      <div *ngFor="let service of selectedServicesData()" class="selected-service-item">
+        <span class="service-name">{{ service.title }}</span>
+        <span class="service-price">{{ formatCurrency(service.price || 0) }}</span>
+        <button
+          (click)="onServiceToggle(service)"
+          class="remove-service"
+          title="Remover servicio"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+
+    <div class="summary-totals">
+      <div class="total-row">
+        <span class="total-label">Tiempo estimado:</span>
+        <span class="total-value">{{ formatTime(estimatedTime()) }}</span>
+      </div>
+      <div class="total-row total-cost">
+        <span class="total-label">Costo total:</span>
+        <span class="total-value">{{ formatCurrency(totalCost()) }}</span>
+      </div>
+    </div>
+  </div>
+</div>

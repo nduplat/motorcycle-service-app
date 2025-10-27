@@ -1,0 +1,20 @@
+
+<div class="flex flex-col min-h-screen" (click)="onUserInteraction()">
+  @if(!shouldHideHeadersFooters()) {
+    <app-header></app-header>
+  }
+  <main class="flex-grow">
+    <router-outlet></router-outlet>
+  </main>
+  @if(!shouldHideHeadersFooters()) {
+    <app-footer></app-footer>
+  }
+
+  <!-- AI Agent for staff users only -->
+  @if(authService.currentUser() && !authService.isCustomer()) {
+    <app-ai-agent></app-ai-agent>
+  }
+
+  <!-- Availability Modal -->
+  <app-availability-modal></app-availability-modal>
+</div>

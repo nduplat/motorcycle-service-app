@@ -1,0 +1,152 @@
+<div class="phone-verification-container">
+  <!-- reCAPTCHA container (invisible) -->
+  <div id="recaptcha-container"></div>
+
+  <!-- Phone Number Input Step -->
+  <div *ngIf="!otpSent()" class="phone-input-section">
+    <h3 class="section-title">
+      {{ flow === 'registration' ? 'Verificar Número de Teléfono' : 'Iniciar Sesión con Teléfono' }}
+    </h3>
+
+    <form [formGroup]="phoneForm" (ngSubmit)="sendOTP()" class="phone-form">
+      <div class="form-group">
+        <label for="phone" class="form-label">Número de Teléfono</label>
+        <input
+          id="phone"
+          type="tel"
+          formControlName="phone"
+          placeholder="+57 300 123 4567"
+          class="phone-input"
+          [class.error]="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched"
+        />
+        <div class="form-help">Formato colombiano: +57 300 123 4567</div>
+        <div *ngIf="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched" class="error-message">
+          <span *ngIf="phoneForm.get('phone')?.errors?.['required']">Número de teléfono requerido</span>
+          <span *ngIf="phoneForm.get('phone')?.errors?.['invalidColombianPhone']">Número de teléfono colombiano inválido</span>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary send-otp-btn"
+        [disabled]="isLoading() || phoneForm.invalid"
+      >
+        <span *ngIf="isLoading()" class="loading-spinner"></span>
+        Enviar Código SMS
+      </button>
+    </form>
+  </div>
+
+  <!-- OTP Input Step -->
+  <div *ngIf="otpSent()" class="otp-input-section">
+    <h3 class="section-title">Ingrese el Código de Verificación</h3>
+    <p class="otp-instructions">
+      Hemos enviado un código de 6 dígitos al {{ formatPhoneNumber(phoneForm.value.phone!) }}
+    </p>
+
+    <form [formGroup]="otpForm" (ngSubmit)="verifyOTP()" class="otp-form">
+      <div class="otp-inputs-container">
+        <input
+          #digit1
+          type="text"
+          formControlName="digit1"
+          maxlength="1"
+          class="otp-digit-input"
+          [class.error]="otpForm.get('digit1')?.invalid && otpForm.get('digit1')?.touched"
+          (input)="onOtpInput($event, digit2)"
+          (keydown)="onOtpKeyDown($event)"
+          autocomplete="off"
+        />
+        <input
+          #digit2
+          type="text"
+          formControlName="digit2"
+          maxlength="1"
+          class="otp-digit-input"
+          [class.error]="otpForm.get('digit2')?.invalid && otpForm.get('digit2')?.touched"
+          (input)="onOtpInput($event, digit3)"
+          (keydown)="onOtpKeyDown($event, digit1)"
+          autocomplete="off"
+        />
+        <input
+          #digit3
+          type="text"
+          formControlName="digit3"
+          maxlength="1"
+          class="otp-digit-input"
+          [class.error]="otpForm.get('digit3')?.invalid && otpForm.get('digit3')?.touched"
+          (input)="onOtpInput($event, digit4)"
+          (keydown)="onOtpKeyDown($event, digit2)"
+          autocomplete="off"
+        />
+        <input
+          #digit4
+          type="text"
+          formControlName="digit4"
+          maxlength="1"
+          class="otp-digit-input"
+          [class.error]="otpForm.get('digit4')?.invalid && otpForm.get('digit4')?.touched"
+          (input)="onOtpInput($event, digit5)"
+          (keydown)="onOtpKeyDown($event, digit3)"
+          autocomplete="off"
+        />
+        <input
+          #digit5
+          type="text"
+          formControlName="digit5"
+          maxlength="1"
+          class="otp-digit-input"
+          [class.error]="otpForm.get('digit5')?.invalid && otpForm.get('digit5')?.touched"
+          (input)="onOtpInput($event, digit6)"
+          (keydown)="onOtpKeyDown($event, digit4)"
+          autocomplete="off"
+        />
+        <input
+          #digit6
+          type="text"
+          formControlName="digit6"
+          maxlength="1"
+          class="otp-digit-input"
+          [class.error]="otpForm.get('digit6')?.invalid && otpForm.get('digit6')?.touched"
+          (input)="onOtpInput($event)"
+          (keydown)="onOtpKeyDown($event, digit5)"
+          autocomplete="off"
+        />
+      </div>
+
+      <div *ngIf="otpForm.invalid && otpForm.touched" class="error-message">
+        Ingrese el código completo de 6 dígitos
+      </div>
+
+      <div class="otp-actions">
+        <button
+          type="submit"
+          class="btn btn-primary verify-otp-btn"
+          [disabled]="isLoading() || otpForm.invalid"
+        >
+          <span *ngIf="isLoading()" class="loading-spinner"></span>
+          Verificar Código
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-secondary resend-btn"
+          [disabled]="!canResendOTP()"
+          (click)="resendOTP()"
+        >
+          {{ countdown() > 0 ? `Reenviar en ${countdown()}s` : 'Reenviar Código' }}
+        </button>
+      </div>
+
+      <div class="change-phone-link">
+        <a href="#" (click)="$event.preventDefault(); reset()">Cambiar número de teléfono</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Error Display -->
+  <div *ngIf="error()" class="error-alert">
+    <div class="error-icon">⚠️</div>
+    <div class="error-text">{{ error() }}</div>
+  </div>
+</div>

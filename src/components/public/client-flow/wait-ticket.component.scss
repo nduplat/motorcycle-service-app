@@ -1,0 +1,582 @@
+/* Wait Ticket Component Styles */
+
+.wait-ticket-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  color: white;
+
+  @media (max-width: 768px) {
+    padding: 1rem 0.5rem;
+    min-height: auto;
+  }
+}
+
+/* Success Header */
+.success-header {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  .success-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    display: block;
+    animation: bounce 0.6s ease;
+  }
+
+  .success-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: white;
+
+    @media (max-width: 768px) {
+      font-size: 1.6rem;
+    }
+  }
+
+  .success-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0;
+    line-height: 1.4;
+
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
+  }
+}
+
+/* Cards */
+.ticket-card,
+.summary-card,
+.instructions-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  color: #333;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Ticket Card */
+.ticket-card {
+  text-align: center;
+
+  .ticket-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    .ticket-icon {
+      font-size: 3rem;
+    }
+
+    .ticket-info {
+      .ticket-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: #27ae60;
+        text-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+      }
+
+      .ticket-label {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  .status-section {
+    margin-bottom: 2rem;
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 25px;
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .verification-section,
+  .qr-section,
+  .wait-time-section {
+    margin-bottom: 2rem;
+
+    h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 0 0 1rem 0;
+      color: #2c3e50;
+      text-align: center;
+    }
+  }
+
+  .verification-section {
+    .verification-code {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      border-radius: 12px;
+      padding: 1.5rem;
+      color: white;
+
+      .code-display {
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+        display: block;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .code-instruction {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.95rem;
+      }
+    }
+  }
+
+  .qr-section {
+    .qr-container {
+      text-align: center;
+      margin-bottom: 1rem;
+
+      .qr-code {
+        width: 150px;
+        height: 150px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        background: white;
+        padding: 0.5rem;
+
+        @media (max-width: 480px) {
+          width: 120px;
+          height: 120px;
+        }
+      }
+
+      .qr-instruction {
+        margin: 0.5rem 0 0 0;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+      }
+    }
+
+    .qr-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+
+      @media (max-width: 480px) {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  }
+
+  .wait-time-section {
+    .wait-time-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+
+      .wait-time {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+      }
+
+      .urgent-badge {
+        background: #e74c3c;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        animation: pulse 2s infinite;
+      }
+    }
+
+    .wait-note {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+  }
+}
+
+/* Summary Card */
+.summary-card {
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: #2c3e50;
+    text-align: center;
+  }
+
+  .summary-details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+
+      .summary-label {
+        font-weight: 600;
+        color: #2c3e50;
+      }
+
+      .summary-value {
+        color: #27ae60;
+        font-weight: 500;
+        text-align: right;
+      }
+    }
+  }
+}
+
+/* Instructions Card */
+.instructions-card {
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: #2c3e50;
+    text-align: center;
+  }
+
+  .instructions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .instruction-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+
+      .instruction-number {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+      }
+
+      .instruction-content {
+        h4 {
+          margin: 0 0 0.25rem 0;
+          font-size: 1rem;
+          font-weight: 600;
+          color: #2c3e50;
+        }
+
+        p {
+          margin: 0;
+          color: #7f8c8d;
+          line-height: 1.4;
+        }
+      }
+    }
+  }
+}
+
+/* Actions Section */
+.actions-section {
+  margin: 2rem 0;
+
+  .primary-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+    }
+  }
+
+  .secondary-actions {
+    text-align: center;
+  }
+}
+
+/* Completion Section */
+.completion-section {
+  margin-top: auto;
+  padding-top: 2rem;
+
+  .completion-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+
+    .completion-icon {
+      font-size: 1.5rem;
+    }
+
+    .completion-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: white;
+    }
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f39c12 0%, #e67e22 100%);
+      border-radius: 3px;
+    }
+  }
+
+  .progress-text {
+    text-align: center;
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+}
+
+/* Button Styles */
+.btn-primary {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 44px; /* Touch-friendly minimum */
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px; /* Touch-friendly minimum */
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-link {
+  background: none;
+  color: rgba(255, 255, 255, 0.8);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: underline;
+
+  &:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Animations */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .wait-ticket-container {
+    padding: 1rem;
+  }
+
+  .ticket-card,
+  .summary-card,
+  .instructions-card {
+    padding: 1.25rem;
+  }
+
+  .ticket-header {
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .ticket-icon {
+      font-size: 2.5rem;
+    }
+
+    .ticket-info .ticket-number {
+      font-size: 2rem;
+    }
+  }
+
+  .verification-code .code-display {
+    font-size: 1.6rem;
+  }
+
+  .instructions-list .instruction-item {
+    gap: 0.75rem;
+
+    .instruction-number {
+      width: 28px;
+      height: 28px;
+      font-size: 0.8rem;
+    }
+  }
+
+  .primary-actions {
+    flex-direction: column;
+
+    .btn-primary {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .wait-ticket-container {
+    padding: 0.5rem;
+  }
+
+  .ticket-card,
+  .summary-card,
+  .instructions-card {
+    padding: 1rem;
+  }
+
+  .success-header {
+    .success-icon {
+      font-size: 3rem;
+    }
+
+    .success-title {
+      font-size: 1.4rem;
+    }
+
+    .success-subtitle {
+      font-size: 0.95rem;
+    }
+  }
+
+  .ticket-info .ticket-number {
+    font-size: 1.8rem;
+  }
+
+  .verification-code {
+    padding: 1.25rem;
+
+    .code-display {
+      font-size: 1.4rem;
+    }
+  }
+
+  .qr-code {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}

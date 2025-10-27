@@ -1,0 +1,435 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================
+    // HELPER FUNCTIONS
+    // ========================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    function isManager() {
+      return isAuthenticated() && getUserRole() == 'manager';
+    }
+
+    function isFrontDesk() {
+      return isAuthenticated() && getUserRole() == 'front_desk';
+    }
+
+    function isTechnician() {
+      return isAuthenticated() && getUserRole() == 'technician';
+    }
+
+    // ✅ NUEVO: Función para staff (employee + technician)
+    function isStaff() {
+      return isAuthenticated() && getUserRole() in ['employee', 'technician', 'front_desk', 'manager', 'admin'];
+    }
+
+    // ✅ Plate-based access control helpers
+    function isAssignedTechnician(workOrderId) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/workOrders/$(workOrderId)).data.assignedTo == request.auth.uid;
+    }
+
+    function canManageUsers() {
+      return isAdmin();
+    }
+
+    function canManageUser(targetUserId) {
+      return isOwner(targetUserId) ||
+             (canManageUsers() &&
+              !(get(/databases/$(database)/documents/users/$(targetUserId)).data.role == 'admin'));
+    }
+
+    // ========================================
+    // USERS COLLECTION
+    // ========================================
+    
+    match /users/{userId} {
+      // ✅ Usuarios pueden leer su propio perfil
+      allow read: if isAuthenticated() && isOwner(userId);
+
+      // ✅ Staff puede leer perfiles de otros staff (para asignaciones)
+      allow read: if isStaff();
+
+      // ✅ Admins pueden leer todos los usuarios
+      allow read: if canManageUsers();
+
+      // Usuarios pueden actualizar campos limitados de su perfil
+      allow update: if isAuthenticated() && isOwner(userId) &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['name', 'phone', 'avatarUrl', 'isAvailable', 'availabilityReason']);
+
+      // Creación de usuario (registro o admin)
+      allow create: if isAuthenticated() && (isOwner(userId) ||
+                        (canManageUsers() &&
+                         (!request.resource.data.keys().hasAny(['role']) ||
+                          request.resource.data.role != 'admin')));
+
+      // Admins pueden actualizar usuarios
+      allow update: if isAuthenticated() && canManageUser(userId) &&
+                        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+                         request.resource.data.role != 'admin');
+
+      // Solo admins pueden eliminar usuarios
+      allow delete: if isAdmin();
+    }
+
+    // Queries de usuarios
+    match /users {
+      allow read: if isAuthenticated() && request.query.limit <= 1;
+      allow read: if isStaff() &&
+                    request.query.limit <= 100 &&
+                    (request.query.where.size() <= 3) &&
+                    (request.query.where.hasOnly(['role', 'active', 'email', 'isAvailable']));
+    }
+
+    // ========================================
+    // WORK-RELATED COLLECTIONS
+    // ========================================
+
+    match /workOrders/{workOrderId} {
+       // Customers can read their own work orders
+       allow read: if isAuthenticated() && resource.data.customerId == request.auth.uid;
+       // Assigned technicians can read/write their work orders
+       allow read, write: if isAssignedTechnician(workOrderId);
+       // Staff can read all work orders
+       allow read: if isStaff();
+       // Staff can create work orders
+       allow create: if isStaff();
+       // Staff can update work orders
+       allow update: if isStaff();
+       allow delete: if isAdmin() || isManager();
+     }
+
+    match /workOrders {
+      allow read: if isStaff() &&
+                    request.query.limit <= 100 &&
+                    (request.query.where.size() <= 3) &&
+                    (request.query.where.hasOnly(['status', 'createdAt', 'assignedTo', 'customerId']));
+    }
+
+    match /appointments/{appointmentId} {
+       allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
+       allow create: if isStaff();
+       allow update: if isStaff();
+       allow delete: if isAdmin() || isManager();
+     }
+
+    match /appointments {
+      allow read: if isStaff() &&
+                    request.query.limit <= 100 &&
+                    (request.query.where.size() <= 3) &&
+                    (request.query.where.hasOnly(['scheduledAt', 'status', 'assignedTo', 'customerId']));
+    }
+
+    // ✅ NUEVO: Assignments collection
+    match /assignments/{assignmentId} {
+       allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
+       allow create: if isAdmin() || isManager() || isFrontDesk();
+       allow update: if isStaff(); // Técnicos pueden actualizar estado
+       allow delete: if isAdmin() || isManager();
+     }
+
+    match /assignments {
+      allow read: if isStaff() &&
+                    request.query.limit <= 100;
+    }
+
+    // ========================================
+    // NOTIFICATIONS & TEMPLATES
+    // ========================================
+
+    match /notifications/{notificationId} {
+      // ✅ Usuario puede leer sus propias notificaciones
+      allow read: if isAuthenticated() && 
+                     resource.data.userId == request.auth.uid;
+      
+      // ✅ Staff puede crear notificaciones
+      allow create: if isStaff();
+      
+      // ✅ Usuario puede actualizar sus notificaciones (marcar como leída)
+      allow update: if isAuthenticated() && 
+                       resource.data.userId == request.auth.uid;
+      
+      allow delete: if isAdmin();
+    }
+
+    match /notifications {
+      allow read: if isAuthenticated() &&
+                    request.query.limit <= 100;
+    }
+
+    match /notificationTemplates/{templateId} {
+      // ✅ Todos los staff pueden leer templates
+      allow read: if isStaff();
+      // Solo admin puede modificar
+      allow write: if isAdmin();
+    }
+
+    match /maintenanceReminders/{reminderId} {
+      // ✅ Staff puede ver todos los recordatorios, usuarios solo los suyos
+      allow read: if isStaff() ||
+                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+
+      // ✅ Staff puede crear/actualizar recordatorios
+      allow create, update: if isStaff();
+
+      allow delete: if isAdmin() ||
+                       (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+
+    match /maintenanceReminders {
+      allow read: if isAuthenticated();
+    }
+
+    // ========================================
+    // QUEUE MANAGEMENT
+    // ========================================
+
+    match /queueEntries/{entryId} {
+        // Customers can read their own queue entries
+        allow read: if isAuthenticated() && resource.data.customerId == request.auth.uid;
+        // Staff can read/write all queue entries
+        allow read, write: if isStaff();
+        // Public read access for queue status tracking (with verification)
+        allow read: if !isAuthenticated() &&
+                      resource.data.verificationCode != null &&
+                      resource.data.expiresAt > request.time;
+        allow delete: if isAdmin() || isManager();
+      }
+
+    match /queueStatus/{statusId} {
+       allow read: if isAuthenticated();
+       allow write: if isStaff();
+     }
+
+    match /workQueue/{queueId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isManager() || isFrontDesk();
+      allow update: if isAdmin() || isManager() || isTechnician();
+      allow delete: if isAdmin() || isManager();
+    }
+
+    // ========================================
+    // SCHEDULING & CAPACITY
+    // ========================================
+
+    match /employeeSchedules/{scheduleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isManager();
+    }
+
+    match /timeBlocks/{blockId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || isManager() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || isManager();
+    }
+
+    match /workshopCapacity/{capacityId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Solo Cloud Functions
+    }
+
+    match /technicianMetrics/{metricId} {
+      allow read: if isAdmin() || isManager() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow write: if false; // Solo Cloud Functions
+    }
+
+    match /workSessions/{sessionId} {
+      // ✅ Usuario puede ver sus propias sesiones
+      allow read: if isAuthenticated() && 
+                     resource.data.userId == request.auth.uid;
+      
+      // ✅ Usuario puede crear/actualizar sus sesiones
+      allow create, update: if isAuthenticated() && 
+                               request.resource.data.userId == request.auth.uid;
+      
+      // Admin puede ver todas
+      allow read: if isAdmin();
+    }
+
+    // ========================================
+    // TECHNICAL PROFILES
+    // ========================================
+
+    match /technician_profiles/{profileId} {
+      allow read: if isStaff();
+      allow create: if isTechnician() && profileId == request.auth.uid;
+      allow update: if isTechnician() && profileId == request.auth.uid;
+      allow write: if isAdmin() || isManager();
+    }
+
+    // ========================================
+    // PRODUCTS & INVENTORY
+    // ========================================
+
+    match /products/{productId} {
+      allow read: if true; // Lectura pública
+      allow write: if isAdmin();
+    }
+
+    match /products {
+      allow read: if request.query.limit <= 100 &&
+                    (request.query.where.size() <= 3) &&
+                    (request.query.where.hasOnly(['isActive', 'categoryId', 'brand', 'stock', 'minStock', 'compatibility', 'sku']));
+    }
+
+    match /stockMovements/{movementId} {
+      allow read: if isStaff();
+      allow write: if isAdmin() || isManager();
+    }
+
+    match /purchaseOrders/{purchaseOrderId} {
+      allow read: if isStaff();
+      allow write: if isAdmin() || isManager();
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    // ========================================
+    // CATALOG DATA (Public Read)
+    // ========================================
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /brands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /motorcycles/{motorcycleId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ========================================
+    // VEHICLES & CUSTOMERS
+    // ========================================
+
+    match /vehicles/{vehicleId} {
+      allow read: if isStaff();
+      allow write: if isStaff();
+    }
+
+    match /userVehicles/{userVehicleId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+
+    match /customers/{customerId} {
+      allow read: if isStaff();
+      allow write: if isStaff();
+    }
+
+    match /motorcycleAssignments/{assignmentId} {
+      // Users can read/write their own assignments
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Admins/managers can read all assignments
+      allow read: if isAdmin() || isManager();
+      // Staff can create assignments
+      allow create: if isStaff();
+      // Admins/managers can update/delete assignments
+      allow update, delete: if isAdmin() || isManager();
+    }
+
+    match /motorcycleAssignments {
+      allow read: if isStaff() &&
+                    request.query.limit <= 100 &&
+                    (request.query.where.size() <= 3) &&
+                    (request.query.where.hasOnly(['userId', 'motorcycleId', 'plate', 'status']));
+    }
+
+    // ========================================
+    // SETTINGS & LOCATIONS
+    // ========================================
+
+    match /workshopLocations/{locationId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /appSettings/{settingsId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ========================================
+    // AUDIT LOG
+    // ========================================
+
+    match /auditLog/{logId} {
+      allow read: if isAdmin() || isManager();
+      allow write: if isAdmin();
+    }
+
+    match /auditLog {
+      allow read: if (isAdmin() || isManager()) &&
+                    request.query.limit <= 100 &&
+                    (request.query.where.size() <= 3) &&
+                    (request.query.where.hasOnly(['performedAt', 'action', 'entity', 'performedBy']));
+    }
+
+    // ========================================
+    // CACHE COLLECTION
+    // ========================================
+
+    match /cache/{cacheId} {
+      // ✅ Staff can read/write cache entries for performance optimization
+      allow read, write: if isStaff();
+    }
+
+    match /cache {
+      allow read: if isStaff() &&
+                    request.query.limit <= 100;
+    }
+
+    // ========================================
+    // SMS NOTIFICATIONS COLLECTION
+    // ========================================
+
+    match /smsNotifications/{notificationId} {
+      // System-only write access
+      allow write: if false; // Only Cloud Functions can write
+      // Users cannot read notification delivery records
+      allow read: if false;
+    }
+
+    // ========================================
+    // PUSH NOTIFICATIONS COLLECTION
+    // ========================================
+
+    match /pushNotifications/{notificationId} {
+      // System-only write access
+      allow write: if false; // Only Cloud Functions can write
+      // Users cannot read notification delivery records
+      allow read: if false;
+    }
+  }
+}

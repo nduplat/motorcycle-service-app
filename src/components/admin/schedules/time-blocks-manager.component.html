@@ -1,0 +1,322 @@
+<div class="time-blocks-manager">
+  <div class="header">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="p-3 bg-primary/10 rounded-xl">
+        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold">Gestión de Bloques de Tiempo</h1>
+        <p class="text-muted-foreground">Solicitudes y aprobaciones de tiempo (vacaciones, descansos, etc.)</p>
+      </div>
+    </div>
+
+    <div class="actions mb-6">
+      <button
+        (click)="openRequestForm()"
+        class="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors duration-200 flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nueva Solicitud
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters mb-6">
+      <div class="flex gap-2 flex-wrap">
+        <button
+          [class.active]="filterStatus() === 'all'"
+          (click)="filterStatus.set('all')"
+          class="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors">
+          Todas
+        </button>
+        <button
+          [class.active]="filterStatus() === 'pending'"
+          (click)="filterStatus.set('pending')"
+          class="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors">
+          Pendientes
+        </button>
+        <button
+          [class.active]="filterStatus() === 'approved'"
+          (click)="filterStatus.set('approved')"
+          class="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors">
+          Aprobadas
+        </button>
+        <button
+          [class.active]="filterStatus() === 'rejected'"
+          (click)="filterStatus.set('rejected')"
+          class="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors">
+          Rechazadas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Time Blocks List -->
+    <div class="time-blocks-grid">
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p class="text-muted-foreground">Cargando solicitudes...</p>
+        </div>
+      } @else if (getFilteredTimeBlocks().length === 0) {
+        <div class="empty-state">
+          <svg class="w-16 h-16 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <h3 class="text-lg font-semibold text-muted-foreground">No hay solicitudes de tiempo</h3>
+          <p class="text-muted-foreground">Crea una nueva solicitud para comenzar</p>
+        </div>
+      } @else {
+        <div class="grid gap-4">
+          @for (timeBlock of getFilteredTimeBlocks(); track timeBlock.id) {
+            <div class="time-block-card bg-card/80 backdrop-blur-sm p-6 rounded-2xl border border-border/50 shadow-lg">
+              <div class="flex justify-between items-start mb-4">
+                <div class="flex-1">
+                  <div class="flex items-center gap-3 mb-2">
+                    <h3 class="text-lg font-semibold">{{ timeBlock.employeeName }}</h3>
+                    <span [class]="getStatusColor(timeBlock.status)" class="px-3 py-1 rounded-full text-sm font-medium">
+                      {{ getStatusText(timeBlock.status) }}
+                    </span>
+                  </div>
+                  <p class="text-muted-foreground text-sm mb-2">
+                    Tipo: <span class="font-medium">{{ getTypeText(timeBlock.type) }}</span>
+                  </p>
+                  <p class="text-muted-foreground text-sm">
+                    Duración: <span class="font-medium">{{ calculateDuration(timeBlock) }}</span>
+                  </p>
+                </div>
+                <div class="flex gap-2">
+                  @if (timeBlock.status === 'pending') {
+                    <button
+                      (click)="openApprovalModal(timeBlock)"
+                      class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm">
+                      Revisar
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Time Details -->
+              <div class="bg-muted/50 p-4 rounded-xl mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p class="text-sm text-muted-foreground">Inicio</p>
+                    <p class="font-medium">{{ formatDateTime(timeBlock.startTime) }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-muted-foreground">Fin</p>
+                    <p class="font-medium">{{ formatDateTime(timeBlock.endTime) }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Reason -->
+              @if (timeBlock.reason) {
+                <div class="mb-4">
+                  <p class="text-sm text-muted-foreground mb-1">Motivo</p>
+                  <p class="text-sm bg-muted/50 p-3 rounded-lg">{{ timeBlock.reason }}</p>
+                </div>
+              }
+
+              <!-- Request Date -->
+              <div class="flex justify-between items-center pt-4 border-t border-border/50">
+                <span class="text-sm text-muted-foreground">
+                  Solicitado: {{ timeBlock.requestedAt | date:'dd/MM/yyyy HH:mm' }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Request Form Modal -->
+  @if (showRequestForm()) {
+    <div class="modal-overlay" (click)="closeModals()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2 class="text-xl font-semibold">Nueva Solicitud de Tiempo</h2>
+            <button (click)="closeModals()" class="p-2 hover:bg-muted rounded-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Employee Selection -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-foreground mb-2">Empleado *</label>
+              <select
+                formControlName="employeeId"
+                class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Seleccionar empleado</option>
+                @for (employee of employees(); track employee.id) {
+                  <option [value]="employee.id">{{ employee.displayName }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Type Selection -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-foreground mb-2">Tipo de Solicitud *</label>
+              <select
+                formControlName="type"
+                class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="break">Descanso</option>
+                <option value="work">Trabajo Extra</option>
+                <option value="maintenance">Mantenimiento</option>
+              </select>
+            </div>
+
+            <!-- Date and Time -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Fecha de Inicio *</label>
+                <input
+                  type="date"
+                  formControlName="startDate"
+                  class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Hora de Inicio *</label>
+                <input
+                  type="time"
+                  formControlName="startTime"
+                  class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Fecha de Fin *</label>
+                <input
+                  type="date"
+                  formControlName="endDate"
+                  class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Hora de Fin *</label>
+                <input
+                  type="time"
+                  formControlName="endTime"
+                  class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              </div>
+            </div>
+
+            <!-- Reason -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-foreground mb-2">Motivo *</label>
+              <textarea
+                formControlName="reason"
+                rows="4"
+                placeholder="Describe el motivo de la solicitud..."
+                class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none">
+              </textarea>
+            </div>
+
+            <!-- Workshop Location (optional) -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-foreground mb-2">Ubicación del Taller (opcional)</label>
+              <input
+                formControlName="workshopLocationId"
+                placeholder="ID de ubicación"
+                class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              (click)="closeModals()"
+              class="px-6 py-3 border border-border rounded-xl hover:bg-muted transition-colors">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              (click)="submitTimeBlockRequest()"
+              [disabled]="timeBlockForm.invalid || isLoading()"
+              class="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors">
+              Enviar Solicitud
+            </button>
+          </div>
+      </div>
+    </div>
+  }
+
+  <!-- Approval Modal -->
+  @if (showApprovalModal() && selectedTimeBlock()) {
+    <div class="modal-overlay" (click)="closeModals()">
+      <div class="modal-content approval-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="text-xl font-semibold">Revisar Solicitud</h2>
+          <button (click)="closeModals()" class="p-2 hover:bg-muted rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (selectedTimeBlock(); as timeBlock) {
+            <div class="review-card bg-card p-6 rounded-xl border border-border/50 mb-6">
+              <div class="flex items-center gap-3 mb-4">
+                <h3 class="text-lg font-semibold">{{ timeBlock.employeeName }}</h3>
+                <span [class]="getStatusColor(timeBlock.status)" class="px-3 py-1 rounded-full text-sm font-medium">
+                  {{ getStatusText(timeBlock.status) }}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p class="text-sm text-muted-foreground">Tipo</p>
+                  <p class="font-medium">{{ getTypeText(timeBlock.type) }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-muted-foreground">Duración</p>
+                  <p class="font-medium">{{ calculateDuration(timeBlock) }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-muted-foreground">Inicio</p>
+                  <p class="font-medium">{{ formatDateTime(timeBlock.startTime) }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-muted-foreground">Fin</p>
+                  <p class="font-medium">{{ formatDateTime(timeBlock.endTime) }}</p>
+                </div>
+              </div>
+
+              @if (timeBlock.reason) {
+                <div>
+                  <p class="text-sm text-muted-foreground mb-1">Motivo</p>
+                  <p class="text-sm bg-muted/50 p-3 rounded-lg">{{ timeBlock.reason }}</p>
+                </div>
+              }
+            </div>
+
+            <div class="action-buttons flex gap-4 justify-center">
+              <button
+                (click)="rejectTimeBlock()"
+                class="px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Rechazar
+              </button>
+              <button
+                (click)="approveTimeBlock()"
+                class="px-6 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Aprobar
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,167 @@
+<div class="dashboard-container">
+  <h1 class="text-3xl font-bold mb-2">Panel de Administración</h1>
+  <p class="text-muted-foreground mb-8">Monitoreo en tiempo real de la cola y métricas de rendimiento</p>
+
+  <!-- Real-time Metrics -->
+  <div class="metrics-grid">
+    <!-- Waiting Count -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-yellow-100 text-yellow-600">
+          ⏳
+        </div>
+        <h3 class="metric-title">Esperando</h3>
+      </div>
+      <p class="metric-value">{{ waitingCount() }}</p>
+      <p class="metric-subtitle">Clientes en cola</p>
+    </div>
+
+    <!-- Called Count -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-blue-100 text-blue-600">
+          📢
+        </div>
+        <h3 class="metric-title">Llamados</h3>
+      </div>
+      <p class="metric-value">{{ calledCount() }}</p>
+      <p class="metric-subtitle">Siendo atendidos</p>
+    </div>
+
+    <!-- Served Count -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-green-100 text-green-600">
+          ✅
+        </div>
+        <h3 class="metric-title">Atendidos</h3>
+      </div>
+      <p class="metric-value">{{ servedCount() }}</p>
+      <p class="metric-subtitle">Completados hoy</p>
+    </div>
+
+    <!-- No Show Count -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-red-100 text-red-600">
+          ❌
+        </div>
+        <h3 class="metric-title">No Show</h3>
+      </div>
+      <p class="metric-value">{{ noShowCount() }}</p>
+      <p class="metric-subtitle">No se presentaron</p>
+    </div>
+
+    <!-- Average Wait Time -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-purple-100 text-purple-600">
+          🕐
+        </div>
+        <h3 class="metric-title">Tiempo Promedio</h3>
+      </div>
+      <p class="metric-value">{{ avgWaitTime() }}</p>
+      <p class="metric-subtitle">Minutos de espera</p>
+    </div>
+
+    <!-- Technician Utilization -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-indigo-100 text-indigo-600">
+          👥
+        </div>
+        <h3 class="metric-title">Utilización</h3>
+      </div>
+      <p class="metric-value">{{ technicianUtilization() | number:'1.0-0' }}%</p>
+      <p class="metric-subtitle">Capacidad de técnicos</p>
+    </div>
+  </div>
+
+  <!-- Critical Alerts -->
+  @if(alerts().length > 0) {
+    <div class="alerts-section">
+      <div class="alerts-header">
+        <div class="h-6 w-6 bg-red-100 rounded-lg flex items-center justify-center">
+          <svg class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h2>Alertas Críticas</h2>
+      </div>
+
+      @for(alert of alerts(); track alert.type) {
+        <div class="alert-card" [class]="alert.severity">
+          <div class="alert-content">
+            <span class="alert-icon">
+              @if(alert.severity === 'critical') {
+                ⚠️
+              } @else {
+                🔔
+              }
+            </span>
+            <div class="alert-text">
+              <p class="alert-title">{{ alert.title }}</p>
+              <p class="alert-message">{{ alert.message }}</p>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <div class="actions-header">
+      <div class="h-6 w-6 bg-blue-100 rounded-lg flex items-center justify-center">
+        <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+      <h2>Acciones Rápidas</h2>
+    </div>
+
+    <div class="actions-grid">
+      <div class="action-card" (click)="navigateToQueue()">
+        <div class="action-content">
+          <div class="action-icon">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div class="action-text">
+            <p class="action-title">Gestionar Cola</p>
+            <p class="action-description">Ver y administrar la cola de espera</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-card" (click)="navigateToTechnicians()">
+        <div class="action-content">
+          <div class="action-icon">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div class="action-text">
+            <p class="action-title">Administrar Técnicos</p>
+            <p class="action-description">Gestionar disponibilidad y asignaciones</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-card" (click)="navigateToReports()">
+        <div class="action-content">
+          <div class="action-icon">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div class="action-text">
+            <p class="action-title">Ver Reportes</p>
+            <p class="action-description">Análisis detallado de rendimiento</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

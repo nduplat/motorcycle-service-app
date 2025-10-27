@@ -1,0 +1,207 @@
+<div class="bottleneck-analyzer space-y-6">
+  <div class="flex justify-between items-center">
+    <h2 class="text-2xl font-bold">Analizador de Cuellos de Botella</h2>
+    <div class="flex items-center gap-2">
+      @if(lastAnalysisTime(); as time) {
+        <span class="text-sm text-muted-foreground">
+          Último análisis: {{ time | date:'HH:mm:ss' }}
+        </span>
+      }
+      <button mat-raised-button color="primary" (click)="refreshAnalysis()" [disabled]="isLoading()">
+        <mat-icon class="mr-2">refresh</mat-icon>
+        @if(isLoading()) {
+          Analizando...
+        } @else {
+          Actualizar Análisis
+        }
+      </button>
+    </div>
+  </div>
+
+  @if(bottleneckAnalysis(); as analysis) {
+    <!-- Overall Efficiency Summary -->
+    <mat-card class="efficiency-summary">
+      <mat-card-content>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="text-center">
+            <div class="text-4xl font-bold mb-2"
+                 [style.color]="getEfficiencyColor(analysis.overallEfficiency)">
+              {{ analysis.overallEfficiency.toFixed(1) }}%
+            </div>
+            <div class="text-lg font-medium">Eficiencia General</div>
+            <div class="text-sm text-muted-foreground">{{ getEfficiencyStatus(analysis.overallEfficiency) }}</div>
+          </div>
+
+          <div class="text-center">
+            <div class="text-4xl font-bold mb-2 text-red-600">
+              {{ analysis.criticalBottlenecks }}
+            </div>
+            <div class="text-lg font-medium">Cuellos de Botella Críticos</div>
+            <div class="text-sm text-muted-foreground">Requieren atención inmediata</div>
+          </div>
+
+          <div class="text-center">
+            <div class="text-4xl font-bold mb-2 text-orange-600">
+              {{ analysis.bottlenecks.length }}
+            </div>
+            <div class="text-lg font-medium">Total de Cuellos de Botella</div>
+            <div class="text-sm text-muted-foreground">Identificados en el sistema</div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Bottlenecks List -->
+    @if(analysis.bottlenecks.length > 0) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Cuellos de Botella Identificados</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="space-y-4">
+            @for(bottleneck of analysis.bottlenecks; track bottleneck.description) {
+              <div class="bottleneck-item p-4 rounded-lg border-l-4"
+                   [ngClass]="{
+                     'border-l-red-500 bg-red-50': bottleneck.severity === 'critical',
+                     'border-l-orange-500 bg-orange-50': bottleneck.severity === 'high',
+                     'border-l-yellow-500 bg-yellow-50': bottleneck.severity === 'medium',
+                     'border-l-green-500 bg-green-50': bottleneck.severity === 'low'
+                   }">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-start gap-3">
+                    <mat-icon class="mt-1"
+                             [style.color]="getSeverityColor(bottleneck.severity)">
+                      {{ getSeverityIcon(bottleneck.severity) }}
+                    </mat-icon>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2 mb-2">
+                        <h4 class="font-semibold">{{ getBottleneckTypeLabel(bottleneck.type) }}</h4>
+                        <mat-chip [color]="getPriorityColor(bottleneck.severity)">
+                          {{ bottleneck.severity | titlecase }}
+                        </mat-chip>
+                      </div>
+                      <p class="text-sm text-gray-700 mb-3">{{ bottleneck.description }}</p>
+
+                      <div class="impact-indicator mb-3">
+                        <div class="text-sm font-medium mb-1">Impacto: {{ bottleneck.impact }} puntos</div>
+                        <mat-progress-bar
+                          mode="determinate"
+                          [value]="bottleneck.impact"
+                          [color]="bottleneck.severity === 'critical' ? 'warn' : 'accent'">
+                        </mat-progress-bar>
+                      </div>
+
+                      @if(bottleneck.recommendations.length > 0) {
+                        <div class="recommendations">
+                          <h5 class="text-sm font-medium mb-2">Recomendaciones:</h5>
+                          <ul class="text-sm text-gray-600 space-y-1">
+                            @for(rec of bottleneck.recommendations; track rec) {
+                              <li class="flex items-start gap-2">
+                                <mat-icon class="text-green-600 mt-0.5" style="font-size: 16px;">check_circle</mat-icon>
+                                {{ rec }}
+                              </li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <mat-card>
+        <mat-card-content>
+          <div class="text-center py-8">
+            <mat-icon class="text-6xl text-green-500 mb-4">check_circle</mat-icon>
+            <h3 class="text-xl font-semibold text-green-700 mb-2">Sin Cuellos de Botella</h3>
+            <p class="text-gray-600">El sistema está funcionando eficientemente sin cuellos de botella identificados.</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Optimization Suggestions -->
+    @if(optimizationSuggestions().length > 0) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Sugerencias de Optimización</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-accordion>
+            @for(suggestion of optimizationSuggestions(); track suggestion.title) {
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title class="flex items-center gap-2">
+                    <mat-icon [style.color]="getSeverityColor(suggestion.priority)">
+                      {{ getSeverityIcon(suggestion.priority) }}
+                    </mat-icon>
+                    <span class="font-medium">{{ suggestion.title }}</span>
+                    <mat-chip [color]="getPriorityColor(suggestion.priority)" class="ml-2">
+                      {{ suggestion.priority | titlecase }}
+                    </mat-chip>
+                  </mat-panel-title>
+                  <mat-panel-description>
+                    <span class="text-sm">{{ suggestion.category }}</span>
+                    <mat-chip [color]="getEffortColor(suggestion.implementationEffort)" class="ml-2">
+                      Esfuerzo: {{ suggestion.implementationEffort | titlecase }}
+                    </mat-chip>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div class="expansion-content p-4">
+                  <p class="text-gray-700 mb-4">{{ suggestion.description }}</p>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <h5 class="font-medium text-sm mb-1">Impacto Potencial</h5>
+                      <p class="text-sm text-green-700">{{ suggestion.potentialImpact }}</p>
+                    </div>
+                    <div>
+                      <h5 class="font-medium text-sm mb-1">Esfuerzo de Implementación</h5>
+                      <p class="text-sm" [ngClass]="{
+                        'text-green-700': suggestion.implementationEffort === 'low',
+                        'text-yellow-700': suggestion.implementationEffort === 'medium',
+                        'text-red-700': suggestion.implementationEffort === 'high'
+                      }">
+                        {{ suggestion.implementationEffort | titlecase }}
+                      </p>
+                    </div>
+                  </div>
+
+                  @if(suggestion.actionable) {
+                    <button mat-raised-button
+                            color="primary"
+                            (click)="implementSuggestion(suggestion)"
+                            class="w-full md:w-auto">
+                      <mat-icon class="mr-2">play_arrow</mat-icon>
+                      Implementar Sugerencia
+                    </button>
+                  } @else {
+                    <mat-chip color="accent" class="w-full md:w-auto text-center">
+                      Requiere Revisión Manual
+                    </mat-chip>
+                  }
+                </div>
+              </mat-expansion-panel>
+            }
+          </mat-accordion>
+        </mat-card-content>
+      </mat-card>
+    }
+
+  } @else {
+    <!-- Loading State -->
+    <mat-card>
+      <mat-card-content>
+        <div class="text-center py-8">
+          <mat-icon class="animate-spin text-4xl mb-4">refresh</mat-icon>
+          <p>Analizando cuellos de botella...</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

@@ -1,0 +1,71 @@
+<div class="bg-card/80 backdrop-blur-sm p-8 rounded-2xl border border-border/50 shadow-lg space-y-6">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="p-3 bg-green-100 rounded-xl">
+      <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+      </svg>
+    </div>
+    <div>
+      <h2 class="text-2xl font-semibold">Gestión de Precios</h2>
+      <p class="text-muted-foreground">Configuración de precios y márgenes</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="space-y-2">
+      <label class="block text-sm font-semibold text-foreground">Precio de Compra (COP)</label>
+      <div class="relative">
+        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+        <input formControlName="purchasePrice" type="number" min="0" step="100"
+          class="w-full pl-8 pr-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <label class="block text-sm font-semibold text-foreground">Precio de Venta (COP) *</label>
+      <div class="relative">
+        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+        <input formControlName="sellingPrice" type="number" min="1" step="100"
+          [class]="'w-full pl-8 pr-4 py-3 bg-background/50 border rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary ' +
+            (isFieldInvalid('sellingPrice') ? 'border-red-500 bg-red-50/50' : 'border-border hover:border-border/80')">
+      </div>
+      @if (isFieldInvalid('sellingPrice')) {
+        <p class="text-red-500 text-xs mt-1">{{ getFieldError('sellingPrice') }}</p>
+      }
+    </div>
+
+    <div class="space-y-2">
+      <label class="block text-sm font-semibold text-foreground">Porcentaje de IVA (%)</label>
+      <div class="relative">
+        <input formControlName="taxPercent" type="number" min="0" max="100" step="1"
+          class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground">%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profit Margin Calculator -->
+  <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200/50">
+    <h3 class="text-lg font-semibold mb-4 text-green-800">Análisis de Rentabilidad</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="text-center">
+        <p class="text-sm text-green-600 font-medium">Margen Bruto</p>
+        <p class="text-2xl font-bold text-green-700">
+          {{ profitMargin() | currency:'COP':'symbol':'1.0-0' }}
+        </p>
+      </div>
+      <div class="text-center">
+        <p class="text-sm text-blue-600 font-medium">Margen %</p>
+        <p class="text-2xl font-bold text-blue-700">
+          {{ profitMarginPercent() | number:'1.1-1' }}%
+        </p>
+      </div>
+      <div class="text-center">
+        <p class="text-sm text-purple-600 font-medium">IVA Calculado</p>
+        <p class="text-2xl font-bold text-purple-700">
+          {{ calculatedTax() | currency:'COP':'symbol':'1.0-0' }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,173 @@
+<div class="capacity-dashboard space-y-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-3xl font-bold">Dashboard de Capacidad del Taller</h1>
+    <button mat-raised-button color="primary" (click)="refreshData()">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </div>
+
+  <!-- Overload Alerts -->
+  @if(overloadAlerts().length > 0) {
+    <mat-card class="alerts-card">
+      <mat-card-header>
+        <mat-card-title class="flex items-center">
+          <mat-icon class="mr-2" [style.color]="overloadAlerts()[0].type === 'critical' ? 'red' : 'orange'">
+            warning
+          </mat-icon>
+          Alertas de Capacidad
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="space-y-2">
+          @for(alert of overloadAlerts(); track alert.message) {
+            <div class="alert-item p-3 rounded-lg border-l-4"
+                 [ngClass]="{
+                   'border-l-red-500 bg-red-50': alert.type === 'critical',
+                   'border-l-orange-500 bg-orange-50': alert.type === 'warning',
+                   'border-l-blue-500 bg-blue-50': alert.type === 'info'
+                 }">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <mat-icon class="mr-2"
+                           [style.color]="alert.type === 'critical' ? 'red' : alert.type === 'warning' ? 'orange' : 'blue'">
+                    {{ alert.type === 'critical' ? 'error' : alert.type === 'warning' ? 'warning' : 'info' }}
+                  </mat-icon>
+                  <span class="font-medium">{{ alert.message }}</span>
+                </div>
+                @if(alert.action) {
+                  <mat-chip [color]="alert.type === 'critical' ? 'warn' : 'accent'">
+                    {{ alert.action }}
+                  </mat-chip>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Real-time Capacity Meter -->
+  @if(currentCapacity(); as capacity) {
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Capacity Overview -->
+      <mat-card class="capacity-overview">
+        <mat-card-header>
+          <mat-card-title>Capacidad Actual</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="capacity-meter">
+            <div class="text-center mb-4">
+              <div class="text-4xl font-bold mb-2"
+                   [style.color]="capacity.utilizationRate >= 90 ? 'red' : capacity.utilizationRate >= 80 ? 'orange' : 'green'">
+                {{ capacity.utilizationRate.toFixed(1) }}%
+              </div>
+              <div class="text-sm text-muted-foreground">
+                {{ getCapacityStatus(capacity.utilizationRate) }}
+              </div>
+            </div>
+
+            <mat-progress-bar
+              mode="determinate"
+              [value]="capacity.utilizationRate"
+              [color]="getCapacityColor(capacity.utilizationRate)">
+            </mat-progress-bar>
+
+            <div class="capacity-details mt-4 space-y-2">
+              <div class="flex justify-between">
+                <span>Capacidad Total:</span>
+                <span class="font-medium">{{ capacity.totalCapacity }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>En Uso:</span>
+                <span class="font-medium">{{ capacity.usedCapacity }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Disponible:</span>
+                <span class="font-medium text-green-600">{{ capacity.availableCapacity }}</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Active Work Orders -->
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Órdenes de Trabajo Activas</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-blue-600 mb-2">
+              {{ capacity.activeWorkOrders }}
+            </div>
+            <div class="text-sm text-muted-foreground">
+              órdenes en progreso
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Technicians Available -->
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Técnicos Disponibles</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-green-600 mb-2">
+              {{ capacity.availableTechnicians }}
+            </div>
+            <div class="text-sm text-muted-foreground">
+              de {{ Math.ceil(capacity.totalCapacity / 8) }} total
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Load Trend Chart -->
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Tendencia de Carga (Últimas 24 horas)</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-container" style="height: 300px;">
+          <canvas baseChart
+                  [data]="capacityTrendData()"
+                  [options]="chartOptions"
+                  type="line">
+          </canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Scheduled Appointments Today -->
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Citas Programadas para Hoy</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-purple-600 mb-2">
+            {{ capacity.scheduledAppointments }}
+          </div>
+          <div class="text-sm text-muted-foreground">
+            citas confirmadas
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <!-- Loading State -->
+    <mat-card>
+      <mat-card-content>
+        <div class="text-center py-8">
+          <mat-icon class="animate-spin text-4xl mb-4">refresh</mat-icon>
+          <p>Cargando datos de capacidad...</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

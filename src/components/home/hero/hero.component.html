@@ -1,0 +1,172 @@
+
+<section class="relative min-h-screen flex items-center overflow-hidden">
+  <!-- Background with sophisticated overlay -->
+  <div class="absolute inset-0 hero-bg">
+    <!-- Premium gradient overlays -->
+    <div class="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-gray-800/80 to-gray-900/90"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
+  </div>
+
+  <!-- Elegant geometric patterns -->
+  <div class="absolute top-20 left-20 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-full blur-3xl animate-pulse-custom"></div>
+  <div class="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-br from-indigo-500/10 to-purple-600/5 rounded-full blur-3xl animate-pulse-custom delay-300"></div>
+
+  <!-- Main content -->
+  <div class="relative z-10 w-full">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="grid lg:grid-cols-12 gap-8 items-center min-h-screen py-20">
+        
+        <!-- Left content -->
+        <div class="lg:col-span-7 space-y-12">
+          
+          <!-- Premium badge -->
+          <div class="inline-flex items-center opacity-0 animate-fadeInUp delay-100">
+            <div class="glass-effect px-6 py-3 rounded-full">
+              <div class="flex items-center space-x-3">
+                <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse-custom"></div>
+                <span class="text-white/90 text-sm font-semibold tracking-wider uppercase">
+                  Servicio Premium de Motocicletas
+                </span>
+                <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse-custom delay-200"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main heading -->
+          <div class="space-y-8 opacity-0 animate-slideInLeft delay-200">
+            <h1 class="hero-title text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-tight text-shadow-lg">
+              <span class="block">PRECISIÓN</span>
+              <span class="block gradient-text animate-gradientShift">MECÁNICA</span>
+              <span class="block text-white/95 text-5xl lg:text-6xl xl:text-7xl font-bold mt-4">
+                PROFESIONAL
+              </span>
+            </h1>
+            
+            <!-- Elegant underline -->
+            <div class="w-24 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
+          </div>
+
+          <!-- Description -->
+          <div class="max-w-2xl opacity-0 animate-fadeInUp delay-500">
+            <p class="hero-subtitle text-xl lg:text-2xl text-gray-300 leading-relaxed font-light">
+              Servicios <span class="text-blue-300 font-semibold">expertos</span>, 
+              repuestos de <span class="text-blue-300 font-semibold">calidad premium</span> 
+              y tecnología de <span class="text-blue-300 font-semibold">vanguardia</span> 
+              para mantener tu motocicleta en perfectas condiciones.
+            </p>
+          </div>
+
+          <!-- CTA Buttons -->
+          <div class="flex flex-col sm:flex-row gap-6 opacity-0 animate-fadeInUp delay-700">
+            <a [routerLink]="appointmentLink()" class="btn-primary shine-effect px-8 py-4 rounded-xl text-white font-bold text-lg shadow-2xl">
+              <div class="flex items-center justify-center space-x-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span>Agendar Cita</span>
+              </div>
+            </a>
+            
+            <a routerLink="/inventory" class="btn-secondary px-8 py-4 rounded-xl text-white font-semibold text-lg">
+              <div class="flex items-center justify-center space-x-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                <span>Ver Repuestos</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Trust indicators -->
+          <div class="flex flex-wrap items-center gap-8 pt-8 opacity-0 animate-fadeInUp delay-700">
+            <div class="flex items-center space-x-2 text-gray-300">
+              <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-sm font-medium">Certificado</span>
+            </div>
+            <div class="flex items-center space-x-2 text-gray-300">
+              <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span class="text-sm font-medium">Garantía Total</span>
+            </div>
+            <div class="flex items-center space-x-2 text-gray-300">
+              <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+              </svg>
+              <span class="text-sm font-medium">Excelencia 5★</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right side - Feature highlights -->
+        <div class="lg:col-span-5 opacity-0 animate-fadeInUp delay-300">
+          <div class="space-y-8">
+            
+            <!-- Feature cards -->
+            <div class="grid gap-6">
+              <div class="glass-effect p-6 rounded-2xl border-l-4 border-blue-500">
+                <div class="flex items-start space-x-4">
+                  <div class="flex-shrink-0 w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-white font-bold text-lg mb-2">Diagnóstico Avanzado</h3>
+                    <p class="text-gray-300 text-sm leading-relaxed">
+                      Tecnología de punta para identificar problemas con precisión milimétrica.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="glass-effect p-6 rounded-2xl border-l-4 border-indigo-500">
+                <div class="flex items-start space-x-4">
+                  <div class="flex-shrink-0 w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-white font-bold text-lg mb-2">Servicio Rápido</h3>
+                    <p class="text-gray-300 text-sm leading-relaxed">
+                      Reparaciones eficientes sin comprometer la calidad del trabajo.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="glass-effect p-6 rounded-2xl border-l-4 border-purple-500">
+                <div class="flex items-start space-x-4">
+                  <div class="flex-shrink-0 w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-white font-bold text-lg mb-2">Garantía Completa</h3>
+                    <p class="text-gray-300 text-sm leading-relaxed">
+                      Respaldamos nuestro trabajo con garantía total en todos los servicios.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 animate-fadeInUp delay-700">
+    <div class="flex flex-col items-center space-y-2">
+      <span class="text-gray-400 text-xs uppercase tracking-wider">Scroll</span>
+      <div class="w-px h-12 bg-gradient-to-b from-gray-400 to-transparent"></div>
+    </div>
+  </div>
+</section>

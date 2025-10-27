@@ -1,0 +1,58 @@
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-3xl font-bold">Movimientos de Stock</h1>
+  </div>
+
+  <div class="bg-card rounded-xl border border-border shadow-sm">
+     <div class="border-t border-border overflow-x-auto">
+        <table class="w-full text-sm text-left text-foreground">
+          <thead class="bg-secondary/50">
+            <tr>
+              <th class="px-6 py-3 font-medium">Fecha</th>
+              <th class="px-6 py-3 font-medium">Producto</th>
+              <th class="px-6 py-3 font-medium">Variante</th>
+              <th class="px-6 py-3 font-medium text-center">Cantidad</th>
+              <th class="px-6 py-3 font-medium text-center">Tipo</th>
+              <th class="px-6 py-3 font-medium">Referencia</th>
+              <th class="px-6 py-3 font-medium">Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(m of stockMovements(); track m.id) {
+              <tr class="border-b border-border hover:bg-secondary/50">
+                <td class="px-6 py-4">{{ formatDate(m.createdAt) }}</td>
+                <td class="px-6 py-4 font-medium">{{ m.productName }}</td>
+                <td class="px-6 py-4 text-sm text-muted-foreground">
+                  @if (m.variantName) {
+                    {{ m.variantName }}
+                  } @else {
+                    <span class="text-xs">N/A</span>
+                  }
+                </td>
+                <td class="px-6 py-4 text-center font-mono" [class]="m.quantity > 0 ? 'text-green-600' : 'text-red-600'">
+                    {{ m.quantity > 0 ? '+' : '' }}{{ m.quantity }}
+                </td>
+                <td class="px-6 py-4 text-center">
+                  <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + getTypeClass(m.type)">
+                    {{ m.type }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-xs font-mono">
+                  @if (m.referenceId) {
+                      <a [routerLink]="['/admin/purchase-orders', m.referenceId, 'edit']" class="text-primary hover:underline">{{ m.referenceId }}</a>
+                  } @else {
+                      <span>N/A</span>
+                  }
+                </td>
+                <td class="px-6 py-4">{{ m.userName }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center py-16 text-muted-foreground">No se encontraron movimientos de stock.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+  </div>
+</div>

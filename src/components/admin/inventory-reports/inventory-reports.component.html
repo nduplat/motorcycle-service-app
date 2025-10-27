@@ -1,0 +1,89 @@
+<div class="inventory-reports-container">
+  <h2>Reportes de Inventario - Uso de Productos por Vehículo</h2>
+
+  <!-- Vehicle Selection Section -->
+  <div class="vehicle-selection">
+    <h3>Seleccionar Vehículo</h3>
+    <div class="search-container">
+      <input
+        type="text"
+        placeholder="Buscar por marca, modelo o placa..."
+        [value]="searchQuery()"
+        (input)="updateSearch($any($event.target).value)"
+        class="search-input"
+      />
+    </div>
+
+    <div class="vehicle-list" *ngIf="filteredMotorcycles().length > 0">
+      <div
+        *ngFor="let motorcycle of filteredMotorcycles()"
+        class="vehicle-item"
+        [class.selected]="selectedVehicleId() === motorcycle.id"
+        (click)="selectVehicle(motorcycle.id)"
+      >
+        <div class="vehicle-info">
+          <strong>{{ motorcycle.brand }} {{ motorcycle.model }} ({{ motorcycle.year }})</strong>
+          <span *ngIf="motorcycle.plate"> - Placa: {{ motorcycle.plate }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="filteredMotorcycles().length === 0 && searchQuery()" class="no-results">
+      No se encontraron vehículos que coincidan con la búsqueda.
+    </div>
+  </div>
+
+  <!-- Selected Vehicle Info -->
+  <div *ngIf="selectedVehicle()" class="selected-vehicle-info">
+    <h3>Vehículo Seleccionado</h3>
+    <p><strong>{{ selectedVehicle()?.brand }} {{ selectedVehicle()?.model }} ({{ selectedVehicle()?.year }})</strong></p>
+    <p *ngIf="selectedVehicle()?.plate">Placa: {{ selectedVehicle()?.plate }}</p>
+    <button (click)="clearSelection()" class="clear-btn">Cambiar Vehículo</button>
+  </div>
+
+  <!-- Product Usage Report -->
+  <div *ngIf="selectedVehicle() && productUsages().length > 0" class="report-section">
+    <h3>Historial de Uso de Productos</h3>
+
+    <table class="usage-table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad Usada</th>
+          <th>Fecha de Orden de Servicio</th>
+          <th>Precio</th>
+          <th>ID Orden</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let usage of productUsages()">
+          <td>{{ usage.productName }}</td>
+          <td>{{ usage.quantity }}</td>
+          <td>{{ usage.workOrderDate | date:'dd/MM/yyyy' }}</td>
+          <td>{{ usage.price | currency:'COP':'symbol':'1.0-0' }}</td>
+          <td>{{ usage.workOrderId }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Summary Totals -->
+    <div class="summary-section">
+      <h4>Resumen Total</h4>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span class="label">Total Productos Usados:</span>
+          <span class="value">{{ totalQuantity() }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Costo Total:</span>
+          <span class="value">{{ totalCost() | currency:'COP':'symbol':'1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Data Message -->
+  <div *ngIf="selectedVehicle() && productUsages().length === 0" class="no-data">
+    <p>No se encontraron registros de uso de productos para este vehículo.</p>
+  </div>
+</div>

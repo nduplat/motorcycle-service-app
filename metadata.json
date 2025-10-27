@@ -1,0 +1,8 @@
+
+{
+  "name": "Blue Dragon Motors AI Assistant",
+  "description": "An AI-powered assistant for Blue Dragon Motors to help manage inventory by scanning motorcycle parts with a camera and identifying them using Gemini.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

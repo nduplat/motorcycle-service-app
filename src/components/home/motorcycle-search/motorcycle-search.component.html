@@ -1,0 +1,188 @@
+<div class="motorcycle-filters-container" [class.compact]="compact()">
+  <form [formGroup]="filtersForm" class="space-y-4">
+    
+    <!-- Búsqueda Principal -->
+    <div class="search-container">
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <span class="text-2xl">🔍</span>
+        </div>
+        <input
+          type="text"
+          formControlName="searchQuery"
+          [placeholder]="placeholder()"
+          [class]="compact() ? 'search-input-compact' : 'search-input-full'"
+          class="w-full pl-14 pr-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-400 transition-all">
+        
+        @if (loading()) {
+          <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
+            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Filtros Principales -->
+    <div [class]="compact() ? 'filters-grid-compact' : 'filters-grid-full'">
+      
+      <!-- Marca -->
+      <div class="filter-group">
+        <label class="filter-label">
+          🏷️ Marca
+        </label>
+        <select
+          formControlName="brand"
+          [class]="compact() ? 'filter-select-compact' : 'filter-select-full'">
+          @for(option of brandOptions(); track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Categoría CC -->
+      <div class="filter-group">
+        <label class="filter-label">
+          ⚙️ Tamaño del Motor
+        </label>
+        <select
+          formControlName="category"
+          [class]="compact() ? 'filter-select-compact' : 'filter-select-full'">
+          @for(option of categoryOptions(); track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Tipo (si está disponible) -->
+      @if (availableTypes().length > 0) {
+        <div class="filter-group">
+          <label class="filter-label">
+            🏍️ Tipo
+          </label>
+          <select
+            formControlName="type"
+            [class]="compact() ? 'filter-select-compact' : 'filter-select-full'">
+            @for(option of typeOptions(); track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <!-- Año -->
+      <div class="filter-group">
+        <label class="filter-label">
+          📅 Año
+        </label>
+        <select
+          formControlName="year"
+          [class]="compact() ? 'filter-select-compact' : 'filter-select-full'">
+          @for(option of yearOptions(); track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Botón Limpiar -->
+      @if (hasActiveFilters()) {
+        <div class="filter-group flex items-end">
+          <button 
+            type="button" 
+            (click)="clearAllFilters()" 
+            [class]="compact() ? 'clear-button-compact' : 'clear-button-full'">
+            🗑️ {{ compact() ? 'Limpiar' : 'Limpiar Filtros' }}
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Filtros Avanzados - Rango de Años -->
+    @if (showAdvancedFilters() && showYearRange()) {
+      <div class="advanced-filters">
+        <details class="group" [open]="showYearRange()">
+          <summary class="advanced-filters-toggle">
+            <span class="font-semibold text-blue-800">📅 Buscar por rango de años</span>
+            <span class="text-blue-600 text-sm ml-2">(avanzado)</span>
+          </summary>
+          <div class="advanced-filters-content">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="filter-label-small">
+                  📅 Desde el año:
+                </label>
+                <select
+                  formControlName="minYear"
+                  class="filter-select-small">
+                  <option value="">Cualquier año</option>
+                  @for(option of yearOptions().slice(1); track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="filter-label-small">
+                  📅 Hasta el año:
+                </label>
+                <select
+                  formControlName="maxYear"
+                  class="filter-select-small">
+                  <option value="">Cualquier año</option>
+                  @for(option of yearOptions().slice(1); track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+    }
+
+    <!-- Chips de Filtros Activos -->
+    @if (hasActiveFilters() && !compact()) {
+      <div class="active-filters">
+        <div class="active-filters-header">
+          <span class="active-filters-title">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path>
+            </svg>
+            Filtros activos:
+          </span>
+        </div>
+        <div class="active-filters-chips">
+          @for(filter of activeFiltersList(); track filter.key) {
+            <div class="filter-chip">
+              <span>{{ filter.label }}: {{ filter.value }}</span>
+              <button
+                type="button"
+                (click)="removeFilter(filter.key)"
+                class="filter-chip-remove">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Contador de Resultados -->
+    @if (resultCount() !== null) {
+      <div class="results-counter">
+        @if (loading()) {
+          <span class="results-loading">🔄 Buscando...</span>
+        } @else {
+          @if (resultCount() === 0) {
+            <span class="results-empty">😕 No se encontraron resultados</span>
+          } @else {
+            <span class="results-found">
+              ✅ {{ resultCount() }} {{ resultCount() === 1 ? 'resultado encontrado' : 'resultados encontrados' }}
+            </span>
+          }
+        }
+      </div>
+    }
+
+  </form>
+</div>

@@ -1,0 +1,200 @@
+<div class="capacity-heatmap space-y-6">
+  <div class="flex justify-between items-center">
+    <h2 class="text-2xl font-bold">Mapa de Calor de Capacidad</h2>
+    <div class="flex gap-2">
+      <mat-form-field appearance="outline" class="w-40">
+        <mat-label>Modo de Vista</mat-label>
+        <mat-select [(ngModel)]="viewMode" (selectionChange)="onViewModeChange($event.value)">
+          <mat-option value="hourly">Por Hora</mat-option>
+          <mat-option value="daily">Por Día</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-40">
+        <mat-label>Fecha</mat-label>
+        <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate" (dateChange)="onDateChange($event.value)">
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="refreshData()">
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Peak Hours Identification -->
+  @if(peakHours().length > 0) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title class="flex items-center">
+          <mat-icon class="mr-2">trending_up</mat-icon>
+          Horas Pico Identificadas
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="flex flex-wrap gap-2">
+          @for(peak of peakHours(); track peak.hour) {
+            <mat-chip [color]="getIntensityColor(peak.intensity)">
+              <mat-icon class="mr-1">
+                {{ peak.intensity === 'critical' ? 'error' : peak.intensity === 'high' ? 'warning' : 'info' }}
+              </mat-icon>
+              {{ getPeakDescription(peak) }}
+            </mat-chip>
+          }
+        </div>
+        <p class="text-sm text-muted-foreground mt-2">
+          * Las horas pico se identifican cuando la utilización supera el 70%
+        </p>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Heatmap Visualization -->
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        @if(viewMode() === 'hourly') {
+          Utilización por Hora - {{ selectedDate() | date:'dd/MM/yyyy' }}
+        } @else {
+          Utilización por Día - Últimos 7 días
+        }
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if(isLoading()) {
+        <div class="text-center py-8">
+          <mat-icon class="animate-spin text-4xl mb-4">refresh</mat-icon>
+          <p>Cargando datos del mapa de calor...</p>
+        </div>
+      } @else {
+        <div class="heatmap-container">
+          <!-- Legend -->
+          <div class="legend mb-4">
+            <div class="flex items-center justify-between text-sm">
+              <span>Utilización:</span>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
+                  <div class="w-4 h-4 rounded" style="background-color: #e5e7eb;"></div>
+                  <span>0-20%</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="w-4 h-4 rounded" style="background-color: #7c3aed;"></div>
+                  <span>20-40%</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="w-4 h-4 rounded" style="background-color: #0891b2;"></div>
+                  <span>40-60%</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="w-4 h-4 rounded" style="background-color: #16a34a;"></div>
+                  <span>60-70%</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="w-4 h-4 rounded" style="background-color: #ca8a04;"></div>
+                  <span>70-80%</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="w-4 h-4 rounded" style="background-color: #ea580c;"></div>
+                  <span>80-90%</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="w-4 h-4 rounded" style="background-color: #dc2626;"></div>
+                  <span>90-100%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Heatmap Grid -->
+          @if(viewMode() === 'hourly') {
+            <div class="hourly-heatmap">
+              <div class="grid grid-cols-24 gap-1">
+                @for(item of heatmapData(); track item.hour) {
+                  <div class="heatmap-cell"
+                       [style.background-color]="getHeatmapColor(item.utilization)"
+                       [matTooltip]="formatHour(item.hour) + ': ' + item.utilization.toFixed(1) + '% utilización'"
+                       matTooltipPosition="above">
+                    <div class="cell-content">
+                      <div class="utilization-text">{{ item.utilization.toFixed(0) }}%</div>
+                      <div class="details-text">
+                        <div>{{ item.appointments }} apt</div>
+                        <div>{{ item.workOrders }} wo</div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="hour-labels mt-2">
+                @for(hour of [0,3,6,9,12,15,18,21]; track hour) {
+                  <div class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="daily-heatmap">
+              <div class="grid grid-cols-7 gap-4">
+                @for(item of heatmapData(); track item.hour) {
+                  <div class="daily-cell">
+                    <div class="day-name text-center font-medium mb-2">{{ item.day }}</div>
+                    <div class="heatmap-cell large"
+                         [style.background-color]="getHeatmapColor(item.utilization)"
+                         [matTooltip]="item.day + ': ' + item.utilization.toFixed(1) + '% utilización'"
+                         matTooltipPosition="above">
+                      <div class="cell-content">
+                        <div class="utilization-text">{{ item.utilization.toFixed(0) }}%</div>
+                        <div class="details-text">
+                          <div>{{ item.appointments }} apt</div>
+                          <div>{{ item.workOrders }} wo</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Summary Statistics -->
+  @if(heatmapData().length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <mat-card>
+        <mat-card-content>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-blue-600 mb-1">
+              {{ averageUtilization() | number:'1.1-1' }}%
+            </div>
+            <div class="text-sm text-muted-foreground">Utilización Promedio</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-green-600 mb-1">
+              {{ maxUtilization() | number:'1.1-1' }}%
+            </div>
+            <div class="text-sm text-muted-foreground">Utilización Máxima</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-purple-600 mb-1">
+              {{ peakHours().length }}
+            </div>
+            <div class="text-sm text-muted-foreground">Horas Pico</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>

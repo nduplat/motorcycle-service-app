@@ -1,0 +1,638 @@
+import { initializeApp } from 'firebase/app';
+import {
+  getFirestore,
+  collection,
+  writeBatch,
+  getDocs,
+  Timestamp,
+  doc,
+} from 'firebase/firestore';
+
+// --- CONFIGURACIÓN DE FIREBASE ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBYKHbMIs8EDeXYpffggpbhYW2lSRac8ro",
+  authDomain: "bbddmm-387a7.firebaseapp.com",
+  projectId: "bbddmm-387a7",
+  storageBucket: "bbddmm-387a7.firebasestorage.app",
+  messagingSenderId: "647494031256",
+  appId: "1:647494031256:web:a7fa67efda4b85b1003ded"
+};
+
+// --- INICIALIZACIÓN ---
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const now = Timestamp.now();
+
+console.log('================================================================');
+console.log('🔧 INICIANDO SCRIPT DE GENERACIÓN MASIVA DE SERVICIOS PROFESIONALES');
+console.log('================================================================');
+
+// --- FUNCIONES AUXILIARES ---
+async function deleteAllDocuments(collectionName) {
+  console.log(`🗑️  Limpiando la colección: ${collectionName}...`);
+  const collectionRef = collection(db, collectionName);
+  const querySnapshot = await getDocs(collectionRef);
+  if (querySnapshot.empty) {
+    console.log(`✅ Colección ${collectionName} ya está vacía.`);
+    return 0;
+  }
+  const batchSize = 400;
+  let deletedCount = 0;
+  for (let i = 0; i < querySnapshot.docs.length; i += batchSize) {
+    const batch = writeBatch(db);
+    const chunk = querySnapshot.docs.slice(i, i + batchSize);
+    chunk.forEach(docSnapshot => batch.delete(docSnapshot.ref));
+    await batch.commit();
+    deletedCount += chunk.length;
+  }
+  console.log(`✅  ${deletedCount} documentos eliminados de ${collectionName}.`);
+  return deletedCount;
+}
+
+// --- DATOS MAESTROS ---
+
+// Perfiles de técnicos con tarifas por hora
+const TECHNICIAN_PROFILES = [
+  {
+    technicianId: 'tech-001',
+    name: 'Carlos Rodríguez',
+    skills: ['motores', 'frenos', 'eléctrica', 'suspensiones'],
+    hourlyRate: 45000, // COP por hora
+    certifications: ['Yamaha Certified', 'Honda Technician'],
+    experience: 'Senior'
+  },
+  {
+    technicianId: 'tech-002',
+    name: 'María González',
+    skills: ['motores', 'transmisión', 'diagnóstico'],
+    hourlyRate: 38000,
+    certifications: ['BMW Motorrad', 'KTM Service'],
+    experience: 'Mid-level'
+  },
+  {
+    technicianId: 'tech-003',
+    name: 'Juan Pérez',
+    skills: ['frenos', 'eléctrica', 'pintura', 'customización'],
+    hourlyRate: 35000,
+    certifications: ['Suzuki Service'],
+    experience: 'Junior'
+  },
+  {
+    technicianId: 'tech-004',
+    name: 'Ana López',
+    skills: ['motores', 'frenos', 'eléctrica', 'diagnóstico'],
+    hourlyRate: 42000,
+    certifications: ['Kawasaki Certified', 'Ducati Service'],
+    experience: 'Senior'
+  },
+  {
+    technicianId: 'tech-005',
+    name: 'Pedro Martínez',
+    skills: ['transmisión', 'suspensiones', 'escape'],
+    hourlyRate: 36000,
+    certifications: ['Triumph Service'],
+    experience: 'Mid-level'
+  }
+];
+
+// Marcas y modelos de motocicletas (basado en el script anterior)
+const MOTORCYCLE_BRANDS = [
+  'Yamaha', 'KTM', 'BMW', 'Honda', 'Kawasaki', 'Suzuki', 'Triumph', 'Royal Enfield', 'TVS', 'Bajaj'
+];
+
+// --- PLANTILLAS DE SERVICIOS PROFESIONALES ---
+
+const SERVICE_TEMPLATES = {
+  // Servicios de Mantenimiento Preventivo
+  mantenimiento: [
+    {
+      code: 'MANT-001',
+      title: 'Cambio de Aceite y Filtros',
+      description: 'Cambio completo de aceite de motor, filtro de aceite y filtro de aire. Incluye verificación de niveles y estado general.',
+      type: 'maintenance',
+      estimatedHours: 1.5,
+      baseLaborCost: 67500, // 45,000 COP/hora x 1.5 horas
+      partsSuggested: [
+        { category: 'Aceites y Fluidos', description: 'Aceite de motor sintético', qty: 3.5, estimatedCost: 180000 },
+        { category: 'Filtros', description: 'Filtro de aceite', qty: 1, estimatedCost: 35000 },
+        { category: 'Filtros', description: 'Filtro de aire', qty: 1, estimatedCost: 95000 }
+      ],
+      requiredSkills: ['motores'],
+      compatibleBrands: MOTORCYCLE_BRANDS,
+      compatibleModels: ['Todos los modelos'],
+      notificationDays: 30,
+      frequencyKm: 5000,
+      frequencyMonths: 6
+    },
+    {
+      code: 'MANT-002',
+      title: 'Revisión General 10,000 Km',
+      description: 'Revisión completa del vehículo cada 10,000 km. Incluye frenos, suspensión, luces, fluidos y sistema eléctrico.',
+      type: 'maintenance',
+      estimatedHours: 3.0,
+      baseLaborCost: 135000,
+      partsSuggested: [
+        { category: 'Aceites y Fluidos', description: 'Aceite de motor sintético', qty: 3.5, estimatedCost: 180000 },
+        { category: 'Filtros', description: 'Filtro de aceite', qty: 1, estimatedCost: 35000 },
+        { category: 'Filtros', description: 'Filtro de aire', qty: 1, estimatedCost: 95000 },
+        { category: 'Frenos', description: 'Pastillas de freno delantero', qty: 1, estimatedCost: 195000 }
+      ],
+      requiredSkills: ['motores', 'frenos', 'eléctrica'],
+      compatibleBrands: MOTORCYCLE_BRANDS,
+      compatibleModels: ['Todos los modelos'],
+      notificationDays: 30,
+      frequencyKm: 10000,
+      frequencyMonths: 12
+    },
+    {
+      code: 'MANT-003',
+      title: 'Cambio de Bujías',
+      description: 'Reemplazo de bujías de encendido con verificación del sistema de encendido.',
+      type: 'maintenance',
+      estimatedHours: 1.0,
+      baseLaborCost: 45000,
+      partsSuggested: [
+        { category: 'Baterías', description: 'Bujías de encendido', qty: 4, estimatedCost: 120000 }
+      ],
+      requiredSkills: ['eléctrica', 'motores'],
+      compatibleBrands: ['Yamaha', 'Honda', 'Kawasaki', 'Suzuki'],
+      compatibleModels: ['Modelos con motor 4T'],
+      notificationDays: 30,
+      frequencyKm: 20000,
+      frequencyMonths: 24
+    },
+    {
+      code: 'MANT-004',
+      title: 'Alineación y Balanceo de Ruedas',
+      description: 'Alineación completa de la dirección y balanceo de ruedas para óptimo rendimiento y seguridad.',
+      type: 'maintenance',
+      estimatedHours: 2.0,
+      baseLaborCost: 90000,
+      partsSuggested: [
+        { category: 'Llantas', description: 'Pesos de balanceo', qty: 4, estimatedCost: 20000 }
+      ],
+      requiredSkills: ['suspensiones'],
+      compatibleBrands: MOTORCYCLE_BRANDS,
+      compatibleModels: ['Todos los modelos'],
+      notificationDays: 30,
+      frequencyKm: 10000,
+      frequencyMonths: 12
+    },
+    {
+      code: 'MANT-005',
+      title: 'Revisión de Frenos',
+      description: 'Inspección completa del sistema de frenado, pastillas, discos y líquido de frenos.',
+      type: 'maintenance',
+      estimatedHours: 1.5,
+      baseLaborCost: 67500,
+      partsSuggested: [
+        { category: 'Aceites y Fluidos', description: 'Líquido de frenos DOT 4', qty: 0.5, estimatedCost: 45000 }
+      ],
+      requiredSkills: ['frenos'],
+      compatibleBrands: MOTORCYCLE_BRANDS,
+      compatibleModels: ['Todos los modelos'],
+      notificationDays: 30,
+      frequencyKm: 5000,
+      frequencyMonths: 6
+    }
+  ],
+
+  // Servicios de Reparación
+  reparacion: [
+    {
+      code: 'REP-001',
+      title: 'Reparación de Motor - Cilindro 1',
+      description: 'Diagnóstico y reparación completa del cilindro 1, incluyendo válvulas, pistón y segmentos.',
+      type: 'repair',
+      estimatedHours: 8.0,
+      baseLaborCost: 360000,
+      partsSuggested: [
+        { category: 'Kits de Arrastre', description: 'Kit de pistón completo', qty: 1, estimatedCost: 850000 },
+        { category: 'Aceites y Fluidos', description: 'Aceite de motor sintético', qty: 4, estimatedCost: 200000 }
+      ],
+      requiredSkills: ['motores'],
+      compatibleBrands: ['Yamaha', 'Honda', 'Kawasaki'],
+      compatibleModels: ['Modelos deportivos y touring'],
+      severity: 'critical'
+    },
+    {
+      code: 'REP-002',
+      title: 'Reemplazo de Pastillas de Freno',
+      description: 'Cambio completo de pastillas de freno delantero y trasero con verificación de discos.',
+      type: 'repair',
+      estimatedHours: 2.5,
+      baseLaborCost: 112500,
+      partsSuggested: [
+        { category: 'Frenos', description: 'Kit de pastillas delantero', qty: 1, estimatedCost: 195000 },
+        { category: 'Frenos', description: 'Kit de pastillas trasero', qty: 1, estimatedCost: 135000 },
+        { category: 'Aceites y Fluidos', description: 'Líquido de frenos DOT 4', qty: 0.5, estimatedCost: 45000 }
+      ],
+      requiredSkills: ['frenos'],
+      compatibleBrands: MOTORCYCLE_BRANDS,
+      compatibleModels: ['Todos los modelos'],
+      severity: 'high'
+    },
+    {
+      code: 'REP-003',
+      title: 'Reparación Sistema Eléctrico',
+      description: 'Diagnóstico y reparación de fallas en el sistema eléctrico, incluyendo batería, alternador y sensores.',
+      type: 'repair',
+      estimatedHours: 4.0,
+      baseLaborCost: 180000,
+      partsSuggested: [
+        { category: 'Baterías', description: 'Batería de reemplazo', qty: 1, estimatedCost: 280000 },
+        { category: 'Baterías', description: 'Juego de cables', qty: 1, estimatedCost: 75000 }
+      ],
+      requiredSkills: ['eléctrica'],
+      compatibleBrands: MOTORCYCLE_BRANDS,
+      compatibleModels: ['Todos los modelos'],
+      severity: 'high'
+    },
+    {
+      code: 'REP-004',
+      title: 'Cambio de Cadena y Piñones',
+      description: 'Reemplazo completo de cadena, piñón de ataque y corona con ajuste de tensión.',
+      type: 'repair',
+      estimatedHours: 3.0,
+      baseLaborCost: 135000,
+      partsSuggested: [
+        { category: 'Kits de Arrastre', description: 'Kit de cadena completo', qty: 1, estimatedCost: 480000 },
+        { category: 'Aceites y Fluidos', description: 'Grasa para cadena', qty: 1, estimatedCost: 35000 }
+      ],
+      requiredSkills: ['transmisión'],
+      compatibleBrands: MOTORCYCLE_BRANDS,
+      compatibleModels: ['Modelos con cadena'],
+      severity: 'medium'
+    },
+    {
+      code: 'REP-005',
+      title: 'Reparación de Suspensión',
+      description: 'Diagnóstico y reparación de amortiguadores, horquillas y componentes de suspensión.',
+      type: 'repair',
+      estimatedHours: 6.0,
+      baseLaborCost: 270000,
+      partsSuggested: [
+            ]
+        },
+        {
+            brand: 'Continental', models: [
+                { name: 'ContiRoad Attack 4', type: 'Sport-Touring', basePrice: 760000 },
+                { name: 'ContiSportAttack 4', type: 'Hypersport', basePrice: 880000 },
+                { name: 'ContiTrail Attack 3', type: 'Adventure', basePrice: 740000 },
+            ],
+            sizes: [
+                { size: '120/70ZR17', position: 'Delantera', additionalPrice: 0 },
+                { size: '160/60ZR17', position: 'Trasera', additionalPrice: 150000 },
+                { size: '180/55ZR17', position: 'Trasera', additionalPrice: 200000 },
+                { size: '190/55ZR17', position: 'Trasera', additionalPrice: 250000 },
+            ]
+        },
+    ],
+    Aceites: [
+        { brand: 'Motul', line: '7100', type: 'Sintético Ester', basePrice: 62000, viscosities: ['5W-30', '5W-40', '10W-30', '10W-40', '10W-50', '15W-50', '20W-50'], sizes: ['1L', '4L', '5L'] },
+        { brand: 'Motul', line: '5100', type: 'Semi-sintético Ester', basePrice: 45000, viscosities: ['10W-40', '15W-50', '20W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Motul', line: '3000', type: 'Mineral', basePrice: 35000, viscosities: ['10W-40', '20W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Liqui Moly', line: 'Motorbike 4T Synth', type: 'Sintético', basePrice: 58000, viscosities: ['5W-40', '10W-40', '10W-50', '15W-50', '20W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Liqui Moly', line: 'Motorbike 4T Semi-Synth', type: 'Semi-sintético', basePrice: 42000, viscosities: ['10W-40', '15W-50', '20W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Castrol', line: 'Power 1', type: 'Semi-sintético', basePrice: 42000, viscosities: ['10W-30', '10W-40', '15W-50', '20W-50'], sizes: ['946ml', '1L'] },
+        { brand: 'Castrol', line: 'Power 1 Racing', type: 'Sintético', basePrice: 65000, viscosities: ['5W-40', '10W-40', '15W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Shell', line: 'Advance Ultra', type: 'Sintético', basePrice: 63000, viscosities: ['10W-40', '15W-50', '5W-40'], sizes: ['1L', '4L'] },
+        { brand: 'Shell', line: 'Advance AX7', type: 'Semi-sintético', basePrice: 41000, viscosities: ['10W-40', '20W-50'], sizes: ['946ml', '1L'] },
+        { brand: 'Repsol', line: 'Moto Racing', type: 'Sintético', basePrice: 61500, viscosities: ['5W-40', '10W-40', '15W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Repsol', line: 'Moto Competición', type: 'Sintético Racing', basePrice: 68000, viscosities: ['5W-40', '10W-40'], sizes: ['1L', '4L'] },
+        { brand: 'Valvoline', line: '4-Stroke', type: 'Semi-sintético', basePrice: 38000, viscosities: ['10W-40', '20W-50'], sizes: ['946ml', '1L'] },
+        { brand: 'Valvoline', line: 'VR1 Racing', type: 'Sintético', basePrice: 64000, viscosities: ['5W-40', '10W-40', '15W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Elf', line: 'Moto 4 Tech', type: 'Sintético', basePrice: 59000, viscosities: ['10W-40', '15W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Total', line: 'Quartz 9000', type: 'Sintético', basePrice: 61000, viscosities: ['5W-40', '10W-40', '15W-50'], sizes: ['1L', '4L'] },
+        { brand: 'Ipone', line: 'Road Racing', type: 'Sintético', basePrice: 67000, viscosities: ['5W-40', '10W-40', '15W-50'], sizes: ['1L', '4L'] },
+    ],
+    Baterias: [
+        { brand: 'Yuasa', type: 'AGM', basePrice: 280000, capacities: ['6Ah', '8Ah', '11.2Ah', '14Ah'], voltages: ['12V'], terminals: ['Estándar', 'Inverso'] },
+        { brand: 'Bosch', type: 'AGM', basePrice: 245000, capacities: ['6Ah', '8Ah', '11.2Ah'], voltages: ['12V'], terminals: ['Estándar'] },
+        { brand: 'Magna', type: 'Gel', basePrice: 130000, capacities: ['6Ah', '8Ah'], voltages: ['12V'], terminals: ['Estándar'] },
+        { brand: 'Century', type: 'Plomo-Ácido', basePrice: 95000, capacities: ['6Ah', '8Ah'], voltages: ['12V'], terminals: ['Estándar'] },
+    ],
+    Frenos: [
+        { brand: 'Brembo', line: 'SA Sinterizado', type: 'Sinterizado', basePrice: 195000, shapes: ['FA252', 'FA606', 'FA777', 'FA380', 'FA447', 'FA196', 'FA243', 'FA508', 'FA513', 'FA545'] },
+        { brand: 'EBC', line: 'HH Sinterizado', type: 'Sinterizado HH', basePrice: 175000, shapes: ['FA252', 'FA606', 'FA777', 'FA380', 'FA447', 'FA196', 'FA243', 'FA508', 'FA513', 'FA545'] },
+        { brand: 'EBC', line: 'FA Orgánico', type: 'Orgánico', basePrice: 110000, shapes: ['FA252', 'FA606', 'FA196', 'FA243', 'FA508'] },
+        { brand: 'EBC', line: 'FA Cerámico', type: 'Cerámico', basePrice: 145000, shapes: ['FA252', 'FA447', 'FA606', 'FA196'] },
+        { brand: 'Ichiban', line: 'Orgánico', type: 'Orgánico', basePrice: 45000, shapes: ['FA196', 'FA252', 'FA243', 'FA508'] },
+        { brand: 'Ferodo', line: 'DS Performance', type: 'Semi-sintético', basePrice: 135000, shapes: ['FA252', 'FA447', 'FA606', 'FA196', 'FA243'] },
+        { brand: 'Galfer', line: 'Sinterizado', type: 'Sinterizado', basePrice: 165000, shapes: ['FA252', 'FA447', 'FA606', 'FA196', 'FA243', 'FA508'] },
+        { brand: 'Newfren', line: 'Orgánico', type: 'Orgánico', basePrice: 55000, shapes: ['FA196', 'FA252', 'FA243'] },
+        { brand: 'Braking', line: 'Semi-sintético', type: 'Semi-sintético', basePrice: 125000, shapes: ['FA252', 'FA447', 'FA606', 'FA196'] },
+    ],
+    KitsDeArrastre: [
+        { brand: 'D.I.D', line: 'VX3 X-Ring', type: 'X-Ring', basePrice: 480000, pitches: [
+            { pitch: 428, ratios: [{f:14,r:42,n:'Stock'}, {f:15,r:42,n:'Velocidad'}, {f:13,r:42,n:'Fuerza'}, {f:16,r:42,n:'Carrera'}] },
+            { pitch: 520, ratios: [{f:15,r:45,n:'Stock'}, {f:14,r:45,n:'Fuerza'}, {f:16,r:45,n:'Velocidad'}, {f:13,r:45,n:'Todoterreno'}] },
+            { pitch: 525, ratios: [{f:16,r:43,n:'Stock'}, {f:16,r:45,n:'Velocidad'}, {f:15,r:43,n:'Fuerza'}, {f:17,r:43,n:'Carrera'}] },
+            { pitch: 530, ratios: [{f:17,r:42,n:'Stock'}, {f:17,r:43,n:'Velocidad'}, {f:16,r:42,n:'Fuerza'}] }
+        ]},
+        { brand: 'JT Sprockets', line: 'Acero Reforzado', type: 'Reforzada', basePrice: 320000, pitches: [
+            { pitch: 428, ratios: [{f:14,r:42,n:'Stock'}, {f:15,r:42,n:'Velocidad'}, {f:13,r:42,n:'Fuerza'}, {f:16,r:42,n:'Carrera'}] },
+            { pitch: 520, ratios: [{f:15,r:45,n:'Stock'}, {f:14,r:45,n:'Fuerza'}, {f:16,r:45,n:'Velocidad'}] }
+        ]},
+        { brand: 'Cassarella', line: 'Racing', type: 'Reforzada Dorada', basePrice: 210000, pitches: [
+            { pitch: 428, ratios: [{f:14,r:45,n:'Stock'}, {f:13,r:45,n:'Fuerza'}, {f:15,r:45,n:'Velocidad'}, {f:16,r:45,n:'Carrera'}] }
+        ]},
+        { brand: 'Sunstar', line: 'Pro', type: 'Reforzada', basePrice: 380000, pitches: [
+            { pitch: 520, ratios: [{f:15,r:45,n:'Stock'}, {f:14,r:45,n:'Fuerza'}, {f:16,r:45,n:'Velocidad'}] },
+            { pitch: 525, ratios: [{f:16,r:43,n:'Stock'}, {f:16,r:45,n:'Velocidad'}, {f:15,r:43,n:'Fuerza'}] }
+        ]},
+        { brand: 'Regina', line: 'Z-Ring', type: 'Z-Ring', basePrice: 420000, pitches: [
+            { pitch: 520, ratios: [{f:15,r:45,n:'Stock'}, {f:14,r:45,n:'Fuerza'}, {f:16,r:45,n:'Velocidad'}] },
+            { pitch: 525, ratios: [{f:16,r:43,n:'Stock'}, {f:16,r:45,n:'Velocidad'}] }
+        ]},
+        { brand: 'RK', line: 'GB520XSO', type: 'XSO Ring', basePrice: 450000, pitches: [
+            { pitch: 520, ratios: [{f:15,r:45,n:'Stock'}, {f:14,r:45,n:'Fuerza'}, {f:16,r:45,n:'Velocidad'}] }
+        ]},
+    ],
+    Filtros: [
+        { brand: 'K&N', type: 'Alto Flujo Lavable', basePrice: 310000, shapes: ['HFA4619', 'HFA7913', 'HFA7918', 'HFA3619', 'HFA2921', 'HFA1113', 'HFA4921', 'HFA2602', 'HFA2702'], category: 'Filtros de Aire' },
+        { brand: 'Hiflofiltro', type: 'Papel OEM', basePrice: 95000, shapes: ['HFA4619', 'HFA7913', 'HFA7918', 'HFA3619', 'HFA2921', 'HFA1113', 'HFA4921', 'HFA2602', 'HFA2702'], category: 'Filtros de Aire' },
+        { brand: 'Hiflofiltro', type: 'Premium', basePrice: 35000, shapes: ['HF204', 'HF155', 'HF160', 'HF138', 'HF113', 'HF303', 'HF116', 'HF121', 'HF122'], category: 'Filtros de Aceite' },
+        { brand: 'BMC', type: 'Alto Flujo Lavable', basePrice: 280000, shapes: ['FM461/19', 'FM791/13', 'FM361/19', 'FM492/21', 'FM260/02'], category: 'Filtros de Aire' },
+        { brand: 'DNA', type: 'Alto Flujo Lavable', basePrice: 250000, shapes: ['DA4619', 'DA7913', 'DA3619', 'DA4921', 'DA2602'], category: 'Filtros de Aire' },
+        { brand: 'Pipercross', type: 'Alto Flujo Lavable', basePrice: 270000, shapes: ['PP4619', 'PP7913', 'PP3619', 'PP4921'], category: 'Filtros de Aire' },
+        { brand: 'MWR', type: 'Alto Flujo Lavable', basePrice: 240000, shapes: ['MW4619', 'MW7913', 'MW3619', 'MW4921'], category: 'Filtros de Aire' },
+        { brand: 'Twin Air', type: 'Alto Flujo Lavable', basePrice: 220000, shapes: ['TA4619', 'TA7913', 'TA3619'], category: 'Filtros de Aire' },
+        { brand: 'No Toil', type: 'Alto Flujo Lavable', basePrice: 260000, shapes: ['NT4619', 'NT7913', 'NT3619', 'NT4921'], category: 'Filtros de Aire' },
+    ],
+};
+
+
+// --- FUNCIÓN DE GENERACIÓN PRINCIPAL ---
+function generateAllProducts() {
+    let allProducts = [];
+
+    // Generador de Llantas (Multiplica modelos x medidas)
+    PRODUCT_BLUEPRINTS.Llantas.forEach(brandBlueprint => {
+        brandBlueprint.models.forEach(model => {
+            brandBlueprint.sizes.forEach(size => {
+                const product = {
+                    brand: brandBlueprint.brand, name: `${brandBlueprint.brand} ${model.name} ${size.size} ${size.position}`, description: `Llanta ${model.type} de alto rendimiento, medida ${size.size} para posición ${size.position}.`,
+                    categoryKey: 'Llantas', supplierKey: 'LLANTAS', basePrice: model.basePrice + size.additionalPrice,
+                    variants: [
+                        { name: `Llanta Individual`, sku: `${brandBlueprint.brand.substring(0,3).toUpperCase()}-${model.name.replace(/ /g, '').substring(0,6)}-${size.size.replace(/\//g,'-')}-${size.position.substring(0,3)}`, stock: randomStock(5, 30), attributes: { size: size.size, position: size.position, type: model.type } }
+                    ],
+                    compatibility: [] // Llantas son genéricas por medida
+                };
+                allProducts.push(product);
+            });
+        });
+    });
+
+    // Generador de Aceites (Multiplica líneas x tamaños x viscosidades)
+    PRODUCT_BLUEPRINTS.Aceites.forEach(blueprint => {
+        blueprint.sizes.forEach(size => {
+            blueprint.viscosities.forEach(viscosity => {
+                const product = {
+                    brand: blueprint.brand, name: `${blueprint.brand} ${blueprint.line} ${viscosity} ${size}`, description: `Aceite ${blueprint.type} ${viscosity} para motores 4T, envase de ${size}.`,
+                    categoryKey: 'Aceites y Fluidos', supplierKey: 'LUBRICANTES', basePrice: blueprint.basePrice * (size === '4L' ? 3.8 : size === '5L' ? 4.5 : 1) + (blueprint.viscosities.indexOf(viscosity) * 2000),
+                    variants: [
+                        { name: `Envase ${size}`, sku: `${blueprint.brand.substring(0,3).toUpperCase()}-${blueprint.line.replace(/ /g,'')}-${viscosity.replace('W-','').replace('-','')}-${size}`, stock: randomStock(20, 100), attributes: { viscosity, size, type: blueprint.type } }
+                    ],
+                    compatibility: [] // Aceites son genéricos
+                };
+                allProducts.push(product);
+            });
+        });
+    });
+
+    // Generador de Baterías (Multiplica tipos x capacidades x terminales)
+    PRODUCT_BLUEPRINTS.Baterias.forEach(blueprint => {
+        blueprint.capacities.forEach(capacity => {
+            blueprint.terminals.forEach(terminal => {
+                const product = {
+                    brand: blueprint.brand, name: `Batería ${blueprint.brand} ${blueprint.type} ${capacity} Terminal ${terminal}`, description: `Batería ${blueprint.type} de ${capacity} con terminales ${terminal} para motocicletas.`,
+                    categoryKey: 'Baterías', supplierKey: 'ELECTRICOS', basePrice: blueprint.basePrice + (capacity === '14Ah' ? 50000 : capacity === '11.2Ah' ? 30000 : 0),
+                    variants: [
+                        { name: `Unidad ${capacity}`, sku: `${blueprint.brand.substring(0,3).toUpperCase()}-${blueprint.type.replace(' ','')}-${capacity.replace('Ah','').replace('.','')}-${terminal.substring(0,3)}`, stock: randomStock(15, 50), attributes: { type: blueprint.type, capacity, voltage: '12V', terminals: terminal } }
+                    ],
+                    compatibility: [] // Baterías tienen compatibilidad específica por modelo
+                };
+
+                // Asignar compatibilidad basada en capacidad típica
+                const compatibleBikes = MOTORCYCLES.filter(m => {
+                    const typicalCapacity = (m.brand === 'BMW' || m.brand === 'KTM') ? '11.2Ah' : (m.brand === 'Honda' || m.brand === 'Yamaha') ? '8Ah' : '6Ah';
+                    return typicalCapacity === capacity;
+                }).slice(0, 8); // Más motos por batería
+
+                product.compatibility = compatibleBikes.map(b => ({ brand: b.brand, model: b.model }));
+                if (product.compatibility.length > 0) {
+                    allProducts.push(product);
+                }
+            });
+        });
+    });
+
+    // Generador de Frenos (Multiplica marcas x formas)
+    PRODUCT_BLUEPRINTS.Frenos.forEach(blueprint => {
+        blueprint.shapes.forEach(shape => {
+             const compatibleBikes = MOTORCYCLES.filter(m => m.tags.brakePadShape === shape);
+             if(compatibleBikes.length === 0) return;
+
+             const product = {
+                brand: blueprint.brand, name: `Pastillas de Freno ${blueprint.brand} ${blueprint.line} ${shape}`, description: `Juego de pastillas de freno ${blueprint.type}, código de forma ${shape}.`,
+                categoryKey: 'Frenos', supplierKey: 'PERFORMANCE', basePrice: blueprint.basePrice,
+                variants: [
+                    { name: `Juego Delantero/Trasero`, sku: `${blueprint.brand.substring(0,3).toUpperCase()}-${shape}-${blueprint.line.replace(/ /g,'').substring(0,4)}`, stock: randomStock(15, 70), attributes: { compound: blueprint.type, shapeCode: shape } }
+                ],
+                compatibility: compatibleBikes.slice(0, 10).map(b => ({ brand: b.brand, model: b.model })) // Más compatibilidades
+             };
+             allProducts.push(product);
+        });
+    });
+
+    // Generador de Kits de Arrastre (Multiplica marcas x pasos x relaciones)
+    PRODUCT_BLUEPRINTS.KitsDeArrastre.forEach(blueprint => {
+        blueprint.pitches.forEach(pitchData => {
+            pitchData.ratios.forEach(ratio => {
+                const compatibleBikes = MOTORCYCLES.filter(m => m.tags.chainPitch === pitchData.pitch);
+                if(compatibleBikes.length === 0) return;
+
+                const product = {
+                    brand: blueprint.brand, name: `Kit de Arrastre ${blueprint.brand} ${blueprint.line} ${pitchData.pitch} ${ratio.f}:${ratio.r} ${ratio.n}`, description: `Kit de cadena ${blueprint.type} paso ${pitchData.pitch} con relación ${ratio.f}:${ratio.r} para ${ratio.n}.`,
+                    categoryKey: 'Kits de Arrastre', supplierKey: 'PERFORMANCE', basePrice: blueprint.basePrice,
+                    variants: [
+                        { name: `Kit Completo`, sku: `${blueprint.brand.substring(0,3).toUpperCase()}-${pitchData.pitch}-${ratio.f}${ratio.r}-${ratio.n.substring(0,3)}`, stock: randomStock(10, 40), attributes: { chainPitch: pitchData.pitch, chainType: blueprint.type, frontTeeth: ratio.f, rearTeeth: ratio.r } }
+                    ],
+                    compatibility: compatibleBikes.slice(0, 6).map(b => ({ brand: b.brand, model: b.model }))
+                };
+                allProducts.push(product);
+            });
+        });
+    });
+
+    // Generador de Filtros (Multiplica marcas x formas)
+    PRODUCT_BLUEPRINTS.Filtros.forEach(blueprint => {
+        blueprint.shapes.forEach(shape => {
+            const filterType = blueprint.category === 'Filtros de Aire' ? 'Aire' : 'Aceite';
+            const compatibleBikes = MOTORCYCLES.filter(m => m.tags[filterType.toLowerCase() + 'Filter'] === shape);
+            if(compatibleBikes.length === 0) return;
+
+            const product = {
+                brand: blueprint.brand, name: `Filtro de ${filterType} ${blueprint.brand} ${blueprint.type} ${shape}`, description: `Filtro de ${filterType.toLowerCase()} ${blueprint.type}, referencia ${shape}.`,
+                categoryKey: 'Filtros', supplierKey: blueprint.brand === 'K&N' || blueprint.brand === 'BMC' || blueprint.brand === 'DNA' || blueprint.brand === 'Pipercross' || blueprint.brand === 'Twin Air' || blueprint.brand === 'No Toil' ? 'PERFORMANCE' : 'LUBRICANTES', basePrice: blueprint.basePrice,
+                variants: [
+                    { name: `Unidad ${shape}`, sku: `${blueprint.brand.substring(0,3).toUpperCase()}-${shape.replace('/','').replace('.','')}`, stock: randomStock(20, 80), attributes: { type: blueprint.type, shapeCode: shape, filterType } }
+                ],
+                compatibility: compatibleBikes.slice(0, 8).map(b => ({ brand: b.brand, model: b.model }))
+            };
+            allProducts.push(product);
+        });
+    });
+
+    // GENERADOR MASIVO: Crear múltiples productos por cada combinación base para alcanzar 5000+
+    const expandedProducts = [];
+    allProducts.forEach(baseProduct => {
+        // Para cada producto base, crear 15-20 variaciones adicionales
+        const variations = randomStock(15, 20);
+        for (let i = 0; i < variations; i++) {
+            const variation = { ...baseProduct };
+
+            // Modificar nombre y SKU ligeramente para cada variación
+            if (baseProduct.categoryKey === 'Aceites y Fluidos') {
+                // Para aceites, crear variaciones por lote/producción
+                variation.name = `${baseProduct.name} - Lote ${String.fromCharCode(65 + i)}`;
+                variation.variants[0].sku = `${baseProduct.variants[0].sku}-L${String.fromCharCode(65 + i)}`;
+                variation.variants[0].stock = randomStock(10, 50);
+            } else if (baseProduct.categoryKey === 'Llantas') {
+                // Para llantas, crear variaciones por construcción (radial/bias)
+                const constructions = ['Radial', 'Bias', 'Belted'];
+                const construction = constructions[i % constructions.length];
+                variation.name = `${baseProduct.name} ${construction}`;
+                variation.variants[0].sku = `${baseProduct.variants[0].sku}-${construction.substring(0,3).toUpperCase()}`;
+                variation.variants[0].attributes = { ...baseProduct.variants[0].attributes, construction };
+            } else if (baseProduct.categoryKey === 'Baterías') {
+                // Para baterías, crear variaciones por fecha de fabricación
+                const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+                const month = months[i % months.length];
+                variation.name = `${baseProduct.name} - Fab ${month} 2024`;
+                variation.variants[0].sku = `${baseProduct.variants[0].sku}-${month}24`;
+            } else if (baseProduct.categoryKey === 'Frenos') {
+                // Para frenos, crear variaciones por temperatura
+                const temps = ['Standard', 'High-Temp', 'Racing'];
+                const temp = temps[i % temps.length];
+                variation.name = `${baseProduct.name} ${temp}`;
+                variation.variants[0].sku = `${baseProduct.variants[0].sku}-${temp.substring(0,3).toUpperCase()}`;
+                variation.variants[0].attributes = { ...baseProduct.variants[0].attributes, temperature: temp };
+            } else if (baseProduct.categoryKey === 'Kits de Arrastre') {
+                // Para kits, crear variaciones por color/acabado
+                const finishes = ['Natural', 'Dorado', 'Negro', 'Plateado'];
+                const finish = finishes[i % finishes.length];
+                variation.name = `${baseProduct.name} ${finish}`;
+                variation.variants[0].sku = `${baseProduct.variants[0].sku}-${finish.substring(0,3).toUpperCase()}`;
+                variation.variants[0].attributes = { ...baseProduct.variants[0].attributes, finish };
+            } else if (baseProduct.categoryKey === 'Filtros') {
+                // Para filtros, crear variaciones por eficiencia
+                const efficiencies = ['Standard', 'High-Flow', 'Premium'];
+                const efficiency = efficiencies[i % efficiencies.length];
+                variation.name = `${baseProduct.name} ${efficiency}`;
+                variation.variants[0].sku = `${baseProduct.variants[0].sku}-${efficiency.substring(0,3).toUpperCase()}`;
+                variation.variants[0].attributes = { ...baseProduct.variants[0].attributes, efficiency };
+            }
+
+            // Ajustar precio ligeramente para cada variación
+            variation.basePrice = Math.round(baseProduct.basePrice * (0.95 + Math.random() * 0.1)); // ±5% variación
+
+            expandedProducts.push(variation);
+        }
+    });
+
+    return expandedProducts;
+}
+
+
+// --- LÓGICA PRINCIPAL DEL SCRIPT ---
+async function seedDatabase() {
+  try {
+    // 1. LIMPIAR COLECCIONES
+    await deleteAllDocuments('products');
+    await deleteAllDocuments('suppliers');
+    await deleteAllDocuments('categories');
+
+    // 2. CREAR CATEGORÍAS
+    console.log('📂 Creando categorías...');
+    const categoryRefs = {};
+    const catBatch = writeBatch(db);
+    CATEGORIES.forEach(cat => {
+      const docRef = doc(collection(db, 'categories'));
+      categoryRefs[cat.name] = docRef.id;
+      catBatch.set(docRef, { ...cat, createdAt: now, updatedAt: now });
+    });
+    await catBatch.commit();
+    console.log(`✅ ${CATEGORIES.length} categorías creadas.`);
+
+    // 3. CREAR PROVEEDORES
+    console.log('🏢 Creando proveedores...');
+    const supplierRefs = {};
+    const supBatch = writeBatch(db);
+    SUPPLIERS.forEach(sup => {
+      const docRef = doc(collection(db, 'suppliers'));
+      supplierRefs[sup.key] = docRef.id;
+      supBatch.set(docRef, { name: sup.name, taxId: sup.taxId, createdAt: now, updatedAt: now });
+    });
+    await supBatch.commit();
+    console.log(`✅ ${SUPPLIERS.length} proveedores creados.`);
+
+    // 4. GENERAR Y CREAR PRODUCTOS
+    console.log('🧠 Generando catálogo de productos desde las plantillas...');
+    const allProducts = generateAllProducts();
+    console.log(`💡 Catálogo generado con ${allProducts.length} productos base.`);
+    console.log('⏳ Escribiendo productos en la base de datos en lotes (esto puede tardar)...');
+
+    const batchSize = 200; // Lotes de 200 productos
+    let productCount = 0;
+    let variantCount = 0;
+    for (let i = 0; i < allProducts.length; i += batchSize) {
+      const batch = writeBatch(db);
+      const chunk = allProducts.slice(i, i + batchSize);
+      chunk.forEach(productTpl => {
+        const productRef = doc(collection(db, 'products'));
+        const tags = new Set([productTpl.brand.toLowerCase(), ...productTpl.name.toLowerCase().split(' ')]);
+        if(productTpl.compatibility) productTpl.compatibility.forEach(c => tags.add(c.brand.toLowerCase()).add(c.model.toLowerCase()));
+
+        const newProduct = {
+          ...productTpl,
+          categoryId: categoryRefs[productTpl.categoryKey],
+          supplierIds: [supplierRefs[productTpl.supplierKey]],
+          totalStock: productTpl.variants.reduce((sum, v) => sum + v.stock, 0),
+          isActive: true,
+          images: [],
+          tags: Array.from(tags),
+          createdAt: now,
+          updatedAt: now,
+        };
+        batch.set(productRef, newProduct);
+        productCount++;
+        variantCount += newProduct.variants.length;
+      });
+      await batch.commit();
+      console.log(`... Lote ${Math.floor(i/batchSize) + 1} completado. ${productCount} productos escritos.`);
+    }
+
+    // 5. RESUMEN FINAL
+    console.log('\n🎉 =================================================== 🎉');
+    console.log('    PROCESO DE SEEDING MASIVO COMPLETADO EXITOSAMENTE');
+    console.log('🎉 =================================================== 🎉\n');
+    console.log('📊 RESUMEN FINAL:');
+    console.log(`   - ${CATEGORIES.length} Categorías creadas.`);
+    console.log(`   - ${SUPPLIERS.length} Proveedores creados.`);
+    console.log(`   - ${productCount} Productos base creados.`);
+    console.log(`   - 🔥 ${variantCount} VARIANTES ÚNICAS DE PRODUCTOS CREADAS EN TOTAL.`);
+    console.log('\nTu base de datos ahora tiene un inventario masivo, robusto y profesional.');
+
+  } catch (error) {
+    console.error('❌ FATAL: El proceso de seeding masivo falló:', error);
+    process.exit(1);
+  }
+}
+
+// --- EJECUTAR EL SCRIPT ---
+seedDatabase().then(() => {
+  console.log('\n✅ Script finalizado.');
+  process.exit(0);
+});

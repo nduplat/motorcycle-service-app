@@ -1,0 +1,194 @@
+
+<div class="space-y-6">
+  <!-- Tab Navigation -->
+  <div class="flex border-b border-border">
+    <button
+      (click)="activeTab.set('motorcycles')"
+      [class.active]="activeTab() === 'motorcycles'"
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+      [class]="activeTab() === 'motorcycles' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">
+      Motocicletas
+    </button>
+    <button
+      (click)="activeTab.set('brands')"
+      [class.active]="activeTab() === 'brands'"
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+      [class]="activeTab() === 'brands' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">
+      Marcas
+    </button>
+  </div>
+
+  <!-- Motorcycles Tab -->
+  @if(activeTab() === 'motorcycles') {
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+       <!-- Form Section -->
+       <div class="lg:col-span-1">
+         <div class="bg-card p-6 rounded-xl border border-border shadow-sm sticky top-8">
+           <h2 class="text-xl font-semibold mb-4">{{ formTitle() }}</h2>
+      <form [formGroup]="motorcycleForm" (ngSubmit)="onSubmit()" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-foreground">Brand</label>
+          <input formControlName="brand" placeholder="e.g., Honda" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-foreground">Model</label>
+          <input formControlName="model" placeholder="e.g., CB500X" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-foreground">Year</label>
+          <input formControlName="year" type="number" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-foreground">Displacement (cc)</label>
+          <input formControlName="displacementCc" type="number" placeholder="e.g., 471" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="submit" [disabled]="isSubmitting()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50">
+            @if(isSubmitting()){
+              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
+            } @else {
+              <span>{{ editingMotorcycleId() ? 'Update' : 'Save' }}</span>
+            }
+          </button>
+          @if(editingMotorcycleId()) {
+            <button type="button" (click)="cancelEdit()" class="w-full py-2 px-4 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-secondary">
+              Cancel
+            </button>
+          }
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- List Section -->
+  <div class="lg:col-span-2">
+    <div class="bg-card rounded-xl border border-border shadow-sm">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold">Motorcycle Catalog</h2>
+      </div>
+      <div class="border-t border-border">
+        <table class="w-full text-sm text-left text-foreground">
+          <thead class="bg-secondary/50">
+            <tr>
+              <th class="px-6 py-3 font-medium">Brand</th>
+              <th class="px-6 py-3 font-medium">Model</th>
+              <th class="px-6 py-3 font-medium text-center">Year</th>
+              <th class="px-6 py-3 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(moto of motorcycles(); track moto.id) {
+              <tr class="border-b border-border hover:bg-secondary/50">
+                <td class="px-6 py-4">{{ moto.brand }}</td>
+                <td class="px-6 py-4 font-medium">{{ moto.model }}</td>
+                <td class="px-6 py-4 text-center">{{ moto.year }}</td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex gap-2 justify-end">
+                    <button (click)="editMotorcycle(moto)" class="p-1 text-muted-foreground hover:text-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
+                    </button>
+                     <button (click)="deleteMotorcycle(moto.id)" class="p-1 text-muted-foreground hover:text-destructive">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="text-center py-16 text-muted-foreground">No motorcycles in the catalog.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+ }
+
+ <!-- Brands Tab -->
+ @if(activeTab() === 'brands') {
+   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Brand Form Section -->
+      <div class="lg:col-span-1">
+        <div class="bg-card p-6 rounded-xl border border-border shadow-sm sticky top-8">
+          <h2 class="text-xl font-semibold mb-4">{{ brandFormTitle() }}</h2>
+          <form [formGroup]="brandForm" (ngSubmit)="onBrandSubmit()" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-foreground">Nombre de la Marca</label>
+              <input formControlName="name" placeholder="e.g., Yamaha" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-foreground">País de Origen</label>
+              <input formControlName="country" placeholder="e.g., Japón" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-foreground">Año de Fundación</label>
+              <input formControlName="foundedYear" type="number" placeholder="e.g., 1955" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" [disabled]="isBrandSubmitting()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50">
+                @if(isBrandSubmitting()){
+                  <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
+                } @else {
+                  <span>{{ editingBrandId() ? 'Actualizar' : 'Guardar' }}</span>
+                }
+              </button>
+              @if(editingBrandId()) {
+                <button type="button" (click)="cancelBrandEdit()" class="w-full py-2 px-4 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-secondary">
+                  Cancelar
+                </button>
+              }
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Brands List Section -->
+      <div class="lg:col-span-2">
+        <div class="bg-card rounded-xl border border-border shadow-sm">
+          <div class="p-6">
+            <h2 class="text-xl font-semibold">Catálogo de Marcas</h2>
+          </div>
+          <div class="border-t border-border">
+            <table class="w-full text-sm text-left text-foreground">
+              <thead class="bg-secondary/50">
+                <tr>
+                  <th class="px-6 py-3 font-medium">Nombre</th>
+                  <th class="px-6 py-3 font-medium">País</th>
+                  <th class="px-6 py-3 font-medium text-center">Año Fundación</th>
+                  <th class="px-6 py-3 font-medium text-center">Motocicletas</th>
+                  <th class="px-6 py-3 font-medium text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for(brand of brands(); track brand.id) {
+                  <tr class="border-b border-border hover:bg-secondary/50">
+                    <td class="px-6 py-4 font-medium">{{ brand.name }}</td>
+                    <td class="px-6 py-4">{{ brand.country || 'N/A' }}</td>
+                    <td class="px-6 py-4 text-center">{{ brand.foundedYear || 'N/A' }}</td>
+                    <td class="px-6 py-4 text-center">{{ getMotorcycleCountForBrand(brand.name) }}</td>
+                    <td class="px-6 py-4 text-right">
+                      <div class="flex gap-2 justify-end">
+                        <button (click)="editBrand(brand)" class="p-1 text-muted-foreground hover:text-primary">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
+                        </button>
+                         <button (click)="deleteBrand(brand.id)" class="p-1 text-muted-foreground hover:text-destructive">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center py-16 text-muted-foreground">No hay marcas registradas.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+ }
+</div>

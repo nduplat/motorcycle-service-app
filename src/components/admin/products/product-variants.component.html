@@ -1,0 +1,124 @@
+<div class="bg-card/80 backdrop-blur-sm p-8 rounded-2xl border border-border/50 shadow-lg space-y-6">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="p-3 bg-purple-100 rounded-xl">
+        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-2xl font-semibold">Variantes del Producto</h2>
+        <p class="text-muted-foreground">Gestiona diferentes versiones del producto (tallas, colores, etc.)</p>
+      </div>
+    </div>
+    <button type="button" (click)="addVariant()"
+      class="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+      </svg>
+      Añadir Variante
+    </button>
+  </div>
+
+  @if (variantsFormArray().length === 0) {
+    <div class="text-center py-16 bg-secondary/20 rounded-xl border-2 border-dashed border-border">
+      <div class="space-y-4">
+        <div class="p-4 bg-secondary/30 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+          <svg class="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-lg font-medium text-muted-foreground">No hay variantes configuradas</p>
+          <p class="text-sm text-muted-foreground">Las variantes te permiten manejar diferentes versiones del mismo producto</p>
+        </div>
+        <button type="button" (click)="addVariant()"
+          class="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all duration-200">
+          Crear Primera Variante
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="space-y-6">
+      @for (variant of variantsFormArray().controls; track $index; let i = $index) {
+        <div class="bg-gradient-to-r from-secondary/20 to-secondary/10 border border-border/50 rounded-xl p-6 space-y-4">
+          <div class="flex justify-between items-start">
+            <h4 class="text-lg font-semibold text-foreground flex items-center gap-2">
+              <span class="flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-lg text-sm font-bold">
+                {{ i + 1 }}
+              </span>
+              Variante {{ i + 1 }}
+            </h4>
+            <button type="button" (click)="removeVariant(i)"
+              class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+
+          <div [formGroupName]="i" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-foreground">Nombre de Variante *</label>
+              <input formControlName="name"
+                placeholder="Ej: Talla M, Color Rojo"
+                class="w-full px-4 py-3 bg-background/70 border border-border hover:border-border/80 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-foreground">SKU de Variante</label>
+              <input formControlName="sku"
+                placeholder="SKU específico"
+                class="w-full px-4 py-3 bg-background/70 border border-border hover:border-border/80 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-foreground">Stock</label>
+              <input formControlName="stock" type="number" min="0"
+                class="w-full px-4 py-3 bg-background/70 border border-border hover:border-border/80 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-foreground">Precio Adicional</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">+$</span>
+                <input formControlName="additionalPrice" type="number" min="0" step="100"
+                  class="w-full pl-8 pr-4 py-3 bg-background/70 border border-border hover:border-border/80 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              </div>
+            </div>
+          </div>
+
+          <!-- Variant Attributes -->
+          <div class="pt-4 border-t border-border/50">
+            <div class="flex justify-between items-center mb-3">
+              <label class="text-sm font-semibold text-foreground">Atributos Personalizados</label>
+              <button type="button" (click)="addVariantAttribute(i)"
+                class="px-3 py-1 text-xs text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 border border-primary/20">
+                + Añadir atributo
+              </button>
+            </div>
+
+            <div [formGroupName]="i" class="space-y-2">
+              @for (attrKey of Object.keys(variant.get('attributes')?.controls || {}); track attrKey) {
+                <div class="flex gap-2 items-center">
+                  <input type="text" [value]="attrKey" readonly
+                    placeholder="Nombre (ej: Color, Talla)"
+                    class="flex-1 px-3 py-2 bg-muted border border-border/70 rounded-lg text-sm">
+                  <input [formControl]="variant.get('attributes').get(attrKey)"
+                    placeholder="Valor (ej: Rojo, XL)"
+                    class="flex-1 px-3 py-2 bg-background/70 border border-border/70 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                  <button type="button" (click)="removeVariantAttribute(i, attrKey)"
+                    class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,65 @@
+<div class="space-y-6">
+  <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+    <h1 class="text-3xl font-bold">Agenda</h1>
+    <div class="flex space-x-2">
+      <button (click)="openCreateAppointmentModal()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Create Appointment</button>
+      <button (click)="setView(CalendarView.Month)" [class.active]="view === CalendarView.Month" class="px-4 py-2 border rounded">Month</button>
+      <button (click)="setView(CalendarView.Week)" [class.active]="view === CalendarView.Week" class="px-4 py-2 border rounded">Week</button>
+      <button (click)="setView(CalendarView.Day)" [class.active]="view === CalendarView.Day" class="px-4 py-2 border rounded">Day</button>
+    </div>
+  </div>
+
+  <!-- Capacity and Availability Indicators -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white p-4 rounded-lg shadow">
+      <h3 class="text-lg font-semibold mb-2">Workshop Capacity</h3>
+      <div class="text-sm text-gray-600">
+        <p>Current utilization and available slots</p>
+        <!-- Capacity info would be displayed here -->
+        <p class="text-green-600 font-medium">Available</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow">
+      <h3 class="text-lg font-semibold mb-2">Technician Availability</h3>
+      <div class="text-sm text-gray-600">
+        <p>Available technicians for today</p>
+        <div class="flex items-center space-x-2 mt-2">
+          <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+          <span>Available</span>
+          <div class="w-3 h-3 bg-red-500 rounded-full ml-4"></div>
+          <span>Busy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow">
+      <h3 class="text-lg font-semibold mb-2">Smart Suggestions</h3>
+      <div class="text-sm text-gray-600">
+        <p>AI-powered time and technician recommendations</p>
+        <p class="text-blue-600 font-medium mt-1">Active</p>
+      </div>
+    </div>
+  </div>
+
+  <div [ngSwitch]="view">
+    <mwl-calendar-month-view
+      *ngSwitchCase="CalendarView.Month"
+      [viewDate]="viewDate"
+      [events]="events()"
+      (eventClicked)="handleEvent('Clicked', $event.event)"
+    ></mwl-calendar-month-view>
+    <mwl-calendar-week-view
+      *ngSwitchCase="CalendarView.Week"
+      [viewDate]="viewDate"
+      [events]="events()"
+      (eventClicked)="handleEvent('Clicked', $event.event)"
+    ></mwl-calendar-week-view>
+    <mwl-calendar-day-view
+      *ngSwitchCase="CalendarView.Day"
+      [viewDate]="viewDate"
+      [events]="events()"
+      (eventClicked)="handleEvent('Clicked', $event.event)"
+    ></mwl-calendar-day-view>
+  </div>
+</div>

@@ -1,0 +1,445 @@
+<div class="space-y-6">
+   <div class="flex justify-between items-center">
+     <h1 class="text-3xl font-bold">Gestión de Usuarios y Permisos</h1>
+     <div class="flex gap-2">
+       <button (click)="openBulkModal('import')" class="px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700">
+         Importar
+       </button>
+       <button (click)="openBulkModal('export')" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700">
+         Exportar
+       </button>
+       <button (click)="createTestTechnician()" class="px-4 py-2 bg-purple-600 text-white rounded-md font-medium hover:bg-purple-700">
+         Crear Técnico de Prueba
+       </button>
+       <button (click)="openUserModal()" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90">
+         Añadir Nuevo Usuario
+       </button>
+     </div>
+   </div>
+
+   <!-- Search and Filters -->
+   <div class="bg-card rounded-xl border border-border shadow-sm p-6">
+     <div class="flex flex-col md:flex-row gap-4">
+       <div class="flex-1">
+         <label class="block text-sm font-medium text-foreground mb-2">Buscar usuarios</label>
+         <input
+           type="text"
+           [value]="searchTerm()"
+           (input)="updateSearchTerm($event)"
+           placeholder="Buscar por nombre, email o teléfono..."
+           class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+       </div>
+       <div class="md:w-48">
+         <label class="block text-sm font-medium text-foreground mb-2">Filtrar por rol</label>
+         <select
+           [value]="selectedRoleFilter()"
+           (change)="updateRoleFilter($any($event.target).value)"
+           class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+           <option value="">Todos los roles</option>
+           @for (role of roles; track role) {
+             <option [value]="role">{{role}}</option>
+           }
+         </select>
+       </div>
+       <div class="md:w-48">
+         <label class="block text-sm font-medium text-foreground mb-2">Estado</label>
+         <select
+           [value]="selectedStatusFilter()"
+           (change)="updateStatusFilter($any($event.target).value)"
+           class="w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+           <option value="">Todos</option>
+           <option value="active">Activos</option>
+           <option value="inactive">Inactivos</option>
+         </select>
+       </div>
+       <div class="flex items-end">
+         <button (click)="clearFilters()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80 text-sm">
+           Limpiar filtros
+         </button>
+       </div>
+     </div>
+   </div>
+
+  <!-- User List -->
+  <div class="bg-card rounded-xl border border-border shadow-sm">
+     <div class="border-t border-border overflow-x-auto">
+        <table class="w-full text-sm text-left text-foreground">
+          <thead class="bg-secondary/50">
+            <tr>
+              <th class="px-6 py-3 font-medium">
+                <input
+                  type="checkbox"
+                  [checked]="selectedUsers().size === filteredUsers().length && filteredUsers().length > 0"
+                  [indeterminate]="selectedUsers().size > 0 && selectedUsers().size < filteredUsers().length"
+                  (change)="selectedUsers().size === filteredUsers().length ? clearSelection() : selectAllUsers()"
+                  class="rounded border-border">
+              </th>
+              <th class="px-6 py-3 font-medium">Usuario</th>
+              <th class="px-6 py-3 font-medium">Rol</th>
+              <th class="px-6 py-3 font-medium text-center">Estado</th>
+              <th class="px-6 py-3 font-medium text-center">Sesión</th>
+              <th class="px-6 py-3 font-medium text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(user of filteredUsersWithComputedValues(); track user.id) {
+              <tr class="border-b border-border hover:bg-secondary/50">
+                <td class="px-6 py-4">
+                  <input
+                    type="checkbox"
+                    [checked]="selectedUsers().has(user.id)"
+                    (change)="toggleUserSelection(user.id)"
+                    class="rounded border-border">
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <img [src]="user.avatarUrl" alt="Avatar" class="h-10 w-10 rounded-full">
+                    <div>
+                      <div class="font-medium">{{ user.name }}</div>
+                      <div class="text-muted-foreground">{{ user.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  @if (currentUser()?.role === 'admin' && user.id !== currentUser()?.id) {
+                    <select [value]="user.role" 
+                            (change)="onRoleChange(user, $any($event.target).value)"
+                            class="block w-full px-2 py-1 text-xs font-medium rounded-md border-gray-300 focus:ring-primary focus:border-primary"
+                            [ngClass]="user.roleClass">
+                      @for (role of roles; track role) {
+                        <option [value]="role">{{ role }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + user.roleClass">
+                      {{ user.role }}
+                    </span>
+                  }
+                </td>
+                <td class="px-6 py-4 text-center">
+                  @if(user.active) {
+                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-200 text-green-800">Activo</span>
+                  } @else {
+                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-800">Inactivo</span>
+                  }
+                </td>
+                <td class="px-6 py-4 text-center">
+                  @if(user.active) {
+                    <div class="w-3 h-3 bg-green-500 rounded-full mx-auto" title="Autenticado"></div>
+                  } @else {
+                    <div class="w-3 h-3 bg-red-500 rounded-full mx-auto" title="Sin autenticación"></div>
+                  }
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex gap-2 justify-end flex-wrap">
+                    <button (click)="openUserModal(user)" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-secondary/80">Editar</button>
+                    <button (click)="openVehicleModal(user)" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-secondary/80">Vehículos</button>
+                    @if (currentUser()?.role === 'admin' && currentUser()?.id !== user.id) {
+                      <button (click)="forceLogoutUser(user)" class="px-3 py-1.5 rounded-md text-sm font-medium bg-orange-100 text-orange-800 hover:bg-orange-200">Forzar Logout</button>
+                    }
+                    <button
+                      (click)="toggleUserStatus(user)"
+                      [class]="user.active === false ? 'px-3 py-1.5 rounded-md text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200' : 'px-3 py-1.5 rounded-md text-sm font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200'">
+                      {{ user.active === false ? 'Reactivar' : 'Desactivar' }}
+                    </button>
+                    @if (currentUser()?.role === 'admin' && user.role !== 'admin' && currentUser()?.id !== user.id) {
+                      <button (click)="deleteUser(user)" class="px-3 py-1.5 rounded-md text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200">Eliminar</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center py-16 text-muted-foreground">No se encontraron usuarios.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bulk Actions Bar -->
+      @if (selectedUsers().size > 0) {
+        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-blue-800">
+              {{ selectedUsers().size }} usuario{{ selectedUsers().size > 1 ? 's' : '' }} seleccionado{{ selectedUsers().size > 1 ? 's' : '' }}
+            </span>
+            <div class="flex gap-2">
+              <button (click)="openBulkModal('activate')" class="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                Activar
+              </button>
+              <button (click)="openBulkModal('deactivate')" class="px-3 py-1.5 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700">
+                Desactivar
+              </button>
+              @if (currentUser()?.role === 'admin') {
+                <button id="admin-delete-btn" (click)="openBulkModal('delete')" class="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+                  Eliminar
+                </button>
+              }
+              <button (click)="clearSelection()" class="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700">
+                Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+     }
+     
+     <!-- Bulk Operations Modal -->
+     @if (isBulkModalOpen()) {
+       <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center animate-in fade-in-50">
+         <div class="bg-card rounded-xl border border-border shadow-lg w-full max-w-2xl m-4">
+           <div class="p-6 border-b border-border flex justify-between items-center">
+             <h2 class="text-xl font-semibold">
+               @if (bulkOperationType() === 'import') { Importar Usuarios }
+               @if (bulkOperationType() === 'export') { Exportar Usuarios }
+               @if (bulkOperationType() === 'activate') { Activar Usuarios }
+               @if (bulkOperationType() === 'deactivate') { Desactivar Usuarios }
+               @if (bulkOperationType() === 'delete') { Eliminar Usuarios }
+             </h2>
+             <button type="button" (click)="closeBulkModal()" class="p-1 rounded-full text-2xl leading-none hover:bg-secondary">&times;</button>
+           </div>
+     
+           <div class="p-6 space-y-4">
+             @if (bulkOperationType() === 'import') {
+               <div class="space-y-4">
+                 <div class="bg-blue-50 p-4 rounded-lg">
+                   <h3 class="font-medium text-blue-800 mb-2">Instrucciones de Importación</h3>
+                   <ul class="text-sm text-blue-700 space-y-1">
+                     <li>• Formato soportado: CSV o JSON</li>
+                     <li>• Columnas requeridas: name, email</li>
+                     <li>• Columnas opcionales: phone, role, active</li>
+                     <li>• Descarga la plantilla para ver el formato correcto</li>
+                   </ul>
+                 </div>
+     
+                 <div class="flex gap-2">
+                   <input
+                     type="file"
+                     accept=".csv,.json"
+                     (change)="onFileSelected($event)"
+                     class="flex-1 px-3 py-2 bg-background border border-border rounded-md text-sm">
+                   <button (click)="downloadImportTemplate()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80">
+                     Plantilla
+                   </button>
+                 </div>
+     
+                 @if (bulkImportResult(); as result) {
+                   <div class="bg-green-50 p-4 rounded-lg">
+                     <h4 class="font-medium text-green-800">Resultado de Importación</h4>
+                     <p class="text-sm text-green-700">
+                       ✅ {{ result.imported }} usuarios importados exitosamente<br>
+                       ❌ {{ result.failed }} usuarios fallaron
+                     </p>
+                     @if (result.errors.length > 0) {
+                       <details class="mt-2">
+                         <summary class="cursor-pointer text-sm text-red-600">Ver errores</summary>
+                         <ul class="mt-1 text-xs text-red-600">
+                           @for (error of result.errors; track error) {
+                             <li>• {{ error }}</li>
+                           }
+                         </ul>
+                       </details>
+                     }
+                   </div>
+                 }
+               </div>
+             }
+     
+             @if (bulkOperationType() === 'export') {
+               <div class="space-y-4">
+                 <p class="text-sm text-muted-foreground">Selecciona el formato de exportación:</p>
+                 <div class="flex gap-2">
+                   <button (click)="exportUsers('csv')" [disabled]="isSubmitting()" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50">
+                     Exportar CSV
+                   </button>
+                   <button (click)="exportUsers('json')" [disabled]="isSubmitting()" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50">
+                     Exportar JSON
+                   </button>
+                 </div>
+               </div>
+             }
+     
+             @if (bulkOperationType() === 'activate' || bulkOperationType() === 'deactivate' || bulkOperationType() === 'delete') {
+               <div class="space-y-4">
+                 <div class="bg-yellow-50 p-4 rounded-lg">
+                   <h3 class="font-medium text-yellow-800 mb-2">Confirmación</h3>
+                   <p class="text-sm text-yellow-700">
+                     @if (bulkOperationType() === 'activate') {
+                       ¿Estás seguro de que quieres activar {{ selectedUsers().size }} usuarios?
+                     }
+                     @if (bulkOperationType() === 'deactivate') {
+                       ¿Estás seguro de que quieres desactivar {{ selectedUsers().size }} usuarios?
+                     }
+                     @if (bulkOperationType() === 'delete') {
+                       ¿Estás seguro de que quieres eliminar permanentemente {{ selectedUsers().size }} usuarios? Esta acción no se puede deshacer.
+                     }
+                   </p>
+                 </div>
+     
+                 @if (bulkOperationResult(); as result) {
+                   <div class="bg-green-50 p-4 rounded-lg">
+                     <h4 class="font-medium text-green-800">Resultado de Operación</h4>
+                     <p class="text-sm text-green-700">
+                       ✅ {{ result.success }} operaciones exitosas<br>
+                       ❌ {{ result.failed }} operaciones fallidas
+                     </p>
+                     @if (result.errors.length > 0) {
+                       <details class="mt-2">
+                         <summary class="cursor-pointer text-sm text-red-600">Ver errores</summary>
+                         <ul class="mt-1 text-xs text-red-600">
+                           @for (error of result.errors; track error) {
+                             <li>• {{ error }}</li>
+                           }
+                         </ul>
+                       </details>
+                     }
+                   </div>
+                 }
+               </div>
+             }
+     
+             @if (isSubmitting()) {
+               <div class="flex items-center justify-center py-4">
+                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                 <span class="ml-2 text-sm text-muted-foreground">Procesando...</span>
+               </div>
+             }
+           </div>
+     
+           <div class="p-4 bg-secondary/30 border-t border-border flex justify-end gap-3">
+             <button type="button" (click)="closeBulkModal()" class="px-4 py-2 bg-card border border-border rounded-md font-medium hover:bg-secondary text-sm">
+               Cerrar
+             </button>
+             @if (bulkOperationType() !== 'import' && bulkOperationType() !== 'export') {
+               <button (click)="executeBulkOperation()" [disabled]="isSubmitting()" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 text-sm">
+                 @if (bulkOperationType() === 'activate') { Activar }
+                 @if (bulkOperationType() === 'deactivate') { Desactivar }
+                 @if (bulkOperationType() === 'delete') { Eliminar }
+               </button>
+             }
+           </div>
+         </div>
+       </div>
+     }
+  </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+@if (isModalOpen()) {
+  <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center animate-in fade-in-50">
+    <div class="bg-card rounded-xl border border-border shadow-lg w-full max-w-lg m-4">
+      <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+        <div class="p-6 border-b border-border flex justify-between items-center">
+          <h2 class="text-xl font-semibold">{{ modalTitle() }}</h2>
+          <button type="button" (click)="closeUserModal()" class="p-1 rounded-full text-2xl leading-none hover:bg-secondary">&times;</button>
+        </div>
+        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          @if (formError()) {
+            <div class="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
+              {{ formError() }}
+            </div>
+          }
+          <app-loader *ngIf="isSubmitting()" text="Guardando usuario..."></app-loader>
+          <div>
+            <label class="block text-sm font-medium text-foreground">Nombre</label>
+            <input formControlName="name" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-foreground">Email</label>
+            <input formControlName="email" type="email" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-foreground">Teléfono</label>
+            <input formControlName="phone" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-foreground">Rol</label>
+            <select formControlName="role" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+              @for (role of roles; track role) {
+                <option [value]="role">{{role}}</option>
+              }
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <input formControlName="active" id="active" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-primary">
+            <label for="active" class="text-sm font-medium text-foreground">Usuario Activo</label>
+          </div>
+
+          <!-- Availability settings for assignable staff -->
+          @if (isAssignableStaff) {
+            <div class="border-t pt-4 mt-4">
+              <h3 class="text-sm font-medium text-foreground mb-3">Disponibilidad del Técnico</h3>
+              <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                  <input formControlName="isAvailable" id="isAvailable" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-primary">
+                  <label for="isAvailable" class="text-sm font-medium text-foreground">Disponible para asignaciones</label>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-foreground">Razón (opcional)</label>
+                  <input formControlName="availabilityReason" class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm" placeholder="Ej: En vacaciones, capacitación, etc.">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="p-4 bg-secondary/30 border-t border-border flex justify-end gap-3">
+          <button type="button" (click)="closeUserModal()" class="px-4 py-2 bg-card border border-border rounded-md font-medium hover:bg-secondary text-sm">Cancelar</button>
+          <button type="submit" [disabled]="isSubmitting() || userForm.invalid" class="w-32 flex justify-center items-center px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 text-sm">
+             @if(isSubmitting()){ <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div> } @else { <span>Guardar</span> }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Manage Vehicles Modal -->
+@if (isVehicleModalOpen() && managingVehiclesForUser(); as user) {
+  <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center animate-in fade-in-50">
+    <div class="bg-card rounded-xl border border-border shadow-lg w-full max-w-2xl m-4 flex flex-col">
+      <div class="p-6 border-b border-border flex justify-between items-center">
+        <div>
+          <h2 class="text-xl font-semibold">Gestionar Vehículos de {{ user.name }}</h2>
+          <p class="text-sm text-muted-foreground">Asigna motocicletas a este usuario para futuros servicios.</p>
+        </div>
+         <button type="button" (click)="closeVehicleModal()" class="p-1 rounded-full text-2xl leading-none hover:bg-secondary">&times;</button>
+      </div>
+      <div class="p-6 space-y-6 flex-grow overflow-y-auto max-h-[70vh]">
+        @if (vehicleModalError()) {
+            <div class="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
+                {{ vehicleModalError() }}
+            </div>
+        }
+        <!-- Add new vehicle form using NuevaMotocicletaComponent -->
+        <div class="bg-secondary/30 p-4 rounded-lg border border-border">
+            <h3 class="font-medium mb-4">Asignar Nueva Motocicleta</h3>
+            <app-nueva-motocicleta (motorcycleAssigned)="onMotorcycleAssigned()"></app-nueva-motocicleta>
+        </div>
+
+        <!-- List of assigned vehicles -->
+        <div>
+            <h3 class="font-medium mb-3">Vehículos Asignados</h3>
+            <div class="space-y-3">
+              @for(v of displayUserVehicles(); track v.id) {
+                <div class="p-3 border rounded-lg bg-background flex justify-between items-start">
+                  <div>
+                    <p class="font-semibold">{{v.brand}} {{v.model}} ({{v.year}})</p>
+                    <p class="text-sm text-muted-foreground font-mono">{{v.plate}} - {{v.mileageKm}} km</p>
+                    <p class="text-xs text-muted-foreground mt-1">{{v.notes}}</p>
+                  </div>
+                   <button (click)="deleteUserVehicle(v.id)" class="p-1 text-muted-foreground hover:text-destructive">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+              } @empty {
+                <p class="text-center text-muted-foreground py-8">Este usuario no tiene vehículos asignados.</p>
+              }
+            </div>
+        </div>
+      </div>
+      <div class="p-4 bg-secondary/30 border-t border-border flex justify-end">
+        <button type="button" (click)="closeVehicleModal()" class="px-4 py-2 bg-card border border-border rounded-md font-medium hover:bg-secondary text-sm">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

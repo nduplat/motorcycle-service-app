@@ -1,0 +1,115 @@
+<div class="modal-header">
+  <h2 class="text-xl font-bold">{{ data.mode === 'create' ? 'Create New Appointment' : 'Appointment Details' }}</h2>
+  <button (click)="onClose()" class="text-gray-500 hover:text-gray-700">&times;</button>
+</div>
+
+<div class="modal-body" *ngIf="data.mode === 'create'">
+  <form class="space-y-4">
+    <!-- Client Selection -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Client</mat-label>
+      <mat-select [(ngModel)]="selectedClient" (selectionChange)="onClientChange()" name="client">
+        <mat-option *ngFor="let client of clients | keyvalue" [value]="client.key">
+          {{ client.value.name }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Service Selection -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Service</mat-label>
+      <mat-select [(ngModel)]="selectedService" name="service">
+        <mat-option *ngFor="let service of services()" [value]="service.id">
+          {{ service.title }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Vehicle Selection -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Vehicle</mat-label>
+      <mat-select [(ngModel)]="selectedVehicle" name="vehicle">
+        <mat-option *ngFor="let vehicle of vehicles" [value]="vehicle.id">
+          {{ vehicle.plate || 'No Plate' }} - {{ vehicle.baseVehicleId }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Date Selection -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Appointment Date</mat-label>
+      <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate" name="date">
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+    <!-- Time Selection -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Time</mat-label>
+      <mat-select [(ngModel)]="selectedTime" name="time">
+        <mat-option value="08:00">8:00 AM</mat-option>
+        <mat-option value="09:00">9:00 AM</mat-option>
+        <mat-option value="10:00">10:00 AM</mat-option>
+        <mat-option value="11:00">11:00 AM</mat-option>
+        <mat-option value="14:00">2:00 PM</mat-option>
+        <mat-option value="15:00">3:00 PM</mat-option>
+        <mat-option value="16:00">4:00 PM</mat-option>
+        <mat-option value="17:00">5:00 PM</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Capacity Validation -->
+    <div class="p-3 bg-gray-50 rounded" *ngIf="capacityValidation.message">
+      <p class="text-sm" [class.text-green-600]="capacityValidation.isValid" [class.text-red-600]="!capacityValidation.isValid">
+        {{ capacityValidation.message }}
+      </p>
+    </div>
+
+    <!-- Time Suggestions -->
+    <div class="p-3 bg-blue-50 rounded" *ngIf="timeSuggestions.length > 0">
+      <h4 class="font-semibold text-sm mb-2">Suggested Times:</h4>
+      <div class="flex flex-wrap gap-2">
+        <button *ngFor="let suggestion of timeSuggestions"
+                (click)="selectedTime = suggestion.time"
+                class="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200">
+          {{ suggestion.time }} (Score: {{ suggestion.score }})
+        </button>
+      </div>
+    </div>
+
+    <!-- Technician Availability -->
+    <div class="p-3 bg-green-50 rounded" *ngIf="technicianAvailability.length > 0">
+      <h4 class="font-semibold text-sm mb-2">Technician Availability:</h4>
+      <div class="space-y-1">
+        <div *ngFor="let tech of technicianAvailability" class="text-sm">
+          <span [class.text-green-600]="tech.available" [class.text-red-600]="!tech.available">
+            {{ tech.name }}: {{ tech.available ? 'Available' : 'Busy' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-assigned Technician -->
+    <div class="p-3 bg-purple-50 rounded" *ngIf="autoAssignedTechnician">
+      <p class="text-sm">
+        <strong>Auto-assigned Technician:</strong> {{ autoAssignedTechnician }}
+      </p>
+    </div>
+  </form>
+</div>
+
+<div class="modal-body" *ngIf="data.mode !== 'create'">
+  <p><strong>Client:</strong> {{ data.client }}</p>
+  <p><strong>Vehicle:</strong> {{ data.vehicle }}</p>
+  <p><strong>Service:</strong> {{ data.service }}</p>
+  <p><strong>Time:</strong> {{ data.time }}</p>
+</div>
+
+<div class="modal-footer">
+  <button *ngIf="data.mode === 'create'" (click)="onCreateAppointment()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 mr-2">
+    Create Appointment
+  </button>
+  <button (click)="onClose()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+    {{ data.mode === 'create' ? 'Cancel' : 'Close' }}
+  </button>
+</div>

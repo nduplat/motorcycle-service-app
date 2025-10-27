@@ -1,0 +1,623 @@
+/* Nueva Motocicleta Component Styles */
+/* Modern, elegant, and fully responsive design */
+
+.nueva-motocicleta-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+
+  .form-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .form-subtitle {
+    font-size: 1.2rem;
+    color: #6c757d;
+    margin: 0;
+    font-weight: 500;
+  }
+}
+
+.assignment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #495057;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+/* Phone Section */
+.phone-section {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-color: #ffc107;
+
+  .section-title {
+    color: #856404;
+  }
+}
+
+/* Data Section */
+.data-section {
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+/* Selection Section */
+.selection-section {
+  .selected-motorcycle {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    .selected-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+
+      h4 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #155724;
+        margin: 0;
+      }
+
+      .change-button {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: #c82333;
+          transform: scale(1.05);
+        }
+      }
+    }
+
+    .motorcycle-details {
+      .motorcycle-name {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #155724;
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+
+      .motorcycle-specs {
+        display: flex;
+        gap: 1rem;
+
+        .spec-item {
+          background: white;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #155724;
+          border: 1px solid #28a745;
+        }
+      }
+    }
+  }
+
+  .search-button {
+    width: 100%;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: 2px dashed #007bff;
+    border-radius: 12px;
+    padding: 2rem;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,123,255,0.3);
+    }
+
+    .search-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+
+      .search-icon {
+        font-size: 3rem;
+      }
+
+      .search-text {
+        text-align: center;
+
+        .search-title {
+          display: block;
+          font-size: 1.3rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .search-subtitle {
+          font-size: 0.95rem;
+          opacity: 0.9;
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  .motorcycle-grid-container {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border: 2px solid #dee2e6;
+  }
+
+  .model-filter {
+    margin-bottom: 1.5rem;
+
+    .filter-label {
+      display: block;
+      font-weight: 700;
+      color: #495057;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .filter-select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ced4da;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+      }
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #6c757d;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-subtitle {
+      color: #6c757d;
+      margin: 0;
+    }
+  }
+
+  .motorcycle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .motorcycle-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    &:hover {
+      border-color: #007bff;
+      background: #f8f9ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .motorcycle-icon {
+      font-size: 2.5rem;
+      flex-shrink: 0;
+    }
+
+    .motorcycle-info {
+      flex: 1;
+
+      .motorcycle-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #495057;
+        margin-bottom: 0.25rem;
+      }
+
+      .motorcycle-year {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+      }
+
+      .motorcycle-specs {
+        .spec-item {
+          display: inline-block;
+          background: #e9ecef;
+          padding: 0.25rem 0.5rem;
+          border-radius: 12px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #495057;
+          margin-right: 0.5rem;
+        }
+      }
+
+      .motorcycle-description {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 0.5rem 0 0 0;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .grid-actions {
+    text-align: center;
+
+    .close-button {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+
+      &:hover {
+        background: #5a6268;
+      }
+    }
+  }
+
+  .section-error {
+    text-align: center;
+    margin-top: 1rem;
+  }
+}
+
+/* Extras Section */
+.extras-section {
+  .extras-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+/* Info Section */
+.info-section {
+  .info-card {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 2px solid #ffc107;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+
+    .info-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .info-content {
+      flex: 1;
+
+      .info-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #856404;
+        margin-bottom: 0.5rem;
+      }
+
+      .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          color: #856404;
+          margin-bottom: 0.25rem;
+          font-size: 0.95rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+      }
+    }
+  }
+}
+
+/* Form Actions */
+.form-actions {
+  text-align: center;
+  padding-top: 1rem;
+
+  .submit-button {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    color: white;
+    border: none;
+    padding: 1.25rem 3rem;
+    border-radius: 12px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 6px 15px rgba(40,167,69,0.3);
+    min-width: 250px;
+    justify-content: center;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(40,167,69,0.4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading-spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid transparent;
+      border-top: 3px solid currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1.5rem;
+
+  .form-label {
+    display: block;
+    font-weight: 700;
+    color: #495057;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+      background: white;
+    }
+
+    &::placeholder {
+      color: #6c757d;
+      font-weight: 400;
+    }
+  }
+
+  .phone-input {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  .plate-input {
+    text-align: center;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+    font-size: 1.3rem;
+    font-weight: 900;
+  }
+
+  .mileage-input-group {
+    display: flex;
+    align-items: center;
+
+    .mileage-input {
+      flex: 1;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .mileage-unit {
+      margin-left: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #495057;
+    }
+  }
+
+  .form-textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f8f9fa;
+    resize: vertical;
+    min-height: 100px;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+      background: white;
+    }
+
+    &::placeholder {
+      color: #6c757d;
+    }
+  }
+
+  .file-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px dashed #ced4da;
+    border-radius: 8px;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: #007bff;
+      background: #f0f8ff;
+    }
+  }
+
+  .file-hint {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+  }
+
+  .error-message {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: #f8d7da;
+    color: #721c24;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .nueva-motocicleta-container {
+    padding: 1rem;
+  }
+
+  .form-header {
+    .form-title {
+      font-size: 2.2rem;
+    }
+
+    .form-subtitle {
+      font-size: 1rem;
+    }
+  }
+
+  .form-section {
+    padding: 1.5rem;
+  }
+
+  .motorcycle-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+
+    .motorcycle-icon {
+      font-size: 2rem;
+    }
+  }
+
+  .form-actions .submit-button {
+    font-size: 1.1rem;
+    padding: 1rem 2rem;
+    min-width: 200px;
+  }
+}

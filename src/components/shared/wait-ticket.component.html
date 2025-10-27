@@ -1,0 +1,184 @@
+<div class="wait-ticket-container">
+  <!-- Header -->
+  <header class="ticket-header">
+    <div class="logo-section">
+      <h1>Blue Dragon Motors</h1>
+      <p>Ticket de Cola Digital</p>
+    </div>
+    <div class="status-badge" [class]="getStatusColor(queueStatus())">
+      {{ getStatusText(queueStatus()) }}
+    </div>
+  </header>
+
+  <!-- Main Ticket Content -->
+  <div class="ticket-content">
+    <!-- Queue Information -->
+    <div class="queue-info">
+      <div class="info-row">
+        <div class="info-item">
+          <label>Posición en Cola</label>
+          <span class="position-number">#{{ queuePosition() }}</span>
+        </div>
+        <div class="info-item">
+          <label>Tiempo Estimado</label>
+          <span class="wait-time">{{ formatWaitTime(estimatedWaitTime()) }}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-item">
+          <label>Código de Verificación</label>
+          <span class="verification-code">{{ verificationCode() }}</span>
+        </div>
+        <div class="info-item">
+          <label>Hora de Emisión</label>
+          <span class="issue-time">{{ currentTime() | date:'HH:mm' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Code Section -->
+    <div class="qr-section">
+      <h3>Tu Código QR Personal</h3>
+      <p>Presenta este código al técnico cuando te llamen</p>
+
+      @if (qrCodeDataUrl()) {
+        <div class="qr-code-container">
+          <img [src]="qrCodeDataUrl()" alt="Código QR de seguimiento" class="qr-code" />
+          <button type="button" class="btn-icon download-qr" (click)="downloadQR()" title="Descargar QR">
+            <i class="icon-download"></i>
+          </button>
+        </div>
+      } @else {
+        <div class="qr-loading">
+          <div class="spinner"></div>
+          <p>Generando código QR...</p>
+        </div>
+      }
+    </div>
+
+    <!-- Services Summary -->
+    <div class="services-summary">
+      <h3>Servicios Solicitados</h3>
+      <div class="services-list">
+        @for (service of ticketData().selectedServices; track service.id) {
+          <div class="service-item">
+            <div class="service-info">
+              <span class="service-name">{{ service.title }}</span>
+              <span class="service-price">
+                @if (service.price && service.price > 0) {
+                  ${{ service.price.toLocaleString('es-CO') }}
+                } @else {
+                  Por cotización
+                }
+              </span>
+            </div>
+            @if (service.estimatedHours) {
+              <span class="service-duration">{{ service.estimatedHours }}h</span>
+            }
+          </div>
+        }
+      </div>
+
+      @if (ticketData().totalCost > 0) {
+        <div class="total-cost">
+          <strong>Costo Total Estimado: ${{ ticketData().totalCost.toLocaleString('es-CO') }}</strong>
+        </div>
+      }
+    </div>
+
+    <!-- Technician Assignment -->
+    @if (assignedTechnician()) {
+      <div class="technician-assignment">
+        <h3>Técnico Asignado</h3>
+        <div class="technician-info">
+          <i class="icon-technician"></i>
+          <span>ID del Técnico: {{ assignedTechnician() }}</span>
+        </div>
+        <p class="assignment-note">Tu técnico te llamará cuando esté listo para atenderte.</p>
+      </div>
+    }
+
+    <!-- Real-time Status Updates -->
+    <div class="status-updates">
+      <h3>Estado Actual</h3>
+      <div class="status-timeline">
+        <div class="timeline-item" [class.active]="queueStatus() === 'waiting'">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            <h4>En Espera</h4>
+            <p>Esperando ser llamado por el técnico</p>
+          </div>
+        </div>
+        <div class="timeline-item" [class.active]="queueStatus() === 'called'">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            <h4>Llamado</h4>
+            <p>El técnico te está llamando</p>
+          </div>
+        </div>
+        <div class="timeline-item" [class.active]="queueStatus() === 'in_service'">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            <h4>En Servicio</h4>
+            <p>Tu motocicleta está siendo atendida</p>
+          </div>
+        </div>
+        <div class="timeline-item" [class.active]="queueStatus() === 'served'">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            <h4>Servicio Completado</h4>
+            <p>El servicio ha sido completado</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="ticket-actions">
+    <div class="action-buttons">
+      <button type="button" class="btn-secondary action-btn" (click)="saveToWallet()">
+        <i class="icon-wallet"></i>
+        Guardar en Billetera
+      </button>
+      <button type="button" class="btn-secondary action-btn" (click)="shareTicket()">
+        <i class="icon-share"></i>
+        Compartir
+      </button>
+    </div>
+
+    @if (showNavigation()) {
+      <div class="navigation-buttons">
+        <button type="button" class="btn-outline" (click)="navigateBack()">
+          Volver al Seguimiento
+        </button>
+        <button type="button" class="btn-primary" (click)="goToQueueTracking()">
+          Ver Estado de Cola
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  <footer class="ticket-footer">
+    <p>Blue Dragon Motors - Servicio de Calidad</p>
+    <p class="footer-note">Guarda este ticket digital para un servicio más rápido</p>
+  </footer>
+
+  <!-- Loading Overlay -->
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Actualizando...</p>
+    </div>
+  }
+
+  <!-- Error Display -->
+  @if (error()) {
+    <div class="error-message">
+      <i class="icon-error"></i>
+      {{ error() }}
+    </div>
+  }
+</div>

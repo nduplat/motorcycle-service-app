@@ -1,0 +1,78 @@
+<div class="max-w-2xl mx-auto p-6 bg-card rounded-lg border border-border">
+  <h2 class="text-2xl font-bold mb-6 text-center">Agendar Cita</h2>
+  <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+    <!-- Service Selection -->
+    <div>
+      <label class="block text-sm font-medium text-foreground mb-2">Servicio</label>
+      <select formControlName="serviceId" class="w-full px-3 py-2 bg-background border border-border rounded-md">
+        <option value="">Selecciona un servicio</option>
+        <option *ngFor="let service of services()" [value]="service.id">{{ service.title }}</option>
+      </select>
+    </div>
+
+    <!-- Date Selection -->
+    <div>
+      <label class="block text-sm font-medium text-foreground mb-2">Fecha</label>
+      <input type="date" formControlName="date" (change)="onDateChange($event)" class="w-full px-3 py-2 bg-background border border-border rounded-md">
+    </div>
+
+    <!-- Time Selection -->
+    <div>
+      <label class="block text-sm font-medium text-foreground mb-2">Hora</label>
+      <select formControlName="time" class="w-full px-3 py-2 bg-background border border-border rounded-md">
+        <option value="">Selecciona una hora</option>
+        <option *ngFor="let time of availableTimes()" [value]="time">{{ time }}</option>
+      </select>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-foreground mb-2">Nombre Completo</label>
+        <input type="text" formControlName="name" class="w-full px-3 py-2 bg-background border border-border rounded-md">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-foreground mb-2">Teléfono</label>
+        <input type="tel" formControlName="phone" class="w-full px-3 py-2 bg-background border border-border rounded-md">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-foreground mb-2">Correo Electrónico</label>
+      <input type="email" formControlName="email" class="w-full px-3 py-2 bg-background border border-border rounded-md">
+    </div>
+
+    <!-- Vehicle Selection -->
+    <div>
+      <label class="block text-sm font-medium text-foreground mb-2">Vehículo</label>
+      @if (isLoggedIn() && userVehicles().length > 0) {
+        <select formControlName="vehicleId" class="w-full px-3 py-2 bg-background border border-border rounded-md">
+          <option value="">Selecciona tu vehículo</option>
+          <option *ngFor="let vehicle of userVehicles()" [value]="vehicle.id">{{ vehicle.baseVehicleId }} - {{ vehicle.plate }}</option>
+        </select>
+      } @else {
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input type="text" formControlName="vehicleBrand" placeholder="Marca" class="px-3 py-2 bg-background border border-border rounded-md">
+          <input type="text" formControlName="vehicleModel" placeholder="Modelo" class="px-3 py-2 bg-background border border-border rounded-md">
+          <input type="number" formControlName="vehicleYear" placeholder="Año" class="px-3 py-2 bg-background border border-border rounded-md">
+        </div>
+        <input type="text" formControlName="vehiclePlate" placeholder="Placa" class="mt-2 w-full px-3 py-2 bg-background border border-border rounded-md">
+      }
+    </div>
+
+    <!-- Notes -->
+    <div>
+      <label class="block text-sm font-medium text-foreground mb-2">Notas Adicionales (Opcional)</label>
+      <textarea formControlName="notes" rows="3" class="w-full px-3 py-2 bg-background border border-border rounded-md"></textarea>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" [disabled]="bookingForm.invalid || isLoading()" class="w-full bg-primary text-primary-foreground py-3 px-4 rounded-md font-medium hover:bg-primary/90 disabled:opacity-50">
+      @if (isLoading()) {
+        <span>Cargando...</span>
+      } @else {
+        <span>Confirmar Cita</span>
+      }
+    </button>
+  </form>
+</div>

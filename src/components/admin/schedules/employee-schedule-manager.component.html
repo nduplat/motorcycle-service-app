@@ -1,0 +1,322 @@
+<div class="schedule-manager">
+  <div class="header">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="p-3 bg-primary/10 rounded-xl">
+        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold">Gestión de Horarios</h1>
+        <p class="text-muted-foreground">Administra los horarios de trabajo de los empleados</p>
+      </div>
+    </div>
+
+    <div class="date-selector mb-6">
+      <label class="block text-sm font-semibold text-foreground mb-2">Seleccionar Fecha</label>
+      <input
+        type="date"
+        [value]="selectedDate() | date:'yyyy-MM-dd'"
+        (change)="onDateChange($any($event.target).value)"
+        class="px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Action Buttons -->
+    <div class="mb-6">
+      <button
+        (click)="openCreateForm()"
+        class="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors duration-200 flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Crear Nuevo Horario
+      </button>
+    </div>
+
+    <!-- Schedules List -->
+    <div class="schedules-grid">
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p class="text-muted-foreground">Cargando horarios...</p>
+        </div>
+      } @else if (schedules().length === 0) {
+        <div class="empty-state">
+          <svg class="w-16 h-16 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <h3 class="text-lg font-semibold text-muted-foreground">No hay horarios para esta fecha</h3>
+          <p class="text-muted-foreground">Crea un nuevo horario para comenzar</p>
+        </div>
+      } @else {
+        <div class="grid gap-6">
+          @for (schedule of schedules(); track schedule.id) {
+            <div class="schedule-card bg-card/80 backdrop-blur-sm p-6 rounded-2xl border border-border/50 shadow-lg">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h3 class="text-lg font-semibold">{{ getEmployeeName(schedule.employeeId) }}</h3>
+                  <p class="text-muted-foreground">{{ schedule.date.toDate() | date:'EEEE, dd/MM/yyyy' }}</p>
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    (click)="openEditForm(schedule)"
+                    class="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="deleteSchedule(schedule)"
+                    class="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Shifts -->
+              @if (schedule.shifts.length > 0) {
+                <div class="mb-4">
+                  <h4 class="text-sm font-semibold text-foreground mb-2">Turnos</h4>
+                  <div class="flex flex-wrap gap-2">
+                    @for (shift of schedule.shifts; track shift.id) {
+                      <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm">
+                        {{ shift.name }}: {{ formatTimeRange(shift) }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Breaks -->
+              @if (schedule.breaks.length > 0) {
+                <div class="mb-4">
+                  <h4 class="text-sm font-semibold text-foreground mb-2">Descansos</h4>
+                  <div class="flex flex-wrap gap-2">
+                    @for (breakItem of schedule.breaks; track breakItem.id) {
+                      <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-sm">
+                        {{ breakItem.name }}: {{ breakItem.startTime }} ({{ breakItem.durationMinutes }}min)
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Total Hours -->
+              <div class="flex justify-between items-center pt-4 border-t border-border/50">
+                <span class="text-sm text-muted-foreground">Horas totales:</span>
+                <span class="font-semibold">{{ calculateTotalHours(schedule) }}h</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Create/Edit Schedule Modal -->
+  @if (showCreateForm() || showEditForm()) {
+    <div class="modal-overlay" (click)="closeForms()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="text-xl font-semibold">
+            {{ showCreateForm() ? 'Crear Nuevo Horario' : 'Editar Horario' }}
+          </h2>
+          <button (click)="closeForms()" class="p-2 hover:bg-muted rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="scheduleForm" (ngSubmit)="showCreateForm() ? createSchedule() : updateSchedule()">
+          <div class="modal-body">
+            <!-- Employee Selection -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-foreground mb-2">Empleado *</label>
+              <select
+                formControlName="employeeId"
+                class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Seleccionar empleado</option>
+                @for (employee of employees(); track employee.id) {
+                  <option [value]="employee.id">{{ employee.displayName }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Date -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-foreground mb-2">Fecha *</label>
+              <input
+                type="date"
+                formControlName="date"
+                class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            </div>
+
+            <!-- Shifts Section -->
+            <div class="mb-6">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Turnos</h3>
+                <button
+                  type="button"
+                  (click)="shiftForm.reset()"
+                  class="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                  Agregar Turno
+                </button>
+              </div>
+
+              <!-- Add Shift Form -->
+              <div class="bg-muted/50 p-4 rounded-xl mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-foreground mb-1">Nombre</label>
+                    <input
+                      [formControl]="shiftForm.get('name')"
+                      placeholder="Ej: Mañana"
+                      class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-foreground mb-1">Inicio</label>
+                    <input
+                      type="time"
+                      [formControl]="shiftForm.get('startTime')"
+                      class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-foreground mb-1">Fin</label>
+                    <input
+                      type="time"
+                      [formControl]="shiftForm.get('endTime')"
+                      class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-foreground mb-1">Días</label>
+                    <select
+                      multiple
+                      [formControl]="shiftForm.get('daysOfWeek')"
+                      class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm">
+                      <option value="0">Domingo</option>
+                      <option value="1">Lunes</option>
+                      <option value="2">Martes</option>
+                      <option value="3">Miércoles</option>
+                      <option value="4">Jueves</option>
+                      <option value="5">Viernes</option>
+                      <option value="6">Sábado</option>
+                    </select>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  (click)="addShift()"
+                  [disabled]="shiftForm.invalid"
+                  class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50">
+                  Agregar Turno
+                </button>
+              </div>
+
+              <!-- Current Shifts -->
+              <div class="space-y-2">
+                @for (shift of scheduleForm.get('shifts')?.value || []; track $index) {
+                  <div class="flex justify-between items-center p-3 bg-background rounded-lg">
+                    <span>{{ shift.name }}: {{ shift.startTime }} - {{ shift.endTime }}</span>
+                    <button
+                      type="button"
+                      (click)="removeShift($index)"
+                      class="p-1 text-red-500 hover:bg-red-50 rounded">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Breaks Section -->
+            <div class="mb-6">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Descansos</h3>
+                <button
+                  type="button"
+                  (click)="breakForm.reset()"
+                  class="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                  Agregar Descanso
+                </button>
+              </div>
+
+              <!-- Add Break Form -->
+              <div class="bg-muted/50 p-4 rounded-xl mb-4">
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-foreground mb-1">Nombre</label>
+                    <input
+                      [formControl]="breakForm.get('name')"
+                      placeholder="Ej: Almuerzo"
+                      class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-foreground mb-1">Inicio</label>
+                    <input
+                      type="time"
+                      [formControl]="breakForm.get('startTime')"
+                      class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-foreground mb-1">Duración (min)</label>
+                    <input
+                      type="number"
+                      [formControl]="breakForm.get('durationMinutes')"
+                      min="15"
+                      class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm">
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  (click)="addBreak()"
+                  [disabled]="breakForm.invalid"
+                  class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50">
+                  Agregar Descanso
+                </button>
+              </div>
+
+              <!-- Current Breaks -->
+              <div class="space-y-2">
+                @for (breakItem of scheduleForm.get('breaks')?.value || []; track $index) {
+                  <div class="flex justify-between items-center p-3 bg-background rounded-lg">
+                    <span>{{ breakItem.name }}: {{ breakItem.startTime }} ({{ breakItem.durationMinutes }}min)</span>
+                    <button
+                      type="button"
+                      (click)="removeBreak($index)"
+                      class="p-1 text-red-500 hover:bg-red-50 rounded">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              (click)="closeForms()"
+              class="px-6 py-3 border border-border rounded-xl hover:bg-muted transition-colors">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              [disabled]="scheduleForm.invalid || isLoading()"
+              class="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors">
+              {{ showCreateForm() ? 'Crear Horario' : 'Actualizar Horario' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

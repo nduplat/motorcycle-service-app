@@ -1,0 +1,601 @@
+<!-- Admin Queue Management Component -->
+<!-- User-friendly interface for managing the service queue -->
+<!-- Features: Queue status overview, call next customer, manage queue entries with clear actions -->
+<div class="queue-management-container">
+  <!-- Header -->
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="main-title">Gestión de Cola de Servicio</h1>
+        <p class="subtitle">Administra la cola de clientes y llama al siguiente</p>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <button (click)="toggleMobileMenu()" class="mobile-menu-button md:hidden">
+        <span class="menu-icon" [class.open]="mobileMenuOpen()"></span>
+      </button>
+
+      <!-- Desktop Actions -->
+      <div class="desktop-actions hidden md:flex">
+        <button (click)="toggleAI()" class="ai-button">
+          <span class="button-icon">🤖</span>
+          <span>Asistente IA</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" [class.open]="mobileMenuOpen()">
+      <button (click)="toggleAI()" class="mobile-menu-item">
+        <span class="button-icon">🤖</span>
+        <span>Asistente IA</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Critical Alerts Panel -->
+  @if(alerts().length > 0) {
+    <div class="alerts-section">
+      <div class="alerts-header">
+        <div class="h-6 w-6 bg-red-100 rounded-lg flex items-center justify-center">
+          <svg class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h2>Alertas Críticas</h2>
+      </div>
+
+      @for(alert of alerts(); track alert.type) {
+        <div class="alert-card" [class]="alert.severity">
+          <div class="alert-content">
+            <span class="alert-icon">
+              @if(alert.severity === 'critical') {
+                ⚠️
+              } @else {
+                🔔
+              }
+            </span>
+            <div class="alert-text">
+              <p class="alert-title">{{ alert.title }}</p>
+              <p class="alert-message">{{ alert.message }}</p>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Quick Metrics Grid -->
+  <div class="metrics-grid">
+    <!-- Waiting Count -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-yellow-100 text-yellow-600">
+          ⏳
+        </div>
+        <h3 class="metric-title">Esperando</h3>
+      </div>
+      <p class="metric-value">{{ waitingCount() }}</p>
+      <p class="metric-subtitle">Clientes en cola</p>
+    </div>
+
+    <!-- Called Count -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-blue-100 text-blue-600">
+          📢
+        </div>
+        <h3 class="metric-title">Llamados</h3>
+      </div>
+      <p class="metric-value">{{ calledCount() }}</p>
+      <p class="metric-subtitle">Siendo atendidos</p>
+    </div>
+
+    <!-- Average Wait Time -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-purple-100 text-purple-600">
+          🕐
+        </div>
+        <h3 class="metric-title">Tiempo Promedio</h3>
+      </div>
+      <p class="metric-value">{{ avgWaitTime() }}</p>
+      <p class="metric-subtitle">Minutos de espera</p>
+    </div>
+
+    <!-- Available Technicians -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon bg-green-100 text-green-600">
+          👥
+        </div>
+        <h3 class="metric-title">Técnicos</h3>
+      </div>
+      <p class="metric-value">{{ availableTechniciansCount() }}</p>
+      <p class="metric-subtitle">Disponibles</p>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-section">
+    <div class="search-container">
+      <div class="search-icon">🔍</div>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Buscar por ID cliente, tipo de servicio, código..."
+        class="search-input">
+    </div>
+  </div>
+
+  <!-- Quick Code Validation Section -->
+  <div class="code-validation-section">
+    <h3 class="section-title">Validación Rápida de Código</h3>
+    <app-code-validation></app-code-validation>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs-section">
+    <button
+      [class.active]="activeTab() === 'current'"
+      (click)="setActiveTab('current')"
+      class="tab-button">
+      <span class="tab-icon">📋</span>
+      Cola Actual
+    </button>
+    <button
+      [class.active]="activeTab() === 'history'"
+      (click)="setActiveTab('history')"
+      class="tab-button">
+      <span class="tab-icon">📚</span>
+      Historial
+    </button>
+    <button
+      [class.active]="activeTab() === 'settings'"
+      (click)="setActiveTab('settings')"
+      class="tab-button">
+      <span class="tab-icon">⚙️</span>
+      Configuración
+    </button>
+  </div>
+
+  <!-- Current Queue Tab -->
+  <div *ngIf="activeTab() === 'current'">
+    <!-- Queue Status Cards -->
+    <div class="status-cards" *ngIf="queueStatus() as status">
+      <div class="status-card">
+        <div class="status-icon" [class.open]="status.isOpen" [class.closed]="!status.isOpen">
+          <span *ngIf="status.isOpen">🟢</span>
+          <span *ngIf="!status.isOpen">🔴</span>
+        </div>
+        <div class="status-info">
+          <h3>Estado de la Cola</h3>
+          <p>{{ status.isOpen ? 'Abierta' : 'Cerrada' }}</p>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="status-icon">👥</div>
+        <div class="status-info">
+          <h3>Clientes Activos</h3>
+          <p>{{ status.currentCount }}</p>
+        </div>
+      </div>
+      <div class="status-card" *ngIf="status.averageWaitTime">
+        <div class="status-icon">⏱️</div>
+        <div class="status-info">
+          <h3>Tiempo Promedio</h3>
+          <p>{{ status.averageWaitTime }} min</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Available Technicians -->
+    <div class="available-technicians-section">
+      <h3 class="section-subtitle">Técnicos Disponibles</h3>
+      <div class="technicians-grid" *ngIf="availableTechnicians().length > 0; else noTechnicians">
+        <div class="technician-card" *ngFor="let technician of availableTechnicians()">
+          <div class="technician-avatar">
+            <span>{{ technician.name.charAt(0).toUpperCase() }}</span>
+          </div>
+          <div class="technician-info">
+            <h4>{{ technician.name }}</h4>
+            <p class="technician-role">{{ technician.role }}</p>
+            <span class="availability-badge available">Disponible</span>
+          </div>
+        </div>
+      </div>
+      <ng-template #noTechnicians>
+        <div class="no-technicians-message">
+          <div class="empty-icon">👥</div>
+          <p>No hay técnicos disponibles en este momento</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Manual Status Toggle -->
+    <div class="manual-status-toggle">
+      <button
+        (click)="toggleQueueStatus()"
+        [disabled]="isUpdatingStatus()"
+        class="status-toggle-button"
+        [class]="queueStatus()?.isOpen ? 'close-button' : 'open-button'">
+        @if (isUpdatingStatus()) {
+          <div class="loading-spinner"></div>
+        } @else {
+          {{ queueStatus()?.isOpen ? 'Cerrar Cola Manualmente' : 'Abrir Cola Manualmente' }}
+        }
+      </button>
+      <p class="toggle-hint">
+        {{ queueStatus()?.isOpen ? 'Cierra la cola para evitar nuevos ingresos' : 'Abre la cola para permitir nuevos ingresos' }}
+      </p>
+    </div>
+
+    <!-- Main Actions -->
+    <div class="main-actions">
+      <button (click)="callNext()" [disabled]="isCalling()" class="call-next-button">
+        <span class="button-icon" *ngIf="!isCalling()">📢</span>
+        <span class="loading-spinner" *ngIf="isCalling()"></span>
+        <span>{{ isCalling() ? 'Llamando...' : 'Llamar Siguiente Cliente' }}</span>
+      </button>
+      <button (click)="autoAssignFromQueue()" [disabled]="isAutoAssigning()" class="auto-assign-button">
+        <span class="button-icon" *ngIf="!isAutoAssigning()">🤖</span>
+        <span class="loading-spinner" *ngIf="isAutoAssigning()"></span>
+        <span>{{ isAutoAssigning() ? 'Asignando...' : 'Auto-Asignar Técnicos' }}</span>
+      </button>
+      <button (click)="prioritizeQueue()" [disabled]="isPrioritizing()" class="prioritize-button">
+        <span class="button-icon" *ngIf="!isPrioritizing()">⚡</span>
+        <span class="loading-spinner" *ngIf="isPrioritizing()"></span>
+        <span>{{ isPrioritizing() ? 'Priorizando...' : 'Re-Priorizar Cola' }}</span>
+      </button>
+      <button (click)="calculateWaitTimes()" [disabled]="isCalculatingWaitTimes()" class="calculate-wait-button">
+        <span class="button-icon" *ngIf="!isCalculatingWaitTimes()">⏱️</span>
+        <span class="loading-spinner" *ngIf="isCalculatingWaitTimes()"></span>
+        <span>{{ isCalculatingWaitTimes() ? 'Calculando...' : 'Calcular Tiempos' }}</span>
+      </button>
+      <button (click)="clearQueue()" [disabled]="isClearingQueue()" class="clear-queue-button">
+        <span class="button-icon" *ngIf="!isClearingQueue()">🗑️</span>
+        <span class="loading-spinner" *ngIf="isClearingQueue()"></span>
+        <span>{{ isClearingQueue() ? 'Limpiando...' : 'Limpiar Cola' }}</span>
+      </button>
+    </div>
+
+    <!-- Queue Entries List -->
+    <div class="queue-entries-section">
+      <h2 class="section-title">Entradas en Cola</h2>
+
+      <div class="entries-list" *ngIf="filteredCurrentEntries().length > 0; else noEntries">
+        <div class="entry-card" *ngFor="let entry of filteredCurrentEntries()" [class]="getStatusClass(entry.status)" [class]="getPriorityLevel(entry)">
+          <div class="entry-header">
+            <div class="entry-position">
+              <span class="position-number">#{{ entry.position }}</span>
+              <span class="priority-badge" [class]="getPriorityLevel(entry)">
+                @if(getPriorityLevel(entry) === 'high') {
+                  🔥 Alta
+                } @else if(getPriorityLevel(entry) === 'medium') {
+                  ⚠️ Media
+                } @else {
+                  ✓ Baja
+                }
+              </span>
+            </div>
+            <div class="entry-status">
+              <span class="status-badge" [class]="getStatusClass(entry.status)">
+                {{ getStatusText(entry.status) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="entry-details">
+            <div class="detail-item">
+              <span class="detail-label">ID Cliente:</span>
+              <span class="detail-value">{{ entry.customerId }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Tipo de Servicio:</span>
+              <span class="detail-value">{{ entry.serviceType === 'appointment' ? 'Agendar Cita' : 'Servicio Inmediato' }}</span>
+            </div>
+            <div class="detail-item" *ngIf="entry.assignedTo">
+              <span class="detail-label">Técnico Asignado:</span>
+              <span class="detail-value">{{ getAssignedTechnicianName(entry) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Tiempo de Espera Estimado:</span>
+              <span class="detail-value">{{ getEstimatedWaitTime(entry.id) }} minutos</span>
+              <span class="priority-indicator" [class]="getPriorityLevel(entry)">
+                {{ getPriorityLevel(entry) === 'high' ? '🔴' : getPriorityLevel(entry) === 'medium' ? '🟡' : '🟢' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Hora de Unión:</span>
+              <span class="detail-value">{{ entry.joinedAt.toDate() | date:'short' }}</span>
+            </div>
+            <div class="detail-item" *ngIf="entry.notes">
+              <span class="detail-label">Notas:</span>
+              <span class="detail-value">{{ entry.notes }}</span>
+            </div>
+            <div class="detail-item" *ngIf="entry.verificationCode">
+              <span class="detail-label">Código de Verificación:</span>
+              <span class="detail-value">{{ entry.verificationCode }}</span>
+            </div>
+          </div>
+
+          <div class="entry-actions">
+            <button (click)="viewEntryDetails(entry)" class="action-button view-button">
+              <span class="button-icon">👁️</span>
+              <span>Ver Detalles</span>
+            </button>
+            <button *ngIf="entry.status === 'called'" (click)="serveEntry(entry.id)" class="action-button serve-button">
+              <span class="button-icon">✅</span>
+              <span>Marcar como Atendido</span>
+            </button>
+            <button *ngIf="entry.status === 'waiting'" (click)="callNext()" class="action-button call-button">
+              <span class="button-icon">📢</span>
+              <span>Llamar Cliente</span>
+            </button>
+            <button *ngIf="entry.status === 'waiting' || entry.status === 'called'" (click)="cancelEntry(entry.id)" class="action-button cancel-button">
+              <span class="button-icon">❌</span>
+              <span>Cancelar</span>
+            </button>
+            <button *ngIf="entry.status === 'waiting'" (click)="markNoShow(entry.id)" class="action-button no-show-button">
+              <span class="button-icon">👤</span>
+              <span>No se Presentó</span>
+            </button>
+          </div>
+        </div>
+      
+        <!-- AI Assistant Chat -->
+        <div class="ai-assistant-overlay" *ngIf="showAI()" (click)="closeAI()">
+          <div class="ai-assistant-panel" (click)="$event.stopPropagation()">
+            <!-- AI Header -->
+            <div class="ai-header">
+              <div class="ai-header-content">
+                <div class="ai-icon">🤖</div>
+                <h3>Asistente IA - Groq</h3>
+              </div>
+              <button (click)="closeAI()" class="ai-close-button">✕</button>
+            </div>
+      
+            <!-- AI Messages -->
+            <div class="ai-messages">
+              <div class="message" *ngFor="let message of aiMessages(); trackBy: trackByMessage" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
+                <div class="message-content">
+                  {{ message.content }}
+                </div>
+              </div>
+              <div class="message loading" *ngIf="isAILoading()">
+                <div class="message-content">
+                  <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+      
+            <!-- AI Input -->
+            <div class="ai-input-section">
+              <div class="ai-input-container">
+                <input
+                  type="text"
+                  [(ngModel)]="aiInput"
+                  (keyup.enter)="sendAIMessage()"
+                  placeholder="Escribe tu consulta..."
+                  class="ai-input"
+                  [disabled]="isAILoading()">
+                <button
+                  (click)="sendAIMessage()"
+                  [disabled]="isAILoading() || !aiInput().trim()"
+                  class="ai-send-button">
+                  Enviar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noEntries>
+        <div class="no-entries-message">
+          <div class="empty-icon">📋</div>
+          <h3>No hay entradas activas en la cola</h3>
+          <p>Los clientes pueden unirse escaneando el código QR en la entrada</p>
+        </div>
+      </ng-template>
+
+      <!-- Pagination -->
+      <app-pagination
+        [meta]="paginationMeta()"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div *ngIf="activeTab() === 'history'">
+    <div class="queue-entries-section">
+      <h2 class="section-title">Historial de Cola</h2>
+
+      <div class="entries-list" *ngIf="historyEntries().length > 0; else noHistory">
+        <div class="entry-card history-card" *ngFor="let entry of historyEntries()" [class]="getStatusClass(entry.status)">
+          <div class="entry-header">
+            <div class="entry-status">
+              <span class="status-badge" [class]="getStatusClass(entry.status)">
+                {{ getStatusText(entry.status) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="entry-details">
+            <div class="detail-item">
+              <span class="detail-label">ID Cliente:</span>
+              <span class="detail-value">{{ entry.customerId }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Tipo de Servicio:</span>
+              <span class="detail-value">{{ entry.serviceType === 'appointment' ? 'Agendar Cita' : 'Servicio Inmediato' }}</span>
+            </div>
+            <div class="detail-item" *ngIf="entry.assignedTo">
+              <span class="detail-label">Técnico Asignado:</span>
+              <span class="detail-value">{{ getAssignedTechnicianName(entry) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Hora de Unión:</span>
+              <span class="detail-value">{{ entry.joinedAt.toDate() | date:'short' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Hora de Finalización:</span>
+              <span class="detail-value">{{ entry.updatedAt.toDate() | date:'short' }}</span>
+            </div>
+            <div class="detail-item" *ngIf="entry.notes">
+              <span class="detail-label">Notas:</span>
+              <span class="detail-value">{{ entry.notes }}</span>
+            </div>
+          </div>
+
+          <div class="entry-actions">
+            <button (click)="viewEntryDetails(entry)" class="action-button view-button">
+              <span class="button-icon">👁️</span>
+              <span>Ver Detalles</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noHistory>
+        <div class="no-entries-message">
+          <div class="empty-icon">📚</div>
+          <h3>No hay historial disponible</h3>
+          <p>Las entradas completadas aparecerán aquí</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div *ngIf="activeTab() === 'settings'">
+    <div class="settings-section">
+      <h2 class="section-title">Configuración de Horarios de Operación</h2>
+
+      <div class="operating-hours-form" *ngIf="operatingHours() as hours">
+        <div class="hours-grid">
+          <div class="day-config" *ngFor="let day of ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']">
+            <div class="day-header">
+              <label class="day-checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="hours[day]?.enabled"
+                  (change)="hours[day].enabled = $any($event.target).checked">
+                <span class="checkmark"></span>
+                {{ getDayName(day) }}
+              </label>
+            </div>
+            <div class="day-hours" *ngIf="hours[day]?.enabled">
+              <div class="time-input">
+                <label>Apertura:</label>
+                <input
+                  type="time"
+                  [value]="hours[day]?.open"
+                  (change)="hours[day].open = $any($event.target).value"
+                  class="time-field">
+              </div>
+              <div class="time-input">
+                <label>Cierre:</label>
+                <input
+                  type="time"
+                  [value]="hours[day]?.close"
+                  (change)="hours[day].close = $any($event.target).value"
+                  class="time-field">
+              </div>
+            </div>
+          </div>
+        
+          <!-- Entry Details Modal -->
+          <div *ngIf="showEntryDetails() && selectedEntry() as entry" class="modal-overlay" (click)="closeEntryDetails()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                <h3>Detalles de la Entrada #{{ entry.position }}</h3>
+                <button (click)="closeEntryDetails()" class="close-button">✕</button>
+              </div>
+        
+              <div class="modal-body">
+                <div class="detail-grid">
+                  <div class="detail-group">
+                    <h4>Información General</h4>
+                    <div class="detail-row">
+                      <span class="label">ID de Entrada:</span>
+                      <span class="value">{{ entry.id }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">ID de Cliente:</span>
+                      <span class="value">{{ entry.customerId }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Estado:</span>
+                      <span class="value status-badge" [class]="getStatusClass(entry.status)">
+                        {{ getStatusText(entry.status) }}
+                      </span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Tipo de Servicio:</span>
+                      <span class="value">{{ entry.serviceType === 'appointment' ? 'Agendar Cita' : 'Servicio Inmediato' }}</span>
+                    </div>
+                  </div>
+        
+                  <div class="detail-group">
+                    <h4>Información de Tiempo</h4>
+                    <div class="detail-row">
+                      <span class="label">Posición:</span>
+                      <span class="value">#{{ entry.position }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Hora de Unión:</span>
+                      <span class="value">{{ entry.joinedAt.toDate() | date:'medium' }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Última Actualización:</span>
+                      <span class="value">{{ entry.updatedAt.toDate() | date:'medium' }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Tiempo de Espera Estimado:</span>
+                      <span class="value">{{ getEstimatedWaitTime(entry.id) }} minutos</span>
+                    </div>
+                  </div>
+        
+                  <div class="detail-group" *ngIf="entry.assignedTo">
+                    <h4>Asignación</h4>
+                    <div class="detail-row">
+                      <span class="label">Técnico Asignado:</span>
+                      <span class="value">{{ getAssignedTechnicianName(entry) }}</span>
+                    </div>
+                  </div>
+        
+                  <div class="detail-group" *ngIf="entry.verificationCode">
+                    <h4>Verificación</h4>
+                    <div class="detail-row">
+                      <span class="label">Código de Verificación:</span>
+                      <span class="value verification-code">{{ entry.verificationCode }}</span>
+                    </div>
+                  </div>
+        
+                  <div class="detail-group" *ngIf="entry.notes">
+                    <h4>Notas</h4>
+                    <div class="notes-content">{{ entry.notes }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button (click)="updateOperatingHours()" [disabled]="isUpdatingHours()" class="save-settings-button">
+            <span *ngIf="isUpdatingHours()" class="loading-spinner"></span>
+            <span *ngIf="!isUpdatingHours()">💾 Guardar Horarios</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

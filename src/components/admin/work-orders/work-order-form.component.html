@@ -1,0 +1,163 @@
+@if(isLoading()) {
+    <app-loader [text]="'Cargando...'"></app-loader>
+} @else {
+    <form [formGroup]="workOrderForm" (ngSubmit)="saveWorkOrder()">
+        <div class="space-y-8">
+            <!-- Encabezado -->
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold">{{ isEditMode ? 'Editar Orden #' + workOrder()?.number : 'Crear Nueva Orden de Trabajo' }}</h1>
+                    @if(isEditMode) {
+                        <p class="text-muted-foreground">Creada: {{ workOrder()?.createdAt.toDate().toLocaleDateString('es-CO', { dateStyle: 'long' }) }}</p>
+                    }
+                </div>
+                <div class="flex items-center gap-4">
+                    <a routerLink="/admin/work-orders" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80 text-sm">Cancelar</a>
+                    <button type="submit" [disabled]="!workOrderForm.valid || isSubmitting()" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 text-sm">
+                        @if(isSubmitting()){ <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div> } 
+                        @else { <span>{{ isEditMode ? 'Guardar Cambios' : 'Crear Orden' }}</span> }
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contenido Principal -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Sección de Cliente y Vehículo -->
+                    <div class="bg-card p-6 rounded-xl border border-border shadow-sm">
+                        <h2 class="text-lg font-semibold mb-4">Información del Cliente y Vehículo</h2>
+                        @if(isEditMode) {
+                            @if(selectedCustomer(); as c) {
+                                <div class="space-y-1 text-sm">
+                                    <p class="font-medium text-foreground">{{ c.name }}</p>
+                                    <p class="text-muted-foreground">{{ c.email }}</p>
+                                    <p class="text-muted-foreground pt-2">Vehículo ID: <span class="font-mono text-xs">{{ workOrder()?.vehicleId }}</span></p>
+                                </div>
+                            }
+                        } @else {
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground">Buscar Cliente</label>
+                                    <input type="text" placeholder="Nombre o email..." [formControl]="customerSearchCtrl" class="mt-1 w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                                    @if(customerSearchResults().length > 0) {
+                                        <ul class="mt-1 border border-border rounded-md bg-background max-h-48 overflow-y-auto">
+                                            @for(user of customerSearchResults(); track user.id) {
+                                                <li (click)="selectCustomer(user)" class="px-3 py-2 cursor-pointer hover:bg-secondary">
+                                                    {{ user.name }} ({{ user.email }})
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground">Seleccionar Vehículo</label>
+                                    <select formControlName="vehicleId" class="mt-1 w-full px-3 py-2 bg-background border border-border rounded-md text-sm" [disabled]="!selectedCustomer()">
+                                        <option value="" disabled>Seleccione un vehículo</option>
+                                        @for(vehicle of customerVehicles(); track vehicle.id) {
+                                            <option [value]="vehicle.id">{{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.plate }})</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Servicios y Productos -->
+                    <div class="bg-card p-6 rounded-xl border border-border shadow-sm">
+                        <h2 class="text-lg font-semibold mb-4">Servicios y Productos</h2>
+                        <!-- Búsqueda de Servicios -->
+                        <div>
+                            <label class="block text-sm font-medium text-foreground">Añadir Servicios</label>
+                             <input type="text" placeholder="Buscar servicio..." [formControl]="serviceSearchCtrl" class="mt-1 w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                             @if(serviceSearchResults().length > 0) {
+                                 <ul class="mt-1 border border-border rounded-md bg-background max-h-48 overflow-y-auto">
+                                     @for(service of serviceSearchResults(); track service.id) {
+                                         <li (click)="addService(service)" class="px-3 py-2 cursor-pointer hover:bg-secondary flex justify-between">
+                                             <span>{{ service.name }}</span>
+                                             <span>{{ service.price | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                                         </li>
+                                     }
+                                 </ul>
+                             }
+                        </div>
+                         <!-- Búsqueda de Productos -->
+                         <div class="mt-4">
+                            <label class="block text-sm font-medium text-foreground">Añadir Productos</label>
+                             <input type="text" placeholder="Buscar producto..." [formControl]="productSearchCtrl" class="mt-1 w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                             @if(productSearchResults().length > 0) {
+                                 <ul class="mt-1 border border-border rounded-md bg-background max-h-48 overflow-y-auto">
+                                     @for(prod of productSearchResults(); track prod.id) {
+                                         <li (click)="addProduct(prod)" class="px-3 py-2 cursor-pointer hover:bg-secondary">
+                                             {{ prod.name }} ({{ prod.sku }})
+                                         </li>
+                                     }
+                                 </ul>
+                             }
+                        </div>
+                    </div>
+
+                    <!-- Items en la Orden -->
+                    <div class="bg-card p-6 rounded-xl border border-border shadow-sm" formArrayName="items">
+                         <h3 class="text-md font-semibold mb-2">Items en la Orden</h3>
+                         <div class="space-y-3">
+                            @for(item of items.controls; track $index) {
+                                <div [formGroupName]="$index" class="grid grid-cols-12 gap-x-4 items-center">
+                                    <div class="col-span-6">
+                                        <p class="font-medium text-sm">{{ item.value.description }}</p>
+                                        <p class="text-xs text-muted-foreground">
+                                            {{ item.value.type === 'product' ? 'Producto' : 'Servicio' }}
+                                            @if(item.value.type === 'product' && item.value.isSuggested) {
+                                                <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">Sugerido</span>
+                                            }
+                                        </p>
+                                    </div>
+                                    <div class="col-span-3">
+                                         @if(item.value.type === 'product') {
+                                            <input type="number" formControlName="quantity" class="w-full px-2 py-1 bg-background border border-border rounded-md text-sm text-center">
+                                         }
+                                    </div>
+                                    <div class="col-span-2 text-right">
+                                        <p class="text-sm">{{ item.value.price | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+                                    </div>
+                                    <div class="col-span-1 text-right">
+                                        <button type="button" (click)="removeItem($index)" class="p-1 text-muted-foreground hover:text-destructive">
+                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            @if(items.controls.length === 0) {
+                                <p class="text-sm text-muted-foreground text-center py-4">Añada servicios o productos a la orden.</p>
+                            }
+                         </div>
+                    </div>
+
+                </div>
+
+                <!-- Barra Lateral -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-card p-6 rounded-xl border border-border shadow-sm">
+                         <h2 class="text-lg font-semibold mb-4">Estado y Asignación</h2>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground">Estado de la Orden</label>
+                            <select formControlName="status" class="mt-1 w-full px-3 py-2 bg-background border border-border rounded-md text-sm">
+                                @for(s of statuses; track s) { <option [value]="s">{{s}}</option> }
+                            </select>
+                        </div>
+                    </div>
+
+                     <!-- Resumen de Costos -->
+                     <div class="bg-card p-6 rounded-xl border border-border shadow-sm">
+                        <h2 class="text-lg font-semibold mb-4">Resumen de Costos</h2>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between font-bold text-base border-t border-border pt-2 mt-2">
+                                <span class="text-foreground">Total:</span>
+                                <span>{{ totalAmount() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+}
