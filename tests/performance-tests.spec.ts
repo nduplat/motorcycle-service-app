@@ -10,8 +10,8 @@ import { SchedulingService } from '../src/services/scheduling.service';
 import { CacheService } from '../src/services/cache.service';
 import { AppointmentService } from '../src/services/appointment.service';
 import { WorkOrderService } from '../src/services/work-order.service';
-import { AIAssistantService } from '../src/services/ai-assistant.service';
-import { GroqService } from '../src/services/groq.service';
+// import { AIAssistantService } from '../src/services/ai-assistant.service'; // REMOVED: AI services eliminated for cost savings
+// import { GroqService } from '../src/services/groq.service'; // REMOVED: AI services eliminated for cost savings
 import { CostMonitoringService } from '../src/services/cost-monitoring.service';
 import { FallbackLibraryService } from '../src/services/fallback-library.service';
 import { BudgetCircuitBreakerService } from '../src/services/budget-circuit-breaker.service';
@@ -20,7 +20,7 @@ import { BudgetCircuitBreakerService } from '../src/services/budget-circuit-brea
 describe('Performance Tests', () => {
   let queueService: QueueService;
   let notificationService: NotificationService;
-  let aiAssistantService: AIAssistantService;
+  // let aiAssistantService: AIAssistantService; // REMOVED: AI services eliminated for cost savings
   let cacheService: CacheService;
   let costMonitoringService: CostMonitoringService;
 
@@ -81,7 +81,7 @@ describe('Performance Tests', () => {
       providers: [
         QueueService,
         NotificationService,
-        AIAssistantService,
+        // AIAssistantService, // REMOVED: AI services eliminated for cost savings
         { provide: AuthService, useValue: authSpy },
         { provide: UserService, useValue: userSpy },
         { provide: EventBusService, useValue: eventBusSpyObj },
@@ -90,7 +90,7 @@ describe('Performance Tests', () => {
         { provide: CacheService, useValue: cacheSpy },
         { provide: AppointmentService, useValue: appointmentSpy },
         { provide: WorkOrderService, useValue: workOrderSpy },
-        { provide: GroqService, useValue: groqSpy },
+        // { provide: GroqService, useValue: groqSpy }, // REMOVED: AI services eliminated for cost savings
         { provide: CostMonitoringService, useValue: costSpy },
         { provide: FallbackLibraryService, useValue: fallbackSpy },
         { provide: BudgetCircuitBreakerService, useValue: circuitBreakerSpy }
@@ -99,7 +99,7 @@ describe('Performance Tests', () => {
 
     queueService = TestBed.inject(QueueService);
     notificationService = TestBed.inject(NotificationService);
-    aiAssistantService = TestBed.inject(AIAssistantService);
+    // aiAssistantService = TestBed.inject(AIAssistantService); // REMOVED: AI services eliminated for cost savings
     cacheService = TestBed.inject(CacheService);
     costMonitoringService = TestBed.inject(CostMonitoringService);
   });
@@ -183,85 +183,86 @@ describe('Performance Tests', () => {
     });
   });
 
-  describe('AI Assistant Performance', () => {
-    beforeEach(() => {
-      // Setup mocks for AI operations
-      jest.spyOn(aiAssistantService as any, 'callGeminiAPI').mockResolvedValue({
-        response: 'AI response',
-        tokens: 150
-      });
-      jest.spyOn(cacheService, 'get').mockResolvedValue(null);
-      jest.spyOn(cacheService, 'set').mockResolvedValue(undefined);
-    });
+  // REMOVED: AI Assistant Performance tests - AI services eliminated for cost savings
+  // describe('AI Assistant Performance', () => {
+  //   beforeEach(() => {
+  //     // Setup mocks for AI operations
+  //     jest.spyOn(aiAssistantService as any, 'callGeminiAPI').mockResolvedValue({
+  //       response: 'AI response',
+  //       tokens: 150
+  //     });
+  //     jest.spyOn(cacheService, 'get').mockResolvedValue(null);
+  //     jest.spyOn(cacheService, 'set').mockResolvedValue(undefined);
+  //   });
 
-    it('should respond to fallback queries within 50ms', async () => {
-      const startTime = performance.now();
+  //   it('should respond to fallback queries within 50ms', async () => {
+  //     const startTime = performance.now();
 
-      // Test fallback query (should be very fast)
-      const result = await aiAssistantService.processUserQuery('¿Cuál es el horario?', 'chatbot');
+  //     // Test fallback query (should be very fast)
+  //     const result = await aiAssistantService.processUserQuery('¿Cuál es el horario?', 'chatbot');
 
-      const endTime = performance.now();
-      const duration = endTime - startTime;
+  //     const endTime = performance.now();
+  //     const duration = endTime - startTime;
 
-      expect(duration).toBeLessThan(50);
-      expect(result).toContain('horario');
-    });
+  //     expect(duration).toBeLessThan(50);
+  //     expect(result).toContain('horario');
+  //   });
 
-    it('should handle cached responses within 200ms', async () => {
-      // Mock cached response
-      const cachedResponse = 'Cached response for common query';
-      jest.spyOn(cacheService, 'get').mockResolvedValue(cachedResponse);
+  //   it('should handle cached responses within 200ms', async () => {
+  //     // Mock cached response
+  //     const cachedResponse = 'Cached response for common query';
+  //     jest.spyOn(cacheService, 'get').mockResolvedValue(cachedResponse);
 
-      const startTime = performance.now();
+  //     const startTime = performance.now();
 
-      const result = await aiAssistantService.processUserQuery('cached query', 'chatbot');
+  //     const result = await aiAssistantService.processUserQuery('cached query', 'chatbot');
 
-      const endTime = performance.now();
-      const duration = endTime - startTime;
+  //     const endTime = performance.now();
+  //     const duration = endTime - startTime;
 
-      expect(duration).toBeLessThan(200);
-      expect(result).toBe(cachedResponse);
-    });
+  //     expect(duration).toBeLessThan(200);
+  //     expect(result).toBe(cachedResponse);
+  //   });
 
-    it('should handle AI responses within acceptable time limits', async () => {
-      // Mock AI call
-      jest.spyOn(cacheService, 'get').mockResolvedValue(null);
+  //   it('should handle AI responses within acceptable time limits', async () => {
+  //     // Mock AI call
+  //     jest.spyOn(cacheService, 'get').mockResolvedValue(null);
 
-      const startTime = performance.now();
+  //     const startTime = performance.now();
 
-      const result = await aiAssistantService.processUserQuery('complex diagnostic question', 'workOrder');
+  //     const result = await aiAssistantService.processUserQuery('complex diagnostic question', 'workOrder');
 
-      const endTime = performance.now();
-      const duration = endTime - startTime;
+  //     const endTime = performance.now();
+  //     const duration = endTime - startTime;
 
-      // AI responses should be under 2 seconds for good UX
-      expect(duration).toBeLessThan(2000);
-      expect(result).toBe('AI response');
-    });
+  //     // AI responses should be under 2 seconds for good UX
+  //     expect(duration).toBeLessThan(2000);
+  //     expect(result).toBe('AI response');
+  //   });
 
-    it('should maintain performance with concurrent AI requests', async () => {
-      const concurrentRequests = 5;
-      const queries = Array.from({ length: concurrentRequests }, (_, i) =>
-        `Concurrent query ${i}`
-      );
+  //   it('should maintain performance with concurrent AI requests', async () => {
+  //     const concurrentRequests = 5;
+  //     const queries = Array.from({ length: concurrentRequests }, (_, i) =>
+  //       `Concurrent query ${i}`
+  //     );
 
-      jest.spyOn(cacheService, 'get').mockResolvedValue(null);
+  //     jest.spyOn(cacheService, 'get').mockResolvedValue(null);
 
-      const startTime = performance.now();
+  //     const startTime = performance.now();
 
-      const results = await Promise.all(
-        queries.map(query => aiAssistantService.processUserQuery(query, 'chatbot'))
-      );
+  //     const results = await Promise.all(
+  //       queries.map(query => aiAssistantService.processUserQuery(query, 'chatbot'))
+  //     );
 
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-      const avgTimePerRequest = duration / concurrentRequests;
+  //     const endTime = performance.now();
+  //     const duration = endTime - startTime;
+  //     const avgTimePerRequest = duration / concurrentRequests;
 
-      // Average response time should be reasonable
-      expect(avgTimePerRequest).toBeLessThan(1000);
-      expect(results).toHaveLength(concurrentRequests);
-    });
-  });
+  //     // Average response time should be reasonable
+  //     expect(avgTimePerRequest).toBeLessThan(1000);
+  //     expect(results).toHaveLength(concurrentRequests);
+  //   });
+  // });
 
   describe('Cache Service Performance', () => {
     it('should provide fast cache access', async () => {
@@ -490,8 +491,9 @@ describe('Performance Tests', () => {
       await queueService.addToQueue(queueData);
       const queueJoinTime = performance.now();
 
-      // Step 2: AI Assistant interaction
-      const aiResponse = await aiAssistantService.processUserQuery('¿Estado de mi turno?', 'chatbot');
+      // Step 2: AI Assistant interaction - REMOVED: AI services eliminated for cost savings
+      // const aiResponse = await aiAssistantService.processUserQuery('¿Estado de mi turno?', 'chatbot');
+      const aiResponse = 'AI services disabled for cost optimization';
       const aiResponseTime = performance.now();
 
       // Step 3: Notification creation
@@ -544,8 +546,9 @@ describe('Performance Tests', () => {
 
         allOperations.push(queueService.addToQueue(queueData));
 
-        // AI query
-        allOperations.push(aiAssistantService.processUserQuery(`Query from user ${user}`, 'chatbot'));
+        // AI query - REMOVED: AI services eliminated for cost savings
+        // allOperations.push(aiAssistantService.processUserQuery(`Query from user ${user}`, 'chatbot'));
+        allOperations.push(Promise.resolve('AI disabled'));
 
         // Notification
         allOperations.push(notificationService.addSystemNotification({

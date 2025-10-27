@@ -1,0 +1,206 @@
+<div class="tab-content">
+  <!-- Period Selector -->
+  <div class="period-selector-section">
+    <mat-form-field appearance="outline" class="period-selector">
+      <mat-label>Período</mat-label>
+      <mat-select [value]="metricsPeriod()" (selectionChange)="onMetricsPeriodChange($event.value)">
+        <mat-option value="daily">Diario</mat-option>
+        <mat-option value="weekly">Semanal</mat-option>
+        <mat-option value="monthly">Mensual</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loadingStates().metrics || loadingStates().teamMetrics" class="loading-section">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Cargando métricas...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="errorStates().metrics || errorStates().teamMetrics" class="error-section">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ errorStates().metrics || errorStates().teamMetrics }}</p>
+  </div>
+
+  <!-- Main Metrics Grid -->
+  <div class="metrics-grid" *ngIf="!loadingStates().metrics && !loadingStates().teamMetrics && !errorStates().metrics && !errorStates().teamMetrics">
+    <!-- KPI Cards -->
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <div class="kpi-header">
+          <mat-icon class="kpi-icon">assignment_turned_in</mat-icon>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ currentMetrics()?.completedWorkOrders || 0 }}</span>
+            <span class="kpi-label">Trabajos Completados</span>
+          </div>
+        </div>
+        <div class="kpi-comparison" *ngIf="personalVsTeamJobs() !== 0">
+          <mat-icon [class.positive]="personalVsTeamJobs() > 0" [class.negative]="personalVsTeamJobs() < 0">
+            {{ personalVsTeamJobs() > 0 ? 'trending_up' : 'trending_down' }}
+          </mat-icon>
+          <span class="comparison-text" [class.positive]="personalVsTeamJobs() > 0" [class.negative]="personalVsTeamJobs() < 0">
+            {{ personalVsTeamJobs() > 0 ? '+' : '' }}{{ personalVsTeamJobs() }} vs promedio equipo
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <div class="kpi-header">
+          <mat-icon class="kpi-icon">schedule</mat-icon>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ formatDuration((currentMetrics()?.totalHoursWorked || 0) * 60) }}</span>
+            <span class="kpi-label">Horas Trabajadas</span>
+          </div>
+        </div>
+        <div class="kpi-comparison" *ngIf="personalVsTeamHours() !== 0">
+          <mat-icon [class.positive]="personalVsTeamHours() > 0" [class.negative]="personalVsTeamHours() < 0">
+            {{ personalVsTeamHours() > 0 ? 'trending_up' : 'trending_down' }}
+          </mat-icon>
+          <span class="comparison-text" [class.positive]="personalVsTeamHours() > 0" [class.negative]="personalVsTeamHours() < 0">
+            {{ personalVsTeamHours() > 0 ? '+' : '' }}{{ personalVsTeamHours().toFixed(1) }}h vs promedio equipo
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <div class="kpi-header">
+          <mat-icon class="kpi-icon">trending_up</mat-icon>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ currentMetrics()?.efficiencyRate || 0 }}%</span>
+            <span class="kpi-label">Tasa de Eficiencia</span>
+          </div>
+        </div>
+        <div class="kpi-comparison" *ngIf="personalVsTeamEfficiency() !== 0">
+          <mat-icon [class.positive]="personalVsTeamEfficiency() > 0" [class.negative]="personalVsTeamEfficiency() < 0">
+            {{ personalVsTeamEfficiency() > 0 ? 'trending_up' : 'trending_down' }}
+          </mat-icon>
+          <span class="comparison-text" [class.positive]="personalVsTeamEfficiency() > 0" [class.negative]="personalVsTeamEfficiency() < 0">
+            {{ personalVsTeamEfficiency() > 0 ? '+' : '' }}{{ personalVsTeamEfficiency() }}% vs promedio equipo
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <div class="kpi-header">
+          <mat-icon class="kpi-icon">star</mat-icon>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ customerSatisfaction() | number:'1.1-1' }}</span>
+            <span class="kpi-label">Satisfacción Cliente</span>
+          </div>
+        </div>
+        <div class="rating-stars">
+          <mat-icon *ngFor="let star of [1,2,3,4,5]" [class.filled]="star <= customerSatisfaction()">
+            star
+          </mat-icon>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Goals Section -->
+  <div class="goals-section" *ngIf="!loadingStates().metrics && currentMetrics()">
+    <mat-card class="goals-card">
+      <mat-card-header>
+        <mat-card-title>Objetivos Mensuales</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="goal-item">
+          <div class="goal-header">
+            <span class="goal-label">Trabajos Completados</span>
+            <span class="goal-progress">{{ monthlyGoals().jobs.current }}/{{ monthlyGoals().jobs.target }}</span>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="goalProgress().jobs" class="goal-progress-bar"></mat-progress-bar>
+        </div>
+
+        <div class="goal-item">
+          <div class="goal-header">
+            <span class="goal-label">Horas Trabajadas</span>
+            <span class="goal-progress">{{ monthlyGoals().hours.current.toFixed(1) }}/{{ monthlyGoals().hours.target }}</span>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="goalProgress().hours" class="goal-progress-bar"></mat-progress-bar>
+        </div>
+
+        <div class="goal-item">
+          <div class="goal-header">
+            <span class="goal-label">Eficiencia</span>
+            <span class="goal-progress">{{ monthlyGoals().efficiency.current }}/{{ monthlyGoals().efficiency.target }}%</span>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="goalProgress().efficiency" class="goal-progress-bar"></mat-progress-bar>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Productivity Trends Chart -->
+  <div class="trends-section" *ngIf="productivityChartData().length > 0">
+    <mat-card class="trends-card">
+      <mat-card-header>
+        <mat-card-title>Tendencias de Productividad (Últimos 6 meses)</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-placeholder">
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-color jobs"></div>
+              <span>Trabajos Completados</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color hours"></div>
+              <span>Horas Trabajadas</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color efficiency"></div>
+              <span>Eficiencia (%)</span>
+            </div>
+          </div>
+          <div class="chart-bars">
+            <div class="chart-bar" *ngFor="let data of productivityChartData(); let i = index">
+              <div class="bar-container">
+                <div class="bar jobs-bar" [style.height.%]="(data.jobs / 30) * 100"></div>
+                <div class="bar hours-bar" [style.height.%]="(data.hours / 200) * 100"></div>
+                <div class="bar efficiency-bar" [style.height.%]="data.efficiency"></div>
+              </div>
+              <span class="bar-label">{{ data.month }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Additional Metrics -->
+  <div class="additional-metrics-section" *ngIf="currentMetrics()">
+    <mat-card class="additional-metrics-card">
+      <mat-card-header>
+        <mat-card-title>Métricas Adicionales</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="additional-metrics-grid">
+          <div class="metric-item">
+            <span class="metric-label">Tiempo Promedio por Trabajo:</span>
+            <span class="metric-value">{{ currentMetrics()?.averageJobDuration || 0 }} min</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Trabajos Rehechos:</span>
+            <span class="metric-value">{{ currentMetrics()?.reworkCount || 0 }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Tasa de Puntualidad:</span>
+            <span class="metric-value">{{ currentMetrics()?.onTimeCompletionRate || 0 }}%</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Tasa de Utilización:</span>
+            <span class="metric-value">{{ currentMetrics()?.utilizationRate || 0 }}%</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

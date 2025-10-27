@@ -587,9 +587,9 @@ async function notifyManagersNoTechnician(queueEntry: FirestoreQueueEntry): Prom
   try {
     MetricsCollector.incrementCounter('auto_assignment.manager_notification');
 
-    // Get all managers
+    // Get all admins (managers are now admins)
     const managersSnapshot = await db.collection('users')
-      .where('role', '==', 'manager')
+      .where('role', '==', 'admin')
       .get();
 
     const managers = managersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FirestoreUser));

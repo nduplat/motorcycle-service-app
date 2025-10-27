@@ -50,8 +50,8 @@ describe('Firestore Schema Validation', () => {
       });
 
       it('should validate user role enum values', async () => {
-        const validRoles = ['customer', 'technician', 'manager', 'admin'];
-        const invalidRoles = ['superuser', 'guest', ''];
+        const validRoles = ['customer', 'technician', 'admin'];
+        const invalidRoles = ['superuser', 'guest', 'manager', 'employee', 'front_desk', ''];
 
         for (const role of validRoles) {
           const userData = {

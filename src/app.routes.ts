@@ -47,7 +47,7 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./components/public/client-flow/client-flow-container.component').then(m => m.ClientFlowContainerComponent),
     title: 'Unirse a la Cola',
     canActivate: [() => import('./guards/client-flow.guard').then(m => m.ClientFlowGuard)],
-    data: { requiredRoles: ['customer', 'admin', 'employee', 'technician'] }
+    data: { requiredRoles: ['customer', 'admin', 'technician'] }
   },
   {
     path: 'queue-status',
@@ -61,16 +61,16 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./components/account/account.component').then(m => m.AccountComponent),
     title: 'Mi Cuenta',
     canActivate: [() => import('./guards/auth.guard').then(m => m.authGuard)],
-    data: { requiredRoles: ['customer', 'employee', 'admin'] }
+    data: { requiredRoles: ['customer', 'admin'] }
   },
 
   // UNIFIED DASHBOARD ROUTE FOR STAFF
   {
     path: 'employee',
-    loadComponent: () => import('./components/unified-dashboard.component').then(m => m.UnifiedDashboardComponent),
+    loadComponent: () => import('./components/employee/employee-dashboard.component').then(m => m.EmployeeDashboardComponent),
     title: 'Panel de Empleado',
     canActivate: [() => import('./guards/auth.guard').then(m => m.authGuard)],
-    data: { requiredRoles: ['technician', 'employee', 'front_desk'] }
+    data: { requiredRoles: ['technician'] }
   },
 
   // Protected checkout route
@@ -87,13 +87,13 @@ export const APP_ROUTES: Routes = [
     path: 'admin',
     loadComponent: () => import('./components/admin/admin-layout.component').then(m => m.AdminLayoutComponent),
     canActivate: [() => import('./guards/auth.guard').then(m => m.authGuard)],
-    data: { requiredRoles: ['admin', 'manager'] },
+    data: { requiredRoles: ['admin'] },
     children: [
         { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
         // UNIFIED DASHBOARD ROUTE FOR ADMIN/MANAGER
         {
           path: 'dashboard',
-          loadComponent: () => import('./components/unified-dashboard.component').then(m => m.UnifiedDashboardComponent),
+          loadComponent: () => import('./components/admin/admin-dashboard.component').then(m => m.AdminDashboardComponent),
           title: 'Panel de Administración'
         },
         {
@@ -193,6 +193,11 @@ export const APP_ROUTES: Routes = [
           path: 'cost-monitoring',
           loadComponent: () => import('./app/cost-monitoring-dashboard/cost-monitoring-dashboard.component').then(m => m.CostMonitoringDashboardComponent),
           title: 'Monitoreo de Costos AI'
+        },
+        {
+          path: 'capacity',
+          loadComponent: () => import('./components/admin/capacity-dashboard/capacity-dashboard.component').then(m => m.CapacityDashboardComponent),
+          title: 'Dashboard de Capacidad'
         },
         { path: '**', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

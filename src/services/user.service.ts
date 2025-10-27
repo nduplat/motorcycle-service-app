@@ -103,7 +103,7 @@ export class UserService {
     }
 
     const isAdmin = currentUser.role === 'admin';
-    const staffRoles = ['admin', 'manager', 'technician', 'front_desk', 'employee'];
+    const staffRoles = ['admin', 'technician'];
     const isStaff = staffRoles.includes(currentUser.role);
 
     console.log("🔍 UserService: Permission check:", {
@@ -688,7 +688,7 @@ export class UserService {
           return reject(new Error('User not authenticated.'));
         }
 
-        const assignableRoles: Role[] = ['technician', 'employee', 'front_desk'];
+        const assignableRoles: Role[] = ['technician'];
         if (!assignableRoles.includes(currentUser.role)) {
           return reject(new Error('User role cannot have availability status.'));
         }

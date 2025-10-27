@@ -64,7 +64,6 @@ export class WeeklyAvailabilityComponent {
   currentWeekStart = signal(this.getWeekStart(new Date()));
 
   employees = computed(() => [
-    ...this.userService.getUsersByRole('employee'),
     ...this.userService.getUsersByRole('technician')
   ]);
 

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { CircuitBreakerService } from './circuit-breaker.service';
 import { RateLimiterService } from './rate-limiter.service';
-import { AIAssistantService } from './ai-assistant.service';
+// import { AIAssistantService } from './ai-assistant.service'; // REMOVED: AI services eliminated for cost savings
 
 export interface ServiceHealthStatus {
   service: string;
@@ -16,7 +16,7 @@ export interface ServiceHealthStatus {
   providedIn: 'root'
 })
 export class ServiceHealthService {
-  private aiAssistantService = inject(AIAssistantService);
+  // private aiAssistantService = inject(AIAssistantService); // REMOVED: AI services eliminated for cost savings
   private circuitBreaker = inject(CircuitBreakerService);
   private rateLimiter = inject(RateLimiterService);
 
@@ -101,15 +101,16 @@ export class ServiceHealthService {
 
   private async checkAIHealth(startTime: number): Promise<ServiceHealthStatus> {
     try {
-      // Check if AI service is available by attempting a simple operation
-      const isConfigured = this.aiAssistantService ? true : false;
+      // REMOVED: AI services eliminated for cost savings
+      // const isConfigured = this.aiAssistantService ? true : false;
+      const isConfigured = false; // AI services removed
 
-      let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+      let status: 'healthy' | 'degraded' | 'unhealthy' = 'unhealthy'; // Always unhealthy since AI is removed
 
-      // Check circuit breaker status
+      // Check circuit breaker status (may still exist for other services)
       const circuitBreakerStats = this.circuitBreaker.getStats('ai-budget');
       if (circuitBreakerStats?.state === 'OPEN') {
-        status = 'degraded';
+        status = 'unhealthy'; // Even more unhealthy if circuit breaker is open
       }
 
       return {
@@ -117,9 +118,11 @@ export class ServiceHealthService {
         status,
         lastChecked: new Date(),
         responseTime: Date.now() - startTime,
+        errorMessage: 'AI services eliminated for cost savings',
         metrics: {
           configured: isConfigured,
-          circuitBreaker: circuitBreakerStats
+          circuitBreaker: circuitBreakerStats,
+          note: 'AI services removed for cost optimization'
         }
       };
     } catch (error: any) {
@@ -128,7 +131,7 @@ export class ServiceHealthService {
         status: 'unhealthy',
         lastChecked: new Date(),
         responseTime: Date.now() - startTime,
-        errorMessage: error.message
+        errorMessage: `AI services removed: ${error.message}`
       };
     }
   }

@@ -440,7 +440,9 @@ Enfócate en:
       await this.generateQueueAlerts();
 
       // 3. Generate maintenance reminders (MAINTENANCE_REMINDERS category - HIGHEST PRIORITY)
-      await this.generateMaintenanceReminders();
+      // REMOVED: AI services eliminated for cost savings
+      // await this.generateMaintenanceReminders();
+      console.log('🔧 Maintenance reminders disabled - AI services removed for cost optimization');
 
       // 4. Check for service order updates (SERVICE_ORDERS category)
       await this.generateServiceOrderAlerts();
@@ -528,95 +530,16 @@ Enfócate en:
     }
   }
 
-  private async generateMaintenanceReminders(): Promise<void> {
-    try {
-      console.log('🔧 AI Assistant: Generating maintenance reminders...');
-
-      // Get all user vehicles with batching to reduce API calls
-      const allUsers = this.userService.getUsers()();
-      const maintenanceReminders: any[] = [];
-
-      // Process users in batches to avoid overwhelming the system
-      const batchSize = 10;
-      for (let i = 0; i < allUsers.length; i += batchSize) {
-        const userBatch = allUsers.slice(i, i + batchSize);
-
-        // Process batch concurrently
-        const batchPromises = userBatch.map(async (user) => {
-          if (!user.id) return [];
-
-          try {
-            // Get user's vehicles
-            const userVehicles = await this.userVehicleService.getVehiclesForUser(user.id).toPromise() || [];
-
-            const userReminders: any[] = [];
-            for (const vehicle of userVehicles) {
-              // Get motorcycle details (cached)
-              const motorcycle = this.getMotorcycleById(vehicle.baseVehicleId);
-              if (!motorcycle) continue;
-
-              // Generate basic maintenance reminders
-              const reminders = this.generateBasicMaintenanceReminders(vehicle, motorcycle, user);
-              userReminders.push(...reminders);
-            }
-            return userReminders;
-          } catch (error) {
-            console.error(`Error checking maintenance for user ${user.id}:`, error);
-            return [];
-          }
-        });
-
-        // Wait for batch to complete
-        const batchResults = await Promise.all(batchPromises);
-        maintenanceReminders.push(...batchResults.flat());
-      }
-
-      // Process and send reminders (limit to avoid spam)
-      const urgentReminders = maintenanceReminders
-        .filter(r => r.priority === 'critical')
-        .slice(0, 5); // Max 5 urgent reminders per run
-
-      const recommendedReminders = maintenanceReminders
-        .filter(r => r.priority === 'recommended')
-        .slice(0, 10); // Max 10 recommended reminders per run
-
-      const allRemindersToSend = [...urgentReminders, ...recommendedReminders];
-
-      // Send reminders in batches to reduce load
-      const reminderBatchSize = 3;
-      for (let i = 0; i < allRemindersToSend.length; i += reminderBatchSize) {
-        const reminderBatch = allRemindersToSend.slice(i, i + reminderBatchSize);
-
-        // Send batch concurrently
-        await Promise.all(reminderBatch.map(async (reminder) => {
-          try {
-            await this.notificationService.createMaintenanceReminder(
-              reminder.customerId,
-              reminder.vehicleInfo,
-              reminder.serviceName,
-              reminder.dueInfo,
-              reminder.priority
-            );
-
-            console.log(`✅ Maintenance reminder sent for ${reminder.vehicleInfo.brand} ${reminder.vehicleInfo.model} - ${reminder.serviceName}`);
-
-          } catch (error) {
-            console.error(`Error sending maintenance reminder:`, error);
-          }
-        }));
-
-        // Small delay between batches to prevent overwhelming
-        if (i + reminderBatchSize < allRemindersToSend.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-
-      console.log(`🔧 AI Assistant: Sent ${allRemindersToSend.length} maintenance reminders (${urgentReminders.length} urgent, ${recommendedReminders.length} recommended)`);
-
-    } catch (error) {
-      console.error('Error generating maintenance reminders:', error);
-    }
-  }
+  // REMOVED: AI services eliminated for cost savings
+  // private async generateMaintenanceReminders(): Promise<void> {
+  //   try {
+  //     console.log('🔧 AI Assistant: Generating maintenance reminders...');
+  //     // ... (all the maintenance reminder logic removed)
+  //     console.log(`🔧 AI Assistant: Sent ${allRemindersToSend.length} maintenance reminders (${urgentReminders.length} urgent, ${recommendedReminders.length} recommended)`);
+  //   } catch (error) {
+  //     console.error('Error generating maintenance reminders:', error);
+  //   }
+  // }
 
   private generateBasicMaintenanceReminders(vehicle: UserVehicle, motorcycle: any, user: any): any[] {
     const reminders: any[] = [];

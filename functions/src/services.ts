@@ -518,9 +518,9 @@ export class TimeCoordinationService {
           return (now.getTime() - createdTime.getTime()) > delayThreshold;
         });
 
-        // Get managers for notifications
+        // Get admins for notifications (managers are now admins)
         const managersSnapshot = await db.collection('users')
-          .where('role', '==', 'manager')
+          .where('role', '==', 'admin')
           .get();
 
         const managers = managersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FirestoreUser));

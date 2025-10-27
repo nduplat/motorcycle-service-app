@@ -22,7 +22,7 @@ export class InventoryComponent {
   searchTerm = signal('');
   selectedCategoryId = signal('');
 
-  canAddProducts = computed(() => this.authService.hasRole(['admin', 'manager']));
+  canAddProducts = computed(() => this.authService.hasRole(['admin']));
 
   products = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();

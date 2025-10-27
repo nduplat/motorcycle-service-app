@@ -26,7 +26,7 @@ export class HeaderComponent {
 
   navItems = computed(() => {
     const user = this.currentUser();
-    if (user && (user.role === 'employee' || user.role === 'technician')) {
+    if (user && user.role === 'technician') {
       // Employees only see their dashboard
       return [];
     }

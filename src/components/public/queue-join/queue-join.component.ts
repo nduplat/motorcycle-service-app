@@ -19,8 +19,8 @@ import { QueueSessionService, QueueSession } from '../../../services/queue-sessi
 import { ValidationService } from '../../../services/validation_service';
 import { QueueAnalyticsService } from '../../../services/queue_analytics_service';
 import { FormCacheService } from '../../../services/form_cache_service';
-import { GroqService } from '../../../services/groq.service';
-import { AIAssistantService } from '../../../services/ai-assistant.service';
+// import { GroqService } from '../../../services/groq.service'; // REMOVED: AI services eliminated for cost savings
+// import { AIAssistantService } from '../../../services/ai-assistant.service'; // REMOVED: AI services eliminated for cost savings
 import { QueueEntry, User, Motorcycle } from '../../../models';
 import { auth } from '../../../firebase.config';
 import { User as FirebaseUser } from 'firebase/auth';
@@ -75,8 +75,8 @@ export class QueueJoinComponent implements OnInit, OnDestroy, AfterViewChecked {
   private validationService = inject(ValidationService);
   private analyticsService = inject(QueueAnalyticsService);
   private cacheService = inject(FormCacheService);
-  private groqService = inject(GroqService);
-  private aiAssistantService = inject(AIAssistantService);
+  // private groqService = inject(GroqService); // REMOVED: AI services eliminated for cost savings
+  // private aiAssistantService = inject(AIAssistantService); // REMOVED: AI services eliminated for cost savings
   private router = inject(Router);
 
   // ========== STEP CONFIGURATION ==========
@@ -1146,15 +1146,18 @@ INFORMACIÓN NECESARIA PARA COMPLETAR:
 
 Responde de manera natural, como si estuvieras charlando con un cliente en el taller.`;
 
-      // Get AI response
-      const aiResponse = await this.groqService.generateResponse(
-        userMessage,
-        systemPrompt,
-        {
-          temperature: 0.7,
-          max_tokens: 1000
-        }
-      );
+      // REMOVED: AI services eliminated for cost savings
+      // const aiResponse = await this.groqService.generateResponse(
+      //   userMessage,
+      //   systemPrompt,
+      //   {
+      //     temperature: 0.7,
+      //     max_tokens: 1000
+      //   }
+      // );
+
+      // Fallback to basic response
+      const aiResponse = "Lo siento, el servicio de asistencia IA no está disponible en este momento. Por favor, continúa con el proceso manualmente.";
 
       // Add AI response to chat
       await this.addMessage('ai', aiResponse);

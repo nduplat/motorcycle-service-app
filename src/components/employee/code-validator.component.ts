@@ -320,7 +320,7 @@ export class CodeValidatorComponent {
 
     // Check user permissions before navigating to admin route
     const currentUser = this.authService.currentUser();
-    if (!currentUser || !this.authService.hasRole(['admin', 'manager', 'technician', 'employee'])) {
+    if (!currentUser || !this.authService.hasRole(['admin', 'technician'])) {
       this.validationMessage.set('No tienes permisos para crear órdenes de trabajo.');
       this.isCreatingWorkOrder.set(false);
       return;

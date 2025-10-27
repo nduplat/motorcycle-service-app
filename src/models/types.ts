@@ -16,7 +16,7 @@ export { Timestamp, FieldValue };
  * Roles de usuario en el sistema del taller de motocicletas.
  * Define niveles de acceso y permisos para diferentes tipos de usuarios.
  */
-export type Role = "admin" | "manager" | "technician" | "employee" | "front_desk" | "customer";
+export type Role = "admin" | "technician" | "customer";
 
 /**
  * Supported currencies for pricing and transactions.

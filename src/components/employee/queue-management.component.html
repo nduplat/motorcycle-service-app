@@ -1,0 +1,152 @@
+<div class="queue-management">
+  <!-- Queue Statistics Panel -->
+  <div class="queue-statistics-panel">
+    <mat-card class="stats-card">
+      <mat-card-content>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon">
+              <mat-icon>people</mat-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ queueStats().totalInQueue }}</span>
+              <span class="stat-label">En Cola</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ queueStats().averageWaitTime }}</span>
+              <span class="stat-label">Tiempo Promedio (min)</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">
+              <mat-icon>engineering</mat-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ queueStats().techniciansAvailable }}</span>
+              <span class="stat-label">Técnicos Disponibles</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Queue Filter Chips -->
+  <div class="queue-filters-section">
+    <mat-chip-set>
+      <mat-chip
+        *ngFor="let filter of queueFilterOptions"
+        [selected]="selectedQueueFilter() === filter.value"
+        (click)="onQueueFilterChange(filter.value)"
+        [class.selected]="selectedQueueFilter() === filter.value">
+        {{ filter.label }}
+      </mat-chip>
+    </mat-chip-set>
+  </div>
+
+  <!-- Queue Search -->
+  <div class="queue-search-section">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Buscar en cola</mat-label>
+      <input matInput
+             [value]="queueSearchQuery()"
+             (input)="onQueueSearchChange($event.target.value)"
+             placeholder="Buscar por cliente, servicio...">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <!-- Queue Entry Cards -->
+  <div class="queue-entries-grid">
+    <mat-card *ngFor="let entry of filteredQueueEntries(); trackBy: trackByQueueEntryId"
+              class="queue-entry-card"
+              [class.called]="entry.status === 'called'"
+              [class.waiting]="entry.status === 'waiting'">
+
+      <!-- Card Header -->
+      <mat-card-header>
+        <div class="entry-header-content">
+          <div class="entry-position">
+            <span class="position-badge">#{{ entry.position }}</span>
+            <span class="wait-time">{{ getQueueEntryWaitTime(entry) }} min</span>
+          </div>
+          <mat-chip [color]="getQueueEntryStatusColor(entry.status)" class="status-chip">
+            {{ getQueueEntryStatusText(entry.status) }}
+          </mat-chip>
+        </div>
+      </mat-card-header>
+
+      <!-- Card Content -->
+      <mat-card-content>
+        <!-- Client Info -->
+        <div class="client-info" *ngIf="getQueueEntryClientInfo(entry)">
+          <mat-icon>person</mat-icon>
+          <div class="client-details">
+            <span class="client-name">{{ getQueueEntryClientInfo(entry)?.name || 'Cliente desconocido' }}</span>
+            <span class="client-email">{{ getQueueEntryClientInfo(entry)?.email }}</span>
+          </div>
+        </div>
+
+        <!-- Service Type -->
+        <div class="service-info">
+          <mat-icon>build</mat-icon>
+          <div class="service-details">
+            <span class="service-type">{{ entry.serviceType === 'appointment' ? 'Cita Programada' : 'Servicio Inmediato' }}</span>
+            <span class="joined-time">{{ entry.joinedAt.toDate() | date:'short' }}</span>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="notes-section" *ngIf="entry.notes">
+          <mat-icon>note</mat-icon>
+          <span class="notes-text">{{ entry.notes }}</span>
+        </div>
+
+        <!-- Assigned Technician -->
+        <div class="technician-info" *ngIf="entry.assignedTo">
+          <mat-icon>engineering</mat-icon>
+          <span class="technician-name">{{ entry.assignedTo }}</span>
+        </div>
+      </mat-card-content>
+
+      <!-- Action Buttons -->
+      <mat-card-actions>
+        <div class="queue-action-buttons">
+          <button mat-raised-button
+                  color="primary"
+                  *ngIf="entry.status === 'waiting'"
+                  (click)="callNextCustomer()"
+                  [disabled]="!isOnline() && !syncService.hasPendingOperations()">
+            <mat-icon>{{ !isOnline() ? 'offline_bolt' : 'call' }}</mat-icon>
+            {{ !isOnline() ? 'LLAMAR (Offline)' : 'LLAMAR AHORA' }}
+          </button>
+
+          <button mat-button
+                  (click)="viewQueueEntryDetails(entry)">
+            <mat-icon>visibility</mat-icon>
+            VER DETALLES
+          </button>
+
+          <button mat-button
+                  *ngIf="entry.status === 'waiting'"
+                  (click)="reassignQueueEntry(entry.id, '')">
+            <mat-icon>swap_horiz</mat-icon>
+            REASIGNAR
+          </button>
+        </div>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredQueueEntries().length === 0" class="empty-queue-state">
+      <mat-icon class="empty-icon">queue</mat-icon>
+      <h3>No hay entradas en la cola</h3>
+      <p>No se encontraron entradas que coincidan con los filtros aplicados.</p>
+    </div>
+  </div>
+</div>

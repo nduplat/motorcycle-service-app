@@ -37,8 +37,8 @@ export class UnifiedDashboardComponent {
   private authService = inject(AuthService);
   private currentUser = this.authService.currentUser;
 
-  private adminRoles: Role[] = ['admin', 'manager'];
-  private staffRoles: Role[] = ['technician', 'employee', 'front_desk'];
+  private adminRoles: Role[] = ['admin'];
+  private staffRoles: Role[] = ['technician'];
 
   isAdminOrManager = computed(() => {
     const userRole = this.currentUser()?.role;

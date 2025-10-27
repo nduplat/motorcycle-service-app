@@ -140,14 +140,8 @@ export class LoginComponent implements OnInit {
         console.log('🔐 LoginComponent: Navigating admin to /admin');
         this.router.navigate(['/admin']);
         break;
-      case 'manager':
-        console.log('🔐 LoginComponent: Navigating manager to /admin');
-        this.router.navigate(['/admin']);
-        break;
       case 'technician':
-      case 'employee':
-      case 'front_desk':
-        console.log('🔐 LoginComponent: Navigating staff to /employee');
+        console.log('🔐 LoginComponent: Navigating technician to /employee');
         this.router.navigate(['/employee']);
         break;
       case 'customer' as any:
@@ -162,7 +156,7 @@ export class LoginComponent implements OnInit {
   private canAccessRoute(url: string, role?: string): boolean {
     // Comprehensive role-based access control matching route guards
     if (url.startsWith('/admin')) {
-      return role === 'admin' || role === 'manager' || role === 'employee' || role === 'technician';
+      return role === 'admin';
     }
     if (url === '/appointments') {
       return role === 'customer';
@@ -171,13 +165,13 @@ export class LoginComponent implements OnInit {
       return role === 'customer';
     }
     if (url === '/account') {
-      return role === 'customer' || role === 'employee' || role === 'admin';
+      return role === 'customer' || role === 'admin';
     }
     if (url === '/employee') {
-      return role === 'employee' || role === 'technician' || role === 'front_desk';
+      return role === 'technician';
     }
     if (url === '/queue/join') {
-      return role === 'customer' || role === 'admin' || role === 'employee' || role === 'technician';
+      return role === 'customer' || role === 'admin' || role === 'technician';
     }
     // Public routes or routes accessible if logged in
     if (url === '/' || url === '/inventory' || url === '/services' || url === '/offers' || url === '/contact') {

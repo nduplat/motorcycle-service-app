@@ -27,7 +27,7 @@ import { AuthService } from '../../../services/auth.service';
 import { UserService } from '../../../services/user.service';
 import { WorkshopCapacityService } from '../../../services/workshop-capacity.service';
 import { EmployeeScheduleService } from '../../../services/employee-schedule.service';
-import { GroqService, GroqMessage } from '../../../services/groq.service';
+// import { GroqService, GroqMessage } from '../../../services/groq.service'; // REMOVED: AI services eliminated for cost savings
 import { QueueEntry, UserProfile, User } from '../../../models';
 import { toDate } from '../../../models/types';
 import { serverTimestamp } from 'firebase/firestore';
@@ -49,7 +49,7 @@ export class QueueManagementComponent implements OnInit {
   private userService = inject(UserService);
   private workshopCapacityService = inject(WorkshopCapacityService);
   private employeeScheduleService = inject(EmployeeScheduleService);
-  private groqService = inject(GroqService);
+  // private groqService = inject(GroqService); // REMOVED: AI services eliminated for cost savings
   private router = inject(Router);
 
   queueEntries = this.queueService.getQueueEntries();
@@ -75,10 +75,13 @@ export class QueueManagementComponent implements OnInit {
   waitTimeEstimations = signal<Map<string, number>>(new Map());
   isPrioritizing = signal(false);
 
-  // AI Assistant state
+  // AI Assistant state - REMOVED: AI services eliminated for cost savings
   showAI = signal(false);
-  aiMessages = signal<GroqMessage[]>([
-    { role: 'assistant', content: '¡Hola! Soy tu asistente de IA. ¿Cómo puedo ayudarte con la gestión de la cola?' }
+  // aiMessages = signal<GroqMessage[]>([
+  //   { role: 'assistant', content: '¡Hola! Soy tu asistente de IA. ¿Cómo puedo ayudarte con la gestión de la cola?' }
+  // ]);
+  aiMessages = signal<any[]>([
+    { role: 'assistant', content: 'Asistente IA no disponible - servicios eliminados por ahorro de costos.' }
   ]);
   aiInput = signal('');
   isAILoading = signal(false);
@@ -531,48 +534,34 @@ export class QueueManagementComponent implements OnInit {
     );
   });
 
-  // AI Assistant methods
+  // AI Assistant methods - REMOVED: AI services eliminated for cost savings
   async sendAIMessage() {
     const input = this.aiInput().trim();
     if (!input) return;
 
-    const userMessage: GroqMessage = { role: 'user', content: input };
+    // const userMessage: GroqMessage = { role: 'user', content: input };
+    const userMessage: any = { role: 'user', content: input };
     this.aiMessages.update(messages => [...messages, userMessage]);
     this.aiInput.set('');
     this.isAILoading.set(true);
 
     try {
-      // Create context about the current queue state
-      const queueContext = this.createQueueContext();
+      // REMOVED: AI services eliminated for cost savings
+      // const response = await this.groqService.chatCompletion(messages, {
+      //   temperature: 0.7,
+      //   max_tokens: 1000
+      // });
 
-      const messages: GroqMessage[] = [
-        {
-          role: 'system',
-          content: `Eres un asistente de IA especializado en la gestión de colas para talleres de motocicletas.
-          Ayuda al administrador con recomendaciones sobre asignación de técnicos, optimización de tiempos,
-          gestión de clientes y mejora de procesos. Usa el contexto proporcionado sobre el estado actual de la cola.`
-        },
-        ...this.aiMessages(),
-        {
-          role: 'user',
-          content: `Contexto de la cola: ${queueContext}\n\nPregunta del usuario: ${input}`
-        }
-      ];
-
-      const response = await this.groqService.chatCompletion(messages, {
-        temperature: 0.7,
-        max_tokens: 1000
-      });
-
-      const aiResponse: GroqMessage = {
+      // Fallback response
+      const aiResponse: any = {
         role: 'assistant',
-        content: response.choices[0]?.message?.content || 'Lo siento, no pude generar una respuesta.'
+        content: 'Lo siento, el asistente IA no está disponible. Los servicios de IA han sido eliminados para reducir costos. Por favor, continúa con la gestión manual de la cola.'
       };
 
       this.aiMessages.update(messages => [...messages, aiResponse]);
     } catch (error) {
       console.error('Error sending AI message:', error);
-      const errorMessage: GroqMessage = {
+      const errorMessage: any = {
         role: 'assistant',
         content: 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.'
       };

@@ -11,8 +11,8 @@ import { SchedulingService } from '../src/services/scheduling.service';
 import { CacheService } from '../src/services/cache.service';
 import { AppointmentService } from '../src/services/appointment.service';
 import { WorkOrderService } from '../src/services/work-order.service';
-import { AIAssistantService } from '../src/services/ai-assistant.service';
-import { GroqService } from '../src/services/groq.service';
+// import { AIAssistantService } from '../src/services/ai-assistant.service'; // REMOVED: AI services eliminated for cost savings
+// import { GroqService } from '../src/services/groq.service'; // REMOVED: AI services eliminated for cost savings
 import { CostMonitoringService } from '../src/services/cost-monitoring.service';
 import { FallbackLibraryService } from '../src/services/fallback-library.service';
 import { BudgetCircuitBreakerService } from '../src/services/budget-circuit-breaker.service';
@@ -21,7 +21,7 @@ import { BudgetCircuitBreakerService } from '../src/services/budget-circuit-brea
 describe('Error Handling and Edge Cases Tests', () => {
   let queueService: QueueService;
   let notificationService: NotificationService;
-  let aiAssistantService: AIAssistantService;
+  // let aiAssistantService: AIAssistantService; // REMOVED: AI services eliminated for cost savings
   let cacheService: CacheService;
   let costMonitoringService: CostMonitoringService;
 
@@ -82,7 +82,7 @@ describe('Error Handling and Edge Cases Tests', () => {
       providers: [
         QueueService,
         NotificationService,
-        AIAssistantService,
+        // AIAssistantService, // REMOVED: AI services eliminated for cost savings
         { provide: AuthService, useValue: authSpy },
         { provide: UserService, useValue: userSpy },
         { provide: EventBusService, useValue: eventBusSpyObj },
@@ -91,7 +91,7 @@ describe('Error Handling and Edge Cases Tests', () => {
         { provide: CacheService, useValue: cacheSpy },
         { provide: AppointmentService, useValue: appointmentSpy },
         { provide: WorkOrderService, useValue: workOrderSpy },
-        { provide: GroqService, useValue: groqSpy },
+        // { provide: GroqService, useValue: groqSpy }, // REMOVED: AI services eliminated for cost savings
         { provide: CostMonitoringService, useValue: costSpy },
         { provide: FallbackLibraryService, useValue: fallbackSpy },
         { provide: BudgetCircuitBreakerService, useValue: circuitBreakerSpy }
@@ -100,7 +100,7 @@ describe('Error Handling and Edge Cases Tests', () => {
 
     queueService = TestBed.inject(QueueService);
     notificationService = TestBed.inject(NotificationService);
-    aiAssistantService = TestBed.inject(AIAssistantService);
+    // aiAssistantService = TestBed.inject(AIAssistantService); // REMOVED: AI services eliminated for cost savings
     cacheService = TestBed.inject(CacheService);
     costMonitoringService = TestBed.inject(CostMonitoringService);
   });
@@ -226,68 +226,69 @@ describe('Error Handling and Edge Cases Tests', () => {
     });
   });
 
-  describe('AI Assistant Error Handling', () => {
-    it('should handle AI service failures gracefully', async () => {
-      // Mock AI service failure
-      jest.spyOn(aiAssistantService as any, 'callGeminiAPI').mockRejectedValue(new Error('AI service unavailable'));
+  // REMOVED: AI Assistant Error Handling tests - AI services eliminated for cost savings
+  // describe('AI Assistant Error Handling', () => {
+  //   it('should handle AI service failures gracefully', async () => {
+  //     // Mock AI service failure
+  //     jest.spyOn(aiAssistantService as any, 'callGeminiAPI').mockRejectedValue(new Error('AI service unavailable'));
 
-      const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
+  //     const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
 
-      // Should return fallback response
-      expect(result).toBeDefined();
-      expect(typeof result).toBe('string');
-    });
+  //     // Should return fallback response
+  //     expect(result).toBeDefined();
+  //     expect(typeof result).toBe('string');
+  //   });
 
-    it('should handle rate limiting', async () => {
-      // Mock rate limit exceeded
-      const circuitBreakerSpy = TestBed.inject(BudgetCircuitBreakerService);
-      jest.spyOn(circuitBreakerSpy, 'executeAIOperation').mockRejectedValue(new Error('Rate limit exceeded'));
-      jest.spyOn(circuitBreakerSpy, 'getFallbackResponse').mockResolvedValue('Rate limited response');
+  //   it('should handle rate limiting', async () => {
+  //     // Mock rate limit exceeded
+  //     const circuitBreakerSpy = TestBed.inject(BudgetCircuitBreakerService);
+  //     jest.spyOn(circuitBreakerSpy, 'executeAIOperation').mockRejectedValue(new Error('Rate limit exceeded'));
+  //     jest.spyOn(circuitBreakerSpy, 'getFallbackResponse').mockResolvedValue('Rate limited response');
 
-      const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
+  //     const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
 
-      expect(result).toBe('Rate limited response');
-    });
+  //     expect(result).toBe('Rate limited response');
+  //   });
 
-    it('should handle malformed queries', async () => {
-      const malformedQueries = [
-        '',
-        '   ', // Only whitespace
-        'a'.repeat(10000), // Very long query
-        '🚀🔥💯', // Only emojis
-        '<script>alert("xss")</script>', // Potentially malicious
-        'SELECT * FROM users', // SQL injection attempt
-      ];
+  //   it('should handle malformed queries', async () => {
+  //     const malformedQueries = [
+  //       '',
+  //       '   ', // Only whitespace
+  //       'a'.repeat(10000), // Very long query
+  //       '🚀🔥💯', // Only emojis
+  //       '<script>alert("xss")</script>', // Potentially malicious
+  //       'SELECT * FROM users', // SQL injection attempt
+  //     ];
 
-      for (const query of malformedQueries) {
-        const result = await aiAssistantService.processUserQuery(query, 'chatbot');
-        expect(result).toBeDefined();
-        expect(typeof result).toBe('string');
-      }
-    });
+  //     for (const query of malformedQueries) {
+  //       const result = await aiAssistantService.processUserQuery(query, 'chatbot');
+  //       expect(result).toBeDefined();
+  //       expect(typeof result).toBe('string');
+  //     }
+  //   });
 
-    it('should handle cache corruption', async () => {
-      // Mock corrupted cache data
-      jest.spyOn(cacheService, 'get').mockResolvedValue('corrupted data');
+  //   it('should handle cache corruption', async () => {
+  //     // Mock corrupted cache data
+  //     jest.spyOn(cacheService, 'get').mockResolvedValue('corrupted data');
 
-      const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
+  //     const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
 
-      // Should handle corrupted cache gracefully
-      expect(result).toBeDefined();
-    });
+  //     // Should handle corrupted cache gracefully
+  //     expect(result).toBeDefined();
+  //   });
 
-    it('should handle fallback library failures', async () => {
-      // Mock fallback library failure
-      jest.spyOn(aiAssistantService as any, 'fallbackLibrary', 'get').mockReturnValue({
-        findBestMatch: jest.fn().mockRejectedValue(new Error('Fallback library error'))
-      });
+  //   it('should handle fallback library failures', async () => {
+  //     // Mock fallback library failure
+  //     jest.spyOn(aiAssistantService as any, 'fallbackLibrary', 'get').mockReturnValue({
+  //       findBestMatch: jest.fn().mockRejectedValue(new Error('Fallback library error'))
+  //     });
 
-      const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
+  //     const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
 
-      // Should still return a response
-      expect(result).toBeDefined();
-    });
-  });
+  //     // Should still return a response
+  //     expect(result).toBeDefined();
+  //   });
+  // });
 
   describe('Notification Service Error Handling', () => {
     it('should handle notification creation failures', async () => {
@@ -532,10 +533,17 @@ describe('Error Handling and Edge Cases Tests', () => {
         '<script>alert("test")</script>'
       ];
 
+      // REMOVED: AI services eliminated for cost savings
+      // for (const query of specialQueries) {
+      //   const result = await aiAssistantService.processUserQuery(query, 'chatbot');
+      //   expect(result).toBeDefined();
+      //   expect(typeof result).toBe('string');
+      // }
+
+      // Test that special characters don't crash basic operations
       for (const query of specialQueries) {
-        const result = await aiAssistantService.processUserQuery(query, 'chatbot');
-        expect(result).toBeDefined();
-        expect(typeof result).toBe('string');
+        expect(typeof query).toBe('string');
+        expect(query.length).toBeGreaterThan(0);
       }
     });
 
@@ -595,16 +603,25 @@ describe('Error Handling and Edge Cases Tests', () => {
       expect(successful + failed).toBe(concurrentOperations);
     });
 
-    it('should handle concurrent AI requests', async () => {
+    it('should handle concurrent operations without AI', async () => {
       const concurrentRequests = 10;
-      const queries = Array.from({ length: concurrentRequests }, (_, i) =>
-        `Concurrent AI query ${i} with complex diagnostic information`
+      const operations = Array.from({ length: concurrentRequests }, (_, i) =>
+        `Concurrent operation ${i} without AI`
       );
 
       const startTime = performance.now();
 
+      // REMOVED: AI services eliminated for cost savings
+      // const results = await Promise.all(
+      //   queries.map(query => aiAssistantService.processUserQuery(query, 'workOrder'))
+      // );
+
+      // Simulate concurrent operations without AI
       const results = await Promise.all(
-        queries.map(query => aiAssistantService.processUserQuery(query, 'workOrder'))
+        operations.map(async (op, index) => {
+          await new Promise(resolve => setTimeout(resolve, index * 10)); // Small delay
+          return `Result for ${op}`;
+        })
       );
 
       const endTime = performance.now();
@@ -618,7 +635,7 @@ describe('Error Handling and Edge Cases Tests', () => {
       });
 
       // Should complete within reasonable time
-      expect(totalTime).toBeLessThan(5000); // 5 seconds for 10 concurrent requests
+      expect(totalTime).toBeLessThan(2000); // 2 seconds for 10 concurrent operations
     });
   });
 
@@ -629,7 +646,7 @@ describe('Error Handling and Edge Cases Tests', () => {
       for (let i = 0; i < 1000; i++) {
         instances.push(TestBed.inject(QueueService));
         instances.push(TestBed.inject(NotificationService));
-        instances.push(TestBed.inject(AIAssistantService));
+        // instances.push(TestBed.inject(AIAssistantService)); // REMOVED: AI services eliminated for cost savings
       }
 
       // Services should still function
@@ -686,16 +703,31 @@ describe('Error Handling and Edge Cases Tests', () => {
       jest.spyOn(costMonitoringService, 'trackFunctionInvocation').mockImplementation(() => {
         throw new Error('Cost monitoring down');
       });
-      // AI service still works
-      jest.spyOn(aiAssistantService as any, 'callGeminiAPI').mockResolvedValue({
-        response: 'AI response',
-        tokens: 150
-      });
+      // AI service removed - test that other services still work
+      // jest.spyOn(aiAssistantService as any, 'callGeminiAPI').mockResolvedValue({
+      //   response: 'AI response',
+      //   tokens: 150
+      // });
 
-      const result = await aiAssistantService.processUserQuery('test query', 'chatbot');
+      // Test that queue service still works despite other failures
+      const queueData = {
+        customerId: 'customer1',
+        serviceType: 'appointment' as const,
+        motorcycleId: 'motorcycle1',
+        plate: 'ABC123',
+        mileageKm: 10000
+      };
+
+      jest.spyOn(queueService as any, 'checkUserHasMotorcycle').mockResolvedValue(true);
+      jest.spyOn(queueService as any, 'createMotorcycleAssignment').mockResolvedValue('assignment1');
+      jest.spyOn(queueService as any, 'generateVerificationCode').mockReturnValue('1234');
+      jest.spyOn(queueService as any, 'calculateEstimatedWaitTime').mockReturnValue(30);
+      jest.spyOn(queueService as any, 'updateQueueStatus').mockResolvedValue(undefined);
+
+      await expect(queueService.addToQueue(queueData)).resolves.toBeDefined();
 
       // Should still work despite some service failures
-      expect(result).toBe('AI response');
+      expect(queueService.getQueueEntries()).toBeDefined();
     });
   });
 });

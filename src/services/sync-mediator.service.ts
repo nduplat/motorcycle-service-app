@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 import { WorkOrder } from '../models';
-import { EventBusService } from './event-bus.service';
+import { EventBusService, NotificationEvent } from './event-bus.service';
 
 // Event types for sync mediator communication
 export type SyncMediatorEvent =
@@ -21,7 +21,7 @@ export class SyncMediatorService {
 
   constructor() {
     // Listen to sync-related events from the event bus
-    this.eventBus.events$.subscribe(event => {
+    this.eventBus.events$.subscribe((event: NotificationEvent) => {
       if (event.type.startsWith('sync.')) {
         this.mediatorSubject.next(event as unknown as SyncMediatorEvent);
       }

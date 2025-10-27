@@ -61,7 +61,7 @@ export class UserManagementComponent implements OnDestroy {
 
   private destroy$ = new Subject<void>();
   
-  roles: Role[] = ["admin", "manager", "technician", "employee", "front_desk", "customer"];
+  roles: Role[] = ["admin", "technician", "customer"];
 
   userForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -79,7 +79,7 @@ export class UserManagementComponent implements OnDestroy {
 
   get isAssignableStaff(): boolean {
     const role = this.userForm.get('role')?.value;
-    return role === 'technician' || role === 'employee' || role === 'front_desk';
+    return role === 'technician';
   }
 
   vehicleForm = this.fb.group({
@@ -393,10 +393,7 @@ export class UserManagementComponent implements OnDestroy {
   getRoleClass(role: Role): string {
     const roles: Record<Role, string> = {
       admin: 'bg-red-200 text-red-800',
-      manager: 'bg-purple-200 text-purple-800',
       technician: 'bg-blue-200 text-blue-800',
-      employee: 'bg-indigo-200 text-indigo-800',
-      front_desk: 'bg-yellow-200 text-yellow-800',
       customer: 'bg-green-200 text-green-800'
     };
     return roles[role] || 'bg-gray-200 text-gray-800';

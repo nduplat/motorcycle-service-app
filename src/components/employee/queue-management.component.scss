@@ -1,0 +1,265 @@
+.queue-management {
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.queue-statistics-panel {
+  margin-bottom: 24px;
+
+  .stats-card {
+    mat-card-content {
+      padding: 16px !important;
+    }
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        mat-icon {
+          color: #666;
+        }
+      }
+
+      .stat-info {
+        .stat-value {
+          display: block;
+          font-size: 24px;
+          font-weight: 500;
+          color: #333;
+          line-height: 1;
+        }
+
+        .stat-label {
+          font-size: 12px;
+          color: #666;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+  }
+}
+
+.queue-filters-section {
+  margin-bottom: 16px;
+
+  mat-chip-set {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    mat-chip {
+      cursor: pointer;
+
+      &.selected {
+        background-color: #1976d2;
+        color: white;
+      }
+    }
+  }
+}
+
+.queue-search-section {
+  margin-bottom: 24px;
+
+  .search-field {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+.queue-entries-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 16px;
+
+  .queue-entry-card {
+    transition: all 0.3s ease;
+
+    &.called {
+      border-left: 4px solid #1976d2;
+      background-color: #e3f2fd;
+    }
+
+    &.waiting {
+      border-left: 4px solid #ff9800;
+    }
+
+    mat-card-header {
+      padding-bottom: 8px;
+
+      .entry-header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+
+        .entry-position {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+
+          .position-badge {
+            background: #1976d2;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+          }
+
+          .wait-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+          }
+        }
+
+        .status-chip {
+          font-size: 11px;
+        }
+      }
+    }
+
+    mat-card-content {
+      padding-top: 0;
+
+      .client-info,
+      .service-info,
+      .notes-section,
+      .technician-info {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 8px;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          color: #666;
+        }
+
+        .client-details,
+        .service-details {
+          flex: 1;
+
+          .client-name,
+          .service-type {
+            display: block;
+            font-weight: 500;
+            color: #333;
+          }
+
+          .client-email,
+          .joined-time {
+            display: block;
+            font-size: 12px;
+            color: #666;
+          }
+        }
+
+        .notes-text,
+        .technician-name {
+          font-size: 14px;
+          color: #555;
+        }
+      }
+    }
+
+    mat-card-actions {
+      padding-top: 0;
+
+      .queue-action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        button {
+          font-size: 12px;
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.empty-queue-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 2px dashed #ddd;
+
+  .empty-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #ccc;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    color: #666;
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: #999;
+    margin: 0;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .queue-management {
+    padding: 8px;
+  }
+
+  .queue-entries-grid {
+    grid-template-columns: 1fr;
+
+    .queue-entry-card {
+      mat-card-actions .queue-action-buttons {
+        flex-direction: column;
+
+        button {
+          width: 100%;
+          margin-bottom: 4px;
+        }
+      }
+    }
+  }
+
+  .queue-statistics-panel .stats-grid {
+    grid-template-columns: 1fr;
+
+    .stat-item {
+      justify-content: center;
+      text-align: center;
+    }
+  }
+}

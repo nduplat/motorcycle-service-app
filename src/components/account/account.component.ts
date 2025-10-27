@@ -252,10 +252,7 @@ export class AccountComponent implements OnInit, OnDestroy {
   getRoleClass(role?: string): string {
     const roles: Record<string, string> = {
       admin: 'bg-red-200 text-red-800',
-      manager: 'bg-purple-200 text-purple-800',
       technician: 'bg-blue-200 text-blue-800',
-      employee: 'bg-indigo-200 text-indigo-800',
-      front_desk: 'bg-yellow-200 text-yellow-800',
       customer: 'bg-green-200 text-green-800'
     };
     return roles[role || ''] || 'bg-gray-200 text-gray-800';

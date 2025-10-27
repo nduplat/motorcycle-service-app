@@ -86,7 +86,7 @@ export class AvailabilityToggleComponent {
   isAssignable = computed(() => {
     const userRole = this.currentUser()?.role;
     if (!userRole) return false;
-    const assignableRoles: Role[] = ['technician', 'employee', 'front_desk'];
+    const assignableRoles: Role[] = ['technician'];
     return assignableRoles.includes(userRole);
   });
 

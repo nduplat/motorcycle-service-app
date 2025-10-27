@@ -77,9 +77,10 @@ export class AIAssistantService {
     };
   }
 
-  async generateMaintenanceReminders(): Promise<void> {
-    console.log('🔧 Maintenance reminders: Service not available');
-  }
+  // REMOVED: AI services eliminated for cost savings
+  // async generateMaintenanceReminders(): Promise<void> {
+  //   console.log('🔧 Maintenance reminders: Service not available');
+  // }
 
   async generateSmartNotifications(): Promise<void> {
     console.log('🔔 Smart notifications: Service not available');

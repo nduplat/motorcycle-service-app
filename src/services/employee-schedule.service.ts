@@ -98,7 +98,7 @@ export class EmployeeScheduleService {
         throw new Error('Employee not found');
       }
 
-      if (!['technician', 'employee', 'front_desk'].includes(employee.role)) {
+      if (!['technician'].includes(employee.role)) {
         throw new Error('User is not an employee');
       }
 
@@ -226,7 +226,7 @@ export class EmployeeScheduleService {
       // Get all employees and filter by those with schedules
       const employeesQuery = query(
         collection(db, 'users'),
-        where('role', 'in', ['technician', 'employee', 'front_desk']),
+        where('role', 'in', ['technician']),
         where('active', '==', true)
       );
       this.logFirestoreCall('getDocs', 'users query for active employees');
@@ -353,7 +353,7 @@ export class EmployeeScheduleService {
 
        // Get all employees (technicians, employees, front_desk) from cache
        const allEmployees = await this.loadActiveEmployees();
-       console.log('📅 EmployeeScheduleService: DEBUG - Using', allEmployees.length, 'active employees with roles technician/employee/front_desk');
+       console.log('📅 EmployeeScheduleService: DEBUG - Using', allEmployees.length, 'active employees with roles technician');
 
        // Get all employee schedules for this date in a single batch query
        const schedulesQuery = query(

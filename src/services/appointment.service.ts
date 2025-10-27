@@ -119,8 +119,8 @@ export class AppointmentService {
 
       const appointmentsData = [...assignedData];
 
-      // Also load unassigned appointments for assignment purposes (only for admins and managers)
-      if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+      // Also load unassigned appointments for assignment purposes (only for admins)
+      if (currentUser.role === 'admin') {
         const unassignedQuery = query(collection(db, "appointments"), where("assignedTo", "==", null));
         const unassignedSnapshot = await getDocs(unassignedQuery);
         this.costMonitoringService.trackFirestoreRead(unassignedSnapshot.docs.length);

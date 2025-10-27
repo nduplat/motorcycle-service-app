@@ -419,11 +419,10 @@ export class NotificationWorkflowService {
   }
 
   private async getInventoryAlertTargets(event: NotificationWorkflowEvent): Promise<NotificationTarget[]> {
-    // Get all admin and manager users
+    // Get all admin users
     const adminUsers = this.userService.getUsersByRole('admin');
-    const managerUsers = this.userService.getUsersByRole('manager');
 
-    return [...adminUsers, ...managerUsers].map(user => ({
+    return adminUsers.map(user => ({
       userId: user.id,
       channels: ['in_app', 'push', 'email'],
       priority: 'high'

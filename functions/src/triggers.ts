@@ -361,7 +361,7 @@ export const onUserDocumentCreated = onDocumentCreated(
       if (ownerEmails.includes(userData.email)) {
         assignedRole = 'admin';
       } else if (employeeEmails.includes(userData.email)) {
-        assignedRole = 'employee';
+        assignedRole = 'technician';
       }
 
       // Update role if it changed

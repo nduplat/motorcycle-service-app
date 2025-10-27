@@ -64,7 +64,7 @@ export class UserValidationService {
     return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) return null;
 
-      const validRoles: Role[] = ['admin', 'manager', 'technician', 'employee', 'front_desk', 'customer'];
+      const validRoles: Role[] = ['admin', 'technician', 'customer'];
 
       if (!validRoles.includes(control.value)) {
         return { invalidRole: { value: control.value } };
@@ -98,7 +98,7 @@ export class UserValidationService {
     }
 
     // Role validation
-    const validRoles: Role[] = ['admin', 'manager', 'technician', 'employee', 'front_desk', 'customer'];
+    const validRoles: Role[] = ['admin', 'technician', 'customer'];
     if (userData.role && !validRoles.includes(userData.role)) {
       errors.push('Invalid role specified');
     }
@@ -137,7 +137,7 @@ export class UserValidationService {
 
     // Role validation and permissions
     if (userData.role) {
-      const validRoles: Role[] = ['admin', 'manager', 'technician', 'employee', 'front_desk', 'customer'];
+      const validRoles: Role[] = ['admin', 'technician', 'customer'];
       if (!validRoles.includes(userData.role)) {
         errors.push('Invalid role specified');
       }

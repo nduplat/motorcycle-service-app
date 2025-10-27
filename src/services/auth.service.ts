@@ -271,7 +271,7 @@ export class AuthService {
 
         // Create new user profile with default role
         const defaultRole: Role = 'customer';
-        const assignableRoles: Role[] = ['technician', 'employee', 'front_desk'];
+        const assignableRoles: Role[] = ['technician'];
 
         const newUser: any = {
           name: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
@@ -314,7 +314,7 @@ export class AuthService {
 
         // Data migration: If availability is missing, add a default and update Firestore.
         if (!data.availability) {
-          const assignableRoles: Role[] = ['technician', 'employee', 'front_desk'];
+          const assignableRoles: Role[] = ['technician'];
           const defaultAvailability = {
             isAvailable: assignableRoles.includes(data.role),
             reason: '',

@@ -1561,10 +1561,8 @@ export class NotificationService implements OnDestroy {
     try {
       // Get all employees and technicians
       const employees = [
-        ...this.userService.getUsersByRole('employee'),
         ...this.userService.getUsersByRole('technician'),
-        ...this.userService.getUsersByRole('admin'),
-        ...this.userService.getUsersByRole('manager')
+        ...this.userService.getUsersByRole('admin')
       ];
 
       const customer = this.userService.getUserById(queueEntry.customerId);

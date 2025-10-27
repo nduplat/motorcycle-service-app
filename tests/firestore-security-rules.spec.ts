@@ -31,12 +31,7 @@ describe('Firestore Security Rules Tests', () => {
         role: 'technician',
         active: true
       },
-      manager: {
-        uid: 'manager123',
-        email: 'manager@test.com',
-        role: 'manager',
-        active: true
-      },
+      // manager role removed
       admin: {
         uid: 'admin123',
         email: 'admin@test.com',
@@ -91,7 +86,7 @@ describe('Firestore Security Rules Tests', () => {
     });
 
     it('should allow staff to read all user profiles', async () => {
-      const staffRoles = ['technician', 'manager', 'admin'];
+      const staffRoles = ['technician', 'admin'];
 
       for (const role of staffRoles) {
         const user = testUsers[role];
@@ -181,7 +176,7 @@ describe('Firestore Security Rules Tests', () => {
     });
 
     it('should allow staff to read all work orders', async () => {
-      const staffRoles = ['technician', 'manager', 'admin'];
+      const staffRoles = ['technician', 'admin'];
 
       for (const role of staffRoles) {
         const user = testUsers[role];
@@ -197,7 +192,7 @@ describe('Firestore Security Rules Tests', () => {
     });
 
     it('should allow staff to create work orders', async () => {
-      const staffRoles = ['technician', 'manager', 'admin'];
+      const staffRoles = ['technician', 'admin'];
 
       for (const role of staffRoles) {
         const user = testUsers[role];
@@ -255,7 +250,7 @@ describe('Firestore Security Rules Tests', () => {
     });
 
     it('should allow staff to manage all queue entries', async () => {
-      const staffRoles = ['technician', 'manager', 'admin'];
+      const staffRoles = ['technician', 'admin'];
 
       for (const role of staffRoles) {
         const user = testUsers[role];
@@ -316,7 +311,7 @@ describe('Firestore Security Rules Tests', () => {
     });
 
     it('should allow staff to create notifications', async () => {
-      const staffRoles = ['technician', 'manager', 'admin'];
+      const staffRoles = ['technician', 'admin'];
 
       for (const role of staffRoles) {
         const user = testUsers[role];
@@ -383,7 +378,7 @@ describe('Firestore Security Rules Tests', () => {
     });
 
     it('should allow staff to create motorcycle assignments', async () => {
-      const staffRoles = ['technician', 'manager', 'admin'];
+      const staffRoles = ['technician', 'admin'];
 
       for (const role of staffRoles) {
         const user = testUsers[role];
@@ -399,8 +394,8 @@ describe('Firestore Security Rules Tests', () => {
       }
     });
 
-    it('should allow admins and managers to update assignments', async () => {
-      const privilegedRoles = ['manager', 'admin'];
+    it('should allow admins to update assignments', async () => {
+      const privilegedRoles = ['admin'];
 
       for (const role of privilegedRoles) {
         const user = testUsers[role];
@@ -419,8 +414,8 @@ describe('Firestore Security Rules Tests', () => {
   });
 
   describe('Audit Log Access Control', () => {
-    it('should allow only admins and managers to read audit logs', async () => {
-      const privilegedRoles = ['manager', 'admin'];
+    it('should allow only admins to read audit logs', async () => {
+      const privilegedRoles = ['admin'];
       const restrictedRoles = ['technician', 'customer'];
 
       const auditLogData = {
@@ -456,10 +451,10 @@ describe('Firestore Security Rules Tests', () => {
       const adminCanWrite = await securityTester.testDocumentCreateAccess('auditLog', auditLogData, admin);
       expect(adminCanWrite).toBe(true);
 
-      // Test with manager (should fail)
-      const manager = testUsers.manager;
-      const managerCanWrite = await securityTester.testDocumentCreateAccess('auditLog', auditLogData, manager);
-      expect(managerCanWrite).toBe(false);
+      // Test with technician (should fail)
+      const technician = testUsers.technician;
+      const technicianCanWrite = await securityTester.testDocumentCreateAccess('auditLog', auditLogData, technician);
+      expect(technicianCanWrite).toBe(false);
     });
   });
 
@@ -538,14 +533,13 @@ describe('Firestore Security Rules Tests', () => {
       const roleHierarchy = {
         customer: ['read_own_profile', 'read_own_work_orders', 'read_own_notifications'],
         technician: ['customer_permissions', 'read_all_work_orders', 'manage_assigned_work_orders', 'create_notifications'],
-        manager: ['technician_permissions', 'manage_users', 'read_audit_logs'],
-        admin: ['manager_permissions', 'delete_users', 'modify_products', 'write_audit_logs']
+        admin: ['technician_permissions', 'manage_users', 'read_audit_logs', 'delete_users', 'modify_products', 'write_audit_logs']
       };
 
       // Test that higher roles include lower role permissions
       const testPermissions = [
         { role: 'technician', resource: 'workOrders', action: 'read', expected: true },
-        { role: 'manager', resource: 'users', action: 'update', expected: true },
+        { role: 'admin', resource: 'users', action: 'update', expected: true },
         { role: 'admin', resource: 'products', action: 'write', expected: true }
       ];
 

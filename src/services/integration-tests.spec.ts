@@ -36,7 +36,8 @@ describe('Service Integration Tests', () => {
       getUsersByRole: jest.fn().mockReturnValue([])
     };
     const eventBusSpyObj = {
-      emit: jest.fn()
+      emit: jest.fn(),
+      events$: of()
     };
     const qrCodeSpy = {
       generateQrCodeDataUrl: jest.fn().mockReturnValue('data:image/png;base64,test')

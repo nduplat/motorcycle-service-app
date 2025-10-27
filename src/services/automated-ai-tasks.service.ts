@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { AIAssistantService } from './ai-assistant.service';
+// import { AIAssistantService } from './ai-assistant.service'; // REMOVED: AI services eliminated for cost savings
 import { NotificationService } from './notification.service';
 import { QueueService } from './queue.service';
 import { InventoryReportsService } from './inventory-reports.service';
@@ -8,7 +8,7 @@ import { InventoryReportsService } from './inventory-reports.service';
   providedIn: 'root'
 })
 export class AutomatedAITasksService {
-  private aiAssistantService = inject(AIAssistantService);
+  // private aiAssistantService = inject(AIAssistantService); // REMOVED: AI services eliminated for cost savings
   private notificationService = inject(NotificationService);
   private queueService = inject(QueueService);
   private inventoryReportsService = inject(InventoryReportsService);
@@ -54,8 +54,9 @@ export class AutomatedAITasksService {
   private async runSmartNotifications(): Promise<void> {
     try {
       console.log('Running automated smart notifications...');
-      await this.aiAssistantService.generateSmartNotifications();
-      console.log('Smart notifications completed');
+      // REMOVED: AI services eliminated for cost savings
+      // await this.aiAssistantService.generateSmartNotifications();
+      console.log('Smart notifications disabled - AI services removed for cost optimization');
     } catch (error) {
       console.error('Error in automated smart notifications:', error);
     }
@@ -64,17 +65,30 @@ export class AutomatedAITasksService {
   private async generateDailyReport(): Promise<void> {
     try {
       console.log('Generating automated daily report...');
-      const report = await this.aiAssistantService.generateDailyReport();
+      // REMOVED: AI services eliminated for cost savings
+      // const report = await this.aiAssistantService.generateDailyReport();
 
-      if (report) {
-        // Send daily report to admin users
-        const adminUsers = ['admin1', 'admin2']; // In a real app, get from user service
-        await this.notificationService.createSmartNotification(
-          `Reporte diario generado: ${report.summary}`,
-          adminUsers
-        );
-        console.log('Daily report generated and sent');
-      }
+      // Basic manual report generation instead
+      const queueStatus = this.queueService.getQueueStatus()();
+      const lowStockItems = this.inventoryReportsService.getLowStockReport();
+
+      const basicReport = {
+        date: new Date().toISOString().split('T')[0],
+        queueStatus: queueStatus ? {
+          currentCount: queueStatus.currentCount,
+          averageWaitTime: queueStatus.averageWaitTime
+        } : null,
+        lowStockCount: lowStockItems.length,
+        summary: `Cola: ${queueStatus?.currentCount || 0} clientes, Inventario: ${lowStockItems.length} productos bajos`
+      };
+
+      // Send basic daily report to admin users
+      const adminUsers = ['admin1', 'admin2']; // In a real app, get from user service
+      await this.notificationService.createSmartNotification(
+        `Reporte diario básico: ${basicReport.summary}`,
+        adminUsers
+      );
+      console.log('Basic daily report generated and sent');
     } catch (error) {
       console.error('Error generating daily report:', error);
     }
@@ -83,13 +97,14 @@ export class AutomatedAITasksService {
   private async monitorQueueEfficiency(): Promise<void> {
     try {
       console.log('Monitoring queue efficiency...');
-      const queueReport = await this.aiAssistantService.analyzeQueueEfficiency();
+      // REMOVED: AI services eliminated for cost savings
+      // const queueReport = await this.aiAssistantService.analyzeQueueEfficiency();
 
-      // Check for critical insights
-      const criticalInsights = queueReport.insights.filter(i => i.priority === 'critical');
+      // Basic manual queue monitoring instead
+      const queueStatus = this.queueService.getQueueStatus()();
 
-      if (criticalInsights.length > 0) {
-        const alertMessage = `Alertas críticas en la cola: ${criticalInsights.map(i => i.title).join(', ')}`;
+      if (queueStatus && queueStatus.averageWaitTime && queueStatus.averageWaitTime > 45) {
+        const alertMessage = `Alerta: Tiempo de espera promedio alto (${queueStatus.averageWaitTime} minutos) con ${queueStatus.currentCount} clientes en cola`;
         await this.notificationService.createSmartNotification(alertMessage);
         console.log('Queue efficiency alerts sent');
       }
@@ -101,15 +116,19 @@ export class AutomatedAITasksService {
   private async monitorInventoryHealth(): Promise<void> {
     try {
       console.log('Monitoring inventory health...');
-      const inventoryReport = await this.aiAssistantService.analyzeInventoryHealth();
+      // REMOVED: AI services eliminated for cost savings
+      // const inventoryReport = await this.aiAssistantService.analyzeInventoryHealth();
 
-      // Check for critical inventory issues
-      const criticalInsights = inventoryReport.insights.filter(i => i.priority === 'critical');
+      // Basic manual inventory monitoring instead
+      const lowStockItems = this.inventoryReportsService.getLowStockReport();
 
-      if (criticalInsights.length > 0) {
-        const alertMessage = `Problemas críticos de inventario: ${criticalInsights.map(i => i.title).join(', ')}`;
-        await this.notificationService.createSmartNotification(alertMessage);
-        console.log('Inventory health alerts sent');
+      if (lowStockItems.length > 0) {
+        const criticalItems = lowStockItems.filter(item => item.status === 'critical');
+        if (criticalItems.length > 0) {
+          const alertMessage = `Productos críticos bajos en stock: ${criticalItems.slice(0, 3).map(item => item.productName).join(', ')}`;
+          await this.notificationService.createSmartNotification(alertMessage);
+          console.log('Inventory health alerts sent');
+        }
       }
     } catch (error) {
       console.error('Error monitoring inventory health:', error);
