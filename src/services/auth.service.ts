@@ -29,6 +29,13 @@ export class AuthService {
   private handleFirebaseUserCallCount = 0;
   private hasRoleCallCount = 0;
 
+  // Role mapping for backward compatibility
+  private roleMapping: Record<string, Role> = {
+    'manager': 'admin',
+    'front_desk': 'technician',
+    'employee': 'technician'
+  };
+
   // Flag to prevent multiple handleFirebaseUser calls per auth session
   private isHandlingAuth = false;
   private costMonitoringService = inject(CostMonitoringService);
@@ -456,17 +463,22 @@ export class AuthService {
       console.log(`🔐 AuthService: hasRole call #${this.hasRoleCallCount} - No current user, denying access`);
       return false;
     }
-    const hasRole = requiredRoles.includes(user.role);
+
+    // Apply role mapping for backward compatibility
+    const mappedRole = this.roleMapping[user.role] || user.role;
+
+    const hasRole = requiredRoles.includes(mappedRole);
     console.log(`🔐 AuthService: hasRole call #${this.hasRoleCallCount}`, {
       userId: user.id,
       userEmail: user.email,
       userRole: user.role,
+      mappedRole,
       requiredRoles,
       hasRole,
       timestamp: new Date().toISOString()
     });
     if (!hasRole) {
-      console.warn('🔐 AuthService: Access denied - user role', user.role, 'not in required roles', requiredRoles);
+      console.warn('🔐 AuthService: Access denied - user role', user.role, '(mapped to', mappedRole, ') not in required roles', requiredRoles);
     }
     return hasRole;
   }

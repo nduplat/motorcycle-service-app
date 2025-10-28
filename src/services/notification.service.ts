@@ -1971,4 +1971,22 @@ export class NotificationService implements OnDestroy {
       }
     );
   }
+  /**
+   * Create admin notification - convenience method for admin alerts
+   */
+  async createAdminNotification(title: string, message: string): Promise<NotificationModel[]> {
+    return this.createCategorizedNotification(
+      'users',
+      `[ADMIN] ${title}`,
+      message,
+      {
+        priority: 'high',
+        targetAudience: 'admins',
+        additionalMeta: {
+          adminNotification: true,
+          systemGenerated: true
+        }
+      }
+    );
+  }
 }

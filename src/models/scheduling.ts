@@ -205,40 +205,6 @@ export interface TechnicianMetrics {
   updatedAt: Timestamp;
 }
 
-/**
- * WorkQueue Model - Prioritized work order queue.
- *
- * Purpose: Manages prioritized queue of work orders waiting to be assigned
- * to technicians, tracking status and assignments.
- *
- * Propósito: Gestiona cola priorizada de órdenes de trabajo esperando ser asignadas
- * a técnicos, rastreando estado y asignaciones.
- *
- * CRUD Operations:
- * - Save: Use Firestore setDoc() with collection 'workQueues', auto-generated id
- * - Query: Use Firestore query() on 'workQueues' collection by status, priority
- * - Delete: Use Firestore deleteDoc() when work order is completed
- *
- * Operaciones CRUD:
- * - Guardar: Usar Firestore setDoc() con colección 'workQueues', id auto-generado
- * - Consultar: Usar Firestore query() en colección 'workQueues' por status, prioridad
- * - Eliminar: Usar Firestore deleteDoc() cuando la orden de trabajo es completada
- *
- * References: Exported from src/models/index.ts
- * Referencias: Exportado desde src/models/index.ts
- */
-export interface WorkQueue {
-  id: string;
-  workOrderId: string;
-  priority: number;
-  status: 'queued' | 'in_progress' | 'completed' | 'cancelled';
-  assignedTo?: string;
-  estimatedStart: Timestamp;
-  actualStart?: Timestamp;
-  completedAt?: Timestamp;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
 
 /**
  * AuditLog Model - System audit trail.

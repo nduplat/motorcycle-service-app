@@ -6,7 +6,7 @@ import { MotorcycleService } from '../../services/motorcycle.service';
 import { QueueService } from '../../services/queue.service';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
-import { Motorcycle, QueueJoinData, QueueEntry, Timestamp } from '../../models';
+import { Motorcycle, QueueJoinData, QueueEntry, Timestamp, ServiceType } from '../../models';
 import { QrCodeService } from '../../services/qr-code.service';
 import { PhoneVerificationComponent, PhoneVerificationResult } from './phone-verification.component';
 import { ServiceSelectionComponent, ServiceSelectionData } from './service-selection.component';
@@ -68,7 +68,7 @@ export class QueueJoinComponent implements OnInit {
       title: 'Servicio General',
       description: 'Servicio de mantenimiento general',
       price: 0,
-      type: 'maintenance',
+      type: ServiceType.MAINTENANCE,
       estimatedHours: 2,
       compatibleBrands: [],
       compatibleModels: [],
@@ -80,7 +80,7 @@ export class QueueJoinComponent implements OnInit {
       title: 'Cambio de Aceite',
       description: 'Cambio de aceite y filtro',
       price: 45000,
-      type: 'maintenance',
+      type: ServiceType.MAINTENANCE,
       estimatedHours: 1,
       compatibleBrands: [],
       compatibleModels: [],
@@ -92,7 +92,7 @@ export class QueueJoinComponent implements OnInit {
       title: 'Servicio de Frenos',
       description: 'Revisión y ajuste de frenos',
       price: 80000,
-      type: 'repair',
+      type: ServiceType.REPAIR,
       estimatedHours: 2.5,
       compatibleBrands: [],
       compatibleModels: [],
@@ -104,7 +104,7 @@ export class QueueJoinComponent implements OnInit {
       title: 'Cambio de Llantas',
       description: 'Cambio de llantas delanteras/traseras',
       price: 120000,
-      type: 'repair',
+      type: ServiceType.REPAIR,
       estimatedHours: 3,
       compatibleBrands: [],
       compatibleModels: [],

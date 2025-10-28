@@ -6,6 +6,7 @@ import { AppointmentService } from './appointment.service';
 import { UserService } from './user.service';
 import { CacheService } from './cache.service';
 import { EmployeeSchedule, ShiftConfig, BreakConfig, User, WorkOrder, Appointment } from '../models';
+import { AppointmentStatus } from '../models/types';
 
 export interface CreateScheduleRequest {
   employeeId: string;
@@ -434,7 +435,7 @@ export class ScheduleWorkflowService {
     console.log('🔍 ScheduleWorkflowService: Getting today\'s active appointments');
 
     const today = new Date();
-    const activeStatuses: Appointment['status'][] = ['scheduled', 'confirmed', 'in_progress'];
+    const activeStatuses: AppointmentStatus[] = [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED, AppointmentStatus.IN_PROGRESS];
 
     return this.appointmentService.getAppointmentsForDate(today)
       .filter(apt => activeStatuses.includes(apt.status));

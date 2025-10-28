@@ -1,4 +1,4 @@
-import { Timestamp } from './types';
+import { Timestamp, ServiceType, Priority, AppointmentStatus } from './types';
 
 /**
  * WorkOrder Model - Central entity for repair services.
@@ -36,7 +36,7 @@ export interface WorkOrder {
   parts?: WorkOrderPart[];
   notes?: string;
   updatedAt?: Timestamp;
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  priority?: Priority;
 }
 
 /**
@@ -70,7 +70,7 @@ export interface Appointment {
   date?: Timestamp;
   scheduledAt: Timestamp;
   estimatedDuration: number; // minutos
-  status: "pending_approval" | "scheduled" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show";
+  status: AppointmentStatus;
   assignedTo?: string; // technician id - id de técnico
   workOrderId?: string; // se crea cuando inicia el servicio
   createdAt: Timestamp;
@@ -139,7 +139,7 @@ export interface ServiceItem {
   code?: string;
   title: string; // e.g., "Cambio de aceite completo"
   description?: string;
-  type?: "maintenance" | "repair" | "inspection" | "customization"; // Tipo de servicio
+  type?: ServiceType; // Tipo de servicio
   estimatedHours?: number;
   price?: number; // base price - precio base
   partsSuggested?: Array<{ productId: string; qty: number }>;
@@ -364,7 +364,7 @@ export interface WorkOrderFilter {
     start: Date;
     end: Date;
   };
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  priority?: Priority;
   serviceTypes?: string[];
   searchTerm?: string;
   sortBy?: 'createdAt' | 'updatedAt' | 'priority' | 'status' | 'totalPrice';

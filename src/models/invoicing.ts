@@ -13,10 +13,6 @@ export interface InvoiceItem {
   taxPercent?: number;
 }
 
-/**
- * Quote Status - Status values for quotes
- */
-export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
 
 /**
  * Invoice Model - Sales invoices for completed work.
@@ -88,40 +84,4 @@ export interface Payment {
   transactionRef?: string; // card auth etc - autenticación de tarjeta, etc.
   paidBy?: string; // user id who recorded - id de usuario que registró
   paidAt: Timestamp;
-}
-
-/**
- * Quote Model - Estimates and quotes for potential work.
- *
- * Purpose: Provides cost estimates to customers before work begins.
- * Can be converted to work orders when accepted.
- *
- * Propósito: Proporciona estimaciones de costo a clientes antes de comenzar el trabajo.
- * Puede convertirse en órdenes de trabajo cuando es aceptada.
- *
- * CRUD Operations:
- * - Save: Use Firestore setDoc() with collection 'quotes', auto-generated id
- * - Query: Use Firestore query() on 'quotes' collection by customerId, status
- * - Delete: Use Firestore deleteDoc() when quote expires or is rejected
- *
- * Operaciones CRUD:
- * - Guardar: Usar Firestore setDoc() con colección 'quotes', id auto-generado
- * - Consultar: Usar Firestore query() en colección 'quotes' por customerId, status
- * - Eliminar: Usar Firestore deleteDoc() cuando la cotización expira o es rechazada
- *
- * References: Exported from src/models/index.ts
- * Referencias: Exportado desde src/models/index.ts
- */
-export interface Quote {
-  id: string;
-  customerId: string;
-  vehicleId?: string;
-  workOrderPreview?: Partial<WorkOrder>;
-  items: InvoiceItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  expiresAt?: Timestamp;
-  status: QuoteStatus;
-  createdAt: Timestamp;
 }

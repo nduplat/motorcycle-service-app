@@ -220,6 +220,49 @@ export class ProductListComponent {
   }
 
   exportToCSV(): void {
-    this.advancedProductService.exportToCSV();
+    const products = this.advancedProductService.filteredProducts();
+    const categories = this.categoryService.getCategories()();
+    const categoryMap = new Map<string, string>();
+    categories.forEach(cat => {
+      categoryMap.set(cat.id, cat.name);
+    });
+
+    const headers = [
+      'Nombre',
+      'SKU',
+      'Marca',
+      'Categoría',
+      'Precio Venta',
+      'Stock',
+      'Stock Mínimo',
+      'Estado',
+      'Fecha Creación'
+    ];
+
+    const csvData = products.map((product: any) => [
+      product.name,
+      product.sku || '',
+      product.brand || '',
+      categoryMap.get(product.categoryId) || '',
+      product.sellingPrice || 0,
+      product.stock || 0,
+      product.minStock || 0,
+      product.isActive ? 'Activo' : 'Inactivo',
+      product.createdAt?.toDate?.()?.toLocaleDateString('es-CO') || ''
+    ]);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `productos_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }

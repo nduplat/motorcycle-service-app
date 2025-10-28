@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ServiceItemService } from '../../../services/service-item.service';
 import { AdvancedServiceService, SortField, SortDirection } from '../../../services/advanced-service.service';
 import { ServiceItem } from '../../../models';
+import { ServiceType } from '../../../models/types';
 import { PaginationComponent } from '../../shared/ui/pagination.component';
 
 @Component({
@@ -47,7 +48,7 @@ export class EnhancedServiceListComponent {
   // Form states
   formTitle = computed(() => this.editingServiceId() ? 'Editar Servicio' : 'Añadir Nuevo Servicio');
 
-  serviceTypes: ServiceItem['type'][] = ["maintenance", "repair", "inspection", "customization"];
+  serviceTypes: ServiceType[] = [ServiceType.MAINTENANCE, ServiceType.REPAIR, ServiceType.INSPECTION, ServiceType.CUSTOMIZATION];
 
   // Filter form
   filterForm = this.fb.group({
@@ -66,7 +67,7 @@ export class EnhancedServiceListComponent {
     code: [''],
     title: ['', Validators.required],
     description: [''],
-    type: ['maintenance' as ServiceItem['type'], Validators.required],
+    type: [ServiceType.MAINTENANCE, Validators.required],
     estimatedHours: [1, [Validators.required, Validators.min(0.5)]],
     price: [0, [Validators.required, Validators.min(0)]],
     partsSuggested: [[] as string[]],
@@ -209,7 +210,7 @@ export class EnhancedServiceListComponent {
       code: service.code || '',
       title: service.title,
       description: service.description || '',
-      type: service.type || 'maintenance',
+      type: service.type || ServiceType.MAINTENANCE,
       estimatedHours: service.estimatedHours || 1,
       price: service.price || 0,
       partsSuggested: partsSuggestedIds,
@@ -227,7 +228,7 @@ export class EnhancedServiceListComponent {
       code: '',
       title: '',
       description: '',
-      type: 'maintenance',
+      type: ServiceType.MAINTENANCE,
       estimatedHours: 1,
       price: 0,
       partsSuggested: [],
@@ -295,7 +296,43 @@ export class EnhancedServiceListComponent {
 
   // Export
   exportToCSV() {
-    this.advancedServiceService.exportToCSV();
+    const services = this.advancedServiceService.getSortedServices();
+    const headers = [
+      'Código',
+      'Título',
+      'Descripción',
+      'Tipo',
+      'Horas Estimadas',
+      'Precio',
+      'Habilidades Requeridas',
+      'Estado',
+      'Fecha Creación'
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...services.map(service => [
+        service.code || '',
+        `"${service.title || ''}"`,
+        `"${service.description || ''}"`,
+        service.type || '',
+        service.estimatedHours || '',
+        service.price || '',
+        `"${service.requiredSkills?.join('; ') || ''}"`,
+        service.isActive !== false ? 'Activo' : 'Inactivo',
+        service.createdAt?.toDate().toLocaleDateString('es-CO') || ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `servicios_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   // Utility methods
@@ -316,14 +353,14 @@ export class EnhancedServiceListComponent {
     });
   }
 
-  getTypeLabel(type: ServiceItem['type']): string {
+  getTypeLabel(type: ServiceType): string {
     const labels = {
-      maintenance: 'Mantenimiento',
-      repair: 'Reparación',
-      inspection: 'Inspección',
-      customization: 'Personalización'
+      [ServiceType.MAINTENANCE]: 'Mantenimiento',
+      [ServiceType.REPAIR]: 'Reparación',
+      [ServiceType.INSPECTION]: 'Inspección',
+      [ServiceType.CUSTOMIZATION]: 'Personalización'
     };
-    return labels[type || 'maintenance'] || type || '';
+    return labels[type] || type;
   }
 
   getStatusBadge(service: ServiceItem): { text: string; class: string } {

@@ -193,34 +193,6 @@ export interface UserVehicle {
   updatedAt: Timestamp;
 }
 
-/**
- * VehicleAssignment Model - Assignment of motorcycles to users.
- *
- * Purpose: Tracks which motorcycles are assigned to which users at specific locations.
- * Used for workshop motorcycle management and user assignments.
- *
- * Propósito: Rastrea qué motocicletas están asignadas a qué usuarios en ubicaciones específicas.
- * Usado para gestión de motocicletas del taller y asignaciones de usuario.
- *
- * CRUD Operations:
- * - Save: Use Firestore setDoc() with collection 'vehicleAssignments', auto-generated id
- * - Query: Use Firestore query() on 'vehicleAssignments' collection by userId or vehicleId
- * - Delete: Use Firestore deleteDoc() when assignment ends
- *
- * Operaciones CRUD:
- * - Guardar: Usar Firestore setDoc() con colección 'vehicleAssignments', id auto-generado
- * - Consultar: Usar Firestore query() en colección 'vehicleAssignments' por userId o vehicleId
- * - Eliminar: Usar Firestore deleteDoc() cuando la asignación termina
- *
- * References: Exported from src/models/index.ts
- * Referencias: Exportado desde src/models/index.ts
- */
-export interface VehicleAssignment {
-  id: string;
-  userId: string;
-  vehicleId: string;
-  assignmentDate: Timestamp;
-}
 
 /**
  * MotorcycleAssignment Model - Assignment of motorcycles to users with plate-based logic.

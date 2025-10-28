@@ -290,47 +290,7 @@ export class AdvancedProductService {
     this.clearSelection();
   }
 
-  // Export methods
-  exportToCSV(): void {
-    const products = this.filteredProducts();
-    const headers = [
-      'Nombre',
-      'SKU',
-      'Marca',
-      'Categoría',
-      'Precio Venta',
-      'Stock',
-      'Stock Mínimo',
-      'Estado',
-      'Fecha Creación'
-    ];
 
-    const csvData = products.map((product: any) => [
-      product.name,
-      product.sku || '',
-      product.brand || '',
-      this.allCategories().find((c: any) => c.id === product.categoryId)?.name || '',
-      product.sellingPrice || 0,
-      product.stock || 0,
-      product.minStock || 0,
-      product.isActive ? 'Activo' : 'Inactivo',
-      product.createdAt?.toDate?.()?.toLocaleDateString('es-CO') || ''
-    ]);
-
-    const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `productos_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
 
   // Getters for external access
   getCurrentFilters(): ProductFilters {
@@ -352,5 +312,53 @@ export class AdvancedProductService {
   // Public getter for products
   get products(): any {
     return this.allProducts;
+  }
+
+  // CSV export functionality
+  generateCSV(): string {
+    const products = this.filteredProducts();
+    if (products.length === 0) {
+      return 'No hay productos para exportar';
+    }
+
+    // CSV headers
+    const headers = [
+      'Nombre',
+      'SKU',
+      'Marca',
+      'Categoría',
+      'Stock',
+      'Precio de Venta',
+      'Estado',
+      'Stock Mínimo',
+      'Descripción'
+    ];
+
+    // CSV rows
+    const rows = products.map((product: any) => [
+      product.name || '',
+      product.sku || '',
+      product.brand || '',
+      this.getCategoryName(product.categoryId),
+      product.stock || 0,
+      product.sellingPrice || 0,
+      product.isActive ? 'Activo' : 'Inactivo',
+      product.minStock || 0,
+      product.description || ''
+    ]);
+
+    // Combine headers and rows
+    const csvData = [headers, ...rows];
+
+    // Convert to CSV string
+    return csvData.map(row =>
+      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  }
+
+  private getCategoryName(categoryId: string | undefined): string {
+    if (!categoryId) return 'N/A';
+    const category = this.allCategories().find((c: any) => c.id === categoryId);
+    return category?.name || 'Desconocida';
   }
 }

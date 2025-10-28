@@ -621,4 +621,19 @@ export class CostMonitoringService {
     console.log('💰 Cost monitoring: Automated alerts configured', thresholds);
     // This would integrate with notification service for automated alerts
   }
+
+  /**
+   * Track AI API calls for cost monitoring
+   */
+  trackAICall(context: string, aiResponse: any): void {
+    // Track function invocation for AI calls
+    this.trackFunctionInvocation(0.1, 0.1, 0); // Rough estimate for AI API calls
+
+    // Log AI usage for monitoring
+    console.log('🤖 AI Call tracked:', {
+      context,
+      tokens: aiResponse?.usage?.total_tokens || 0,
+      model: aiResponse?.model || 'unknown'
+    });
+  }
 }

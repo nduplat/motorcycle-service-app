@@ -5,7 +5,7 @@ import { AppointmentService } from '../../../../services/appointment.service';
 import { ServiceItemService } from '../../../../services/service-item.service';
 import { AuthService } from '../../../../services/auth.service';
 import { UserVehicleService } from '../../../../services/user-vehicle.service';
-import { ServiceItem, UserVehicle, Appointment } from '../../../../models';
+import { ServiceItem, UserVehicle, Appointment, AppointmentStatus } from '../../../../models';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 
 @Component({
@@ -104,7 +104,7 @@ export class AppointmentBookingComponent implements OnInit {
         serviceId: formValue.serviceId,
         scheduledAt: FirestoreTimestamp.fromDate(dateTime),
         estimatedDuration: (selectedService.estimatedHours || 1) * 60,
-        status: 'pending_approval' as const,
+        status: AppointmentStatus.PENDING_APPROVAL,
         date: FirestoreTimestamp.fromDate(new Date(formValue.date))
       };
 

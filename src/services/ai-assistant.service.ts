@@ -1,920 +1,297 @@
 import { Injectable, inject } from '@angular/core';
-import { GroqService } from './groq.service';
-import { NotificationService, NotificationCategory } from './notification.service';
-import { QueueService } from './queue.service';
-import { InventoryReportsService, StockReport } from './inventory-reports.service';
-import { ProductService } from './product.service';
-import { UserService } from './user.service';
-import { UserVehicleService } from './user-vehicle.service';
-import { CostMonitoringService } from './cost-monitoring.service';
+import { Firestore, doc, getDoc, setDoc, Timestamp } from '@angular/fire/firestore';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { CacheService } from './cache.service';
-import { FallbackLibraryService } from './fallback-library.service';
-import { BudgetCircuitBreakerService } from './budget-circuit-breaker.service';
-import { MaintenanceReminder, Motorcycle, UserVehicle } from '../models';
-import { toDate } from '../models/types';
-import { Observable, from, map } from 'rxjs';
+import { RateLimiterService } from './rate-limiter.service';
+import { CostMonitoringService } from './cost-monitoring.service';
+import { ToastService } from './toast.service';
 
-export interface AIInsight {
-  type: 'recommendation' | 'alert' | 'analysis' | 'prediction';
-  title: string;
-  description: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  category: 'inventory' | 'queue' | 'notifications' | 'operations' | 'financial';
-  actionable: boolean;
-  suggestedActions?: string[];
-  data?: any;
-}
-
-export interface FallbackResponse {
-  id: string;
-  context: string;
-  query: string;
+interface AIResponse {
   response: string;
-  category: 'inventory' | 'queue' | 'maintenance' | 'general';
-  priority: number; // 1-10, higher = more specific
-  lastUsed?: Date;
-  successRate?: number;
+  tokens: number;
+  cached: boolean;
+  provider: 'gemini' | 'fallback';
+  timestamp: Timestamp;
 }
 
-export interface FallbackLibrary {
-  responses: FallbackResponse[];
-  categories: Record<string, FallbackResponse[]>;
+interface CachedResponse {
+  response: string;
+  tokens: number;
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
 }
 
-export interface CircuitBreakerState {
-  state: 'closed' | 'open' | 'half-open';
-  failureCount: number;
-  lastFailureTime?: Date;
-  nextAttemptTime?: Date;
-}
-
-export interface BudgetCircuitBreaker {
-  isEnabled: boolean;
-  dailyBudget: number;
-  currentSpend: number;
-  circuitBreaker: CircuitBreakerState;
-  emergencyMode: boolean;
-}
-
-export interface AIReport {
-  title: string;
-  summary: string;
-  insights: AIInsight[];
-  recommendations: string[];
-  generatedAt: Date;
-  data: any;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AIAssistantService {
-  private groqService = inject(GroqService);
-  private notificationService = inject(NotificationService);
-  private queueService = inject(QueueService);
-  private inventoryReportsService = inject(InventoryReportsService);
-  private productService = inject(ProductService);
-  private userService = inject(UserService);
-  private userVehicleService = inject(UserVehicleService);
+  private firestore = inject(Firestore);
+  private functions = inject(Functions);
+  private cache = inject(CacheService);
+  private rateLimiter = inject(RateLimiterService);
   private costMonitoring = inject(CostMonitoringService);
-  private cacheService = inject(CacheService);
-  private fallbackLibrary = inject(FallbackLibraryService);
-  private budgetCircuitBreaker = inject(BudgetCircuitBreakerService);
+  private toast = inject(ToastService);
 
-  // Budget circuit breaker for cost control - now using the service
+  // TTL Configuration (milliseconds)
+  private readonly CACHE_TTL = {
+    chatbot_faqs: 30 * 24 * 60 * 60 * 1000,      // 30 días
+    product_search: 24 * 60 * 60 * 1000,         // 24 horas
+    scanner_results: 60 * 60 * 1000,             // 1 hora
+    work_order_templates: 7 * 24 * 60 * 60 * 1000, // 7 días
+    general: 6 * 60 * 60 * 1000                  // 6 horas (default)
+  };
 
-  // Legacy fallback library - will be replaced by FallbackLibraryService
-  // Keeping for backward compatibility during transition
-
-  constructor() {
-    // Check if AI service is available
-    const isConfigured = this.groqService.isConfigured();
-    console.log('🤖 AI Assistant: Checking Groq service configuration - Configured:', isConfigured);
-    if (!isConfigured) {
-      console.warn('AI Assistant: Groq service is not configured. AI features will be limited.');
+  // Pre-generated responses for common queries
+  private readonly FALLBACK_RESPONSES: Record<string, Record<string, string>> = {
+    chatbot: {
+      'horario': 'Nuestro horario de atención:\n• Lunes a Viernes: 8:00 AM - 6:00 PM\n• Sábados: 9:00 AM - 2:00 PM\n• Domingos: Cerrado',
+      'ubicacion': 'Estamos ubicados en Calle 123 #45-67, Bogotá. Ver mapa: https://maps.app.goo.gl/example',
+      'contacto': 'Contáctanos:\n• Teléfono: +57 301 234 5678\n• WhatsApp: +57 301 234 5678\n• Email: info@bluedragonmotors.com',
+      'servicios': 'Servicios disponibles:\n• Mantenimiento preventivo\n• Reparaciones mecánicas\n• Reparaciones eléctricas\n• Cambio de aceite y filtros\n• Diagnóstico computarizado\n• Venta de repuestos originales',
+      'precio_revision': 'Revisión básica: $35.000 (incluye diagnóstico inicial)',
+      'precio_cambio_aceite': 'Cambio de aceite: $45.000 - $65.000 (incluye aceite y filtro)',
+      'garantia': 'Todos nuestros servicios tienen 30 días de garantía. Repuestos originales con garantía del fabricante.',
+      'metodos_pago': 'Aceptamos: Efectivo, Tarjetas débito/crédito, Transferencias, Nequi, Daviplata',
+      'cita': 'Para agendar una cita, usa nuestro sistema en línea o llámanos al +57 301 234 5678'
+    },
+    productSearch: {
+      'aceite_10w40': 'Aceite Motul 5100 10W40 - $42.000\nStock: 15 unidades\nCompatible con mayoría de motos de 4 tiempos',
+      'aceite_20w50': 'Aceite Motul 7100 20W50 - $48.000\nStock: 12 unidades\nRecomendado para motos deportivas',
+      'filtro_aceite': 'Filtro de aceite genérico - $8.000\nStock: 25 unidades\nVerifica compatibilidad con tu moto',
+      'llantas': 'Llantas desde $150.000\nVariedad de marcas: Michelin, Pirelli, IRC\nConsulta disponibilidad para tu modelo',
+      'bateria': 'Baterías desde $120.000\nMarcas: Yuasa, Bosch\n12 meses de garantía'
     }
-
-    // Initialize fallback library categories
-    this.initializeFallbackCategories();
-  }
+  };
 
   /**
-   * Initialize fallback response categories for quick lookup
-   * Legacy method - now handled by FallbackLibraryService
+   * Main entry point for AI queries with full cost optimization
    */
-  private initializeFallbackCategories(): void {
-    // Categories are now managed by FallbackLibraryService
-    console.log('🤖 AI Assistant: Using new FallbackLibraryService for response management');
-  }
-
-  // Fallback methods for when AI service is unavailable
-  private getFallbackAnalysis(context: string, type: string): string {
-    console.warn(`Using fallback analysis for ${type} due to AI service unavailability`);
-
-    switch (type) {
-      case 'inventory health analysis':
-        return 'Análisis de inventario no disponible. Se recomienda revisar manualmente los niveles de stock y productos críticos.';
-
-      case 'queue efficiency analysis':
-        return 'Análisis de cola no disponible. Se recomienda monitorear manualmente los tiempos de espera y eficiencia del servicio.';
-
-      default:
-        return 'Análisis no disponible temporalmente. Por favor, contacte al administrador del sistema.';
-    }
-  }
-
-  private getFallbackRecommendations(data: any, context: string): string[] {
-    console.warn('Using fallback recommendations due to AI service unavailability');
-
-    // Provide basic, generic recommendations based on context
-    if (context.includes('inventory')) {
-      return [
-        'Revisar niveles de stock semanalmente',
-        'Implementar alertas automáticas para productos críticos',
-        'Analizar patrones de venta para optimizar pedidos'
-      ];
-    }
-
-    if (context.includes('queue')) {
-      return [
-        'Monitorear tiempos de espera promedio',
-        'Optimizar distribución de técnicos',
-        'Implementar sistema de citas para reducir colas'
-      ];
-    }
-
-    return [
-      'Implementar monitoreo automático del sistema',
-      'Establecer procedimientos de respaldo',
-      'Revisar configuraciones de servicios externos'
-    ];
-  }
-
-  // Inventory Management AI Features
-  async analyzeInventoryHealth(): Promise<AIReport> {
-    try {
-      const stockReports = this.inventoryReportsService.getStockReportByLocation();
-      const lowStockItems = this.inventoryReportsService.getLowStockReport();
-      const rotationReport = await this.inventoryReportsService.getProductRotationReport(30);
-      const topSelling = await this.inventoryReportsService.getTopSellingProducts(10);
-
-      const inventoryData = {
-        totalProducts: stockReports.length,
-        lowStockItems: lowStockItems.length,
-        outOfStockItems: stockReports.filter(r => r.status === 'out_of_stock').length,
-        criticalItems: stockReports.filter(r => r.status === 'critical').length,
-        topSellingProducts: topSelling.slice(0, 5),
-        slowMovingProducts: rotationReport.filter(r => r.daysSinceLastMovement > 60).slice(0, 5)
-      };
-
-      const analysisPrompt = `
-Analyze this inventory data for Blue Dragon Motors motorcycle workshop:
-
-${JSON.stringify(inventoryData, null, 2)}
-
-Provide insights about:
-1. Inventory health status
-2. Stock optimization opportunities
-3. Potential stockouts or overstock situations
-4. Product performance trends
-5. Recommendations for inventory management
-
-Focus on actionable insights that can improve workshop operations and customer satisfaction.
-`;
-
-      let aiAnalysis: string;
-      try {
-        aiAnalysis = await this.groqService.analyzeText(
-          analysisPrompt,
-          'inventory health analysis',
-          'Motorcycle workshop inventory management'
-        );
-      } catch (error) {
-        console.error('AI analysis failed, using fallback:', error);
-        aiAnalysis = this.getFallbackAnalysis(analysisPrompt, 'inventory health analysis');
-      }
-
-      const insights: AIInsight[] = [];
-
-      // Generate specific insights based on data
-      if (inventoryData.outOfStockItems > 0) {
-        insights.push({
-          type: 'alert',
-          title: 'Productos sin stock',
-          description: `${inventoryData.outOfStockItems} productos están agotados. Esto puede afectar el servicio al cliente.`,
-          priority: 'high',
-          category: 'inventory',
-          actionable: true,
-          suggestedActions: [
-            'Revisar proveedores para reabastecimiento urgente',
-            'Considerar productos alternativos para clientes',
-            'Actualizar catálogo de productos disponibles'
-          ]
-        });
-      }
-
-      if (inventoryData.criticalItems > 0) {
-        insights.push({
-          type: 'alert',
-          title: 'Productos en nivel crítico',
-          description: `${inventoryData.criticalItems} productos están por debajo del 50% del stock mínimo.`,
-          priority: 'medium',
-          category: 'inventory',
-          actionable: true,
-          suggestedActions: [
-            'Programar pedidos de reabastecimiento',
-            'Monitorear ventas de estos productos'
-          ]
-        });
-      }
-
-      if (inventoryData.slowMovingProducts.length > 0) {
-        insights.push({
-          type: 'recommendation',
-          title: 'Productos de lento movimiento',
-          description: `${inventoryData.slowMovingProducts.length} productos no se venden desde hace más de 60 días.`,
-          priority: 'low',
-          category: 'inventory',
-          actionable: true,
-          suggestedActions: [
-            'Evaluar descuentos promocionales',
-            'Considerar discontinuar productos obsoletos',
-            'Revisar estrategias de marketing'
-          ]
-        });
-      }
-
+  async query(
+    prompt: string,
+    context: 'chatbot' | 'scanner' | 'workOrder' | 'productSearch',
+    userId: string
+  ): Promise<AIResponse> {
+    
+    // Step 1: Try fallback responses first (free, instant)
+    const fallback = this.findFallback(prompt, context);
+    if (fallback) {
       return {
-        title: 'Análisis de Salud del Inventario',
-        summary: aiAnalysis,
-        insights,
-        recommendations: await this.generateInventoryRecommendations(inventoryData),
-        generatedAt: new Date(),
-        data: inventoryData
+        response: fallback,
+        tokens: 0,
+        cached: true,
+        provider: 'fallback',
+        timestamp: Timestamp.now()
       };
-
-    } catch (error) {
-      console.error('Error analyzing inventory health:', error);
-      throw error;
     }
-  }
 
-  private async generateInventoryRecommendations(data: any): Promise<string[]> {
-    const recommendationsPrompt = `
-Basado en estos datos de inventario, genera 5 recomendaciones específicas y accionables:
-
-${JSON.stringify(data, null, 2)}
-
-Enfócate en:
-- Optimización de stock
-- Mejora de rotación de productos
-- Estrategias de reabastecimiento
-- Gestión de productos de temporada
-- Integración con proveedores
-`;
-
-    try {
-      const aiRecommendations = await this.groqService.generateResponse(
-        recommendationsPrompt,
-        'Genera recomendaciones específicas de inventario para taller de motocicletas'
-      );
-
-      return aiRecommendations.split('\n').filter(line => line.trim().length > 0).slice(0, 5);
-    } catch (error) {
-      console.error('AI recommendations failed, using fallback:', error);
-      return this.getFallbackRecommendations(data, 'inventory');
-    }
-  }
-
-  // Queue Management AI Features
-  async analyzeQueueEfficiency(): Promise<AIReport> {
-    try {
-      const queueStatus = this.queueService.getQueueStatus()();
-      const queueEntries = this.queueService.getQueueEntries()();
-      const waitingEntries = queueEntries.filter(e => e.status === 'waiting');
-      const servedToday = queueEntries.filter(e =>
-        e.status === 'served' &&
-        toDate(e.updatedAt)?.toDateString() === new Date().toDateString()
-      );
-
-      const queueData = {
-        isOpen: queueStatus?.isOpen || false,
-        currentCount: queueStatus?.currentCount || 0,
-        averageWaitTime: queueStatus?.averageWaitTime || 0,
-        waitingCustomers: waitingEntries.length,
-        servedToday: servedToday.length,
-        operatingHours: queueStatus?.operatingHours,
-        peakHours: this.calculatePeakHours(queueEntries)
-      };
-
-      const analysisPrompt = `
-Analyze this queue management data for Blue Dragon Motors:
-
-${JSON.stringify(queueData, null, 2)}
-
-Provide insights about:
-1. Queue efficiency and customer satisfaction
-2. Optimal staffing levels
-3. Peak hour management
-4. Service time optimization
-5. Customer wait time reduction strategies
-
-Consider motorcycle workshop operations and customer expectations.
-`;
-
-      let aiAnalysis: string;
-      try {
-        aiAnalysis = await this.groqService.analyzeText(
-          analysisPrompt,
-          'queue efficiency analysis',
-          'Motorcycle workshop queue management'
-        );
-      } catch (error) {
-        console.error('AI queue analysis failed, using fallback:', error);
-        aiAnalysis = this.getFallbackAnalysis(analysisPrompt, 'queue efficiency analysis');
-      }
-
-      const insights: AIInsight[] = [];
-
-      if (queueData.averageWaitTime > 30) {
-        insights.push({
-          type: 'alert',
-          title: 'Tiempos de espera elevados',
-          description: `El tiempo promedio de espera es de ${queueData.averageWaitTime} minutos.`,
-          priority: 'medium',
-          category: 'queue',
-          actionable: true,
-          suggestedActions: [
-            'Considerar agregar más técnicos',
-            'Optimizar procesos de servicio',
-            'Implementar sistema de citas prioritarias'
-          ]
-        });
-      }
-
-      if (queueData.waitingCustomers > 5) {
-        insights.push({
-          type: 'recommendation',
-          title: 'Cola congestionada',
-          description: `${queueData.waitingCustomers} clientes esperando. Considere medidas para reducir tiempos.`,
-          priority: 'high',
-          category: 'queue',
-          actionable: true,
-          suggestedActions: [
-            'Activar modo de atención prioritaria',
-            'Notificar clientes sobre tiempos de espera',
-            'Evaluar redistribución de técnicos'
-          ]
-        });
-      }
-
+    // Step 2: Check cache
+    const cacheKey = this.generateCacheKey(prompt, context);
+    const cached = await this.getCachedResponse(cacheKey);
+    if (cached) {
       return {
-        title: 'Análisis de Eficiencia de Cola',
-        summary: aiAnalysis,
-        insights,
-        recommendations: await this.generateQueueRecommendations(queueData),
-        generatedAt: new Date(),
-        data: queueData
+        response: cached.response,
+        tokens: cached.tokens,
+        cached: true,
+        provider: 'gemini',
+        timestamp: Timestamp.now()
       };
-
-    } catch (error) {
-      console.error('Error analyzing queue efficiency:', error);
-      throw error;
     }
-  }
 
-  private calculatePeakHours(entries: any[]): string[] {
-    const hourCounts: { [key: string]: number } = {};
+    // Step 3: Check rate limit before expensive AI call
+    const canProceed = await this.rateLimiter.checkLimit(userId, context);
+    if (!canProceed) {
+      const suggestion = this.getSuggestedFallback(context);
+      this.toast.warning('Límite diario alcanzado. Mostrando información general.');
+      return {
+        response: suggestion,
+        tokens: 0,
+        cached: false,
+        provider: 'fallback',
+        timestamp: Timestamp.now()
+      };
+    }
 
-    entries.forEach(entry => {
-      if (entry.joinedAt) {
-        const hour = entry.joinedAt.toDate().getHours();
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-      }
-    });
-
-    const sortedHours = Object.entries(hourCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 3)
-      .map(([hour]) => `${hour}:00`);
-
-    return sortedHours;
-  }
-
-  private async generateQueueRecommendations(data: any): Promise<string[]> {
-    const recommendationsPrompt = `
-Basado en estos datos de cola, genera 5 recomendaciones específicas para mejorar la eficiencia:
-
-${JSON.stringify(data, null, 2)}
-
-Enfócate en:
-- Optimización de horarios de atención
-- Gestión de picos de demanda
-- Mejora de tiempos de servicio
-- Estrategias de citas
-- Comunicación con clientes
-`;
-
+    // Step 4: Make AI call (expensive)
     try {
-      const aiRecommendations = await this.groqService.generateResponse(
-        recommendationsPrompt,
-        'Genera recomendaciones de gestión de cola para taller'
-      );
-
-      return aiRecommendations.split('\n').filter(line => line.trim().length > 0).slice(0, 5);
+      const aiResponse = await this.callGeminiAPI(prompt, context);
+      
+      // Step 5: Cache the response
+      await this.cacheResponse(cacheKey, aiResponse, context);
+      
+      // Step 6: Track cost
+      await this.costMonitoring.trackAICall(context, aiResponse);
+      
+      return {
+        response: aiResponse.response,
+        tokens: aiResponse.tokens,
+        cached: false,
+        provider: 'gemini',
+        timestamp: Timestamp.now()
+      };
     } catch (error) {
-      console.error('AI queue recommendations failed, using fallback:', error);
-      return this.getFallbackRecommendations(data, 'queue');
-    }
-  }
-
-  // Smart Notifications AI Features with Categorized Notifications
-  async generateSmartNotifications(): Promise<void> {
-    try {
-      console.log('🤖 AI Assistant: Generating smart notifications...');
-
-      // 1. Analyze inventory for alerts (INVENTORY category)
-      await this.generateInventoryAlerts();
-
-      // 2. Analyze queue for efficiency alerts (QUEUE category)
-      await this.generateQueueAlerts();
-
-      // 3. Generate maintenance reminders (MAINTENANCE_REMINDERS category - HIGHEST PRIORITY)
-      // REMOVED: AI services eliminated for cost savings
-      // await this.generateMaintenanceReminders();
-      console.log('🔧 Maintenance reminders disabled - AI services removed for cost optimization');
-
-      // 4. Check for service order updates (SERVICE_ORDERS category)
-      await this.generateServiceOrderAlerts();
-
-      console.log('🤖 AI Assistant: Smart notifications generated successfully');
-
-    } catch (error) {
-      console.error('Error generating smart notifications:', error);
-    }
-  }
-
-  private async generateInventoryAlerts(): Promise<void> {
-    try {
-      const lowStockItems = this.inventoryReportsService.getLowStockReport();
-
-      for (const item of lowStockItems.slice(0, 3)) { // Limit to top 3 alerts
-        let alertType: 'low_stock' | 'out_of_stock' | 'critical' | 'reorder_needed' = 'low_stock';
-
-        if (item.availableStock === 0) {
-          alertType = 'out_of_stock';
-        } else if (item.status === 'critical') {
-          alertType = 'critical';
-        } else if (item.availableStock <= item.minStock * 0.5) {
-          alertType = 'reorder_needed';
-        }
-
-        await this.notificationService.createInventoryAlert(
-          {
-            name: item.productName,
-            sku: item.productId, // Use productId as SKU placeholder
-            currentStock: item.availableStock,
-            minStock: item.minStock
-          },
-          alertType
-        );
-      }
-    } catch (error) {
-      console.error('Error generating inventory alerts:', error);
-    }
-  }
-
-  private async generateQueueAlerts(): Promise<void> {
-    try {
-      const queueStatus = this.queueService.getQueueStatus()();
-
-      if (queueStatus && queueStatus.averageWaitTime && queueStatus.averageWaitTime > 45) {
-        // Create queue efficiency alert for staff
-        await this.notificationService.createCategorizedNotification(
-          'queue',
-          'Alerta: Cola Congestionada',
-          `Tiempo de espera promedio: ${queueStatus.averageWaitTime} minutos. ${queueStatus.currentCount} clientes esperando. Considera medidas para mejorar la eficiencia.`,
-          {
-            priority: 'high',
-            targetAudience: 'admins',
-            additionalMeta: {
-              queueMetrics: queueStatus,
-              alertType: 'efficiency_warning'
-            }
-          }
-        );
-      }
-
-      // Check for customers waiting too long
-      const queueEntries = this.queueService.getQueueEntries()();
-      const longWaitingEntries = queueEntries.filter(entry =>
-        entry.status === 'waiting' &&
-        entry.joinedAt &&
-        (new Date().getTime() - toDate(entry.joinedAt).getTime()) > (60 * 60 * 1000) // 1 hour
-      );
-
-      for (const entry of longWaitingEntries.slice(0, 2)) { // Limit notifications
-        await this.notificationService.createQueueNotification(
-          entry.customerId,
-          {
-            position: entry.position,
-            estimatedWaitTime: entry.estimatedWaitTime,
-            ticketNumber: entry.id.slice(-4).toUpperCase() // Last 4 chars as ticket
-          },
-          'delayed'
-        );
-      }
-
-    } catch (error) {
-      console.error('Error generating queue alerts:', error);
-    }
-  }
-
-  // REMOVED: AI services eliminated for cost savings
-  // private async generateMaintenanceReminders(): Promise<void> {
-  //   try {
-  //     console.log('🔧 AI Assistant: Generating maintenance reminders...');
-  //     // ... (all the maintenance reminder logic removed)
-  //     console.log(`🔧 AI Assistant: Sent ${allRemindersToSend.length} maintenance reminders (${urgentReminders.length} urgent, ${recommendedReminders.length} recommended)`);
-  //   } catch (error) {
-  //     console.error('Error generating maintenance reminders:', error);
-  //   }
-  // }
-
-  private generateBasicMaintenanceReminders(vehicle: UserVehicle, motorcycle: any, user: any): any[] {
-    const reminders: any[] = [];
-    const currentMileage = vehicle.mileageKm || 0;
-    const vehicleAge = new Date().getFullYear() - motorcycle.year;
-
-    // Basic maintenance reminders based on motorcycle age and mileage
-    const basicServices = [
-      {
-        name: 'Cambio de aceite y filtro',
-        priority: 'critical' as const,
-        condition: currentMileage > 3000 || vehicleAge > 1
-      },
-      {
-        name: 'Revisión general de frenos',
-        priority: 'recommended' as const,
-        condition: currentMileage > 5000 || vehicleAge > 2
-      },
-      {
-        name: 'Revisión de cadena y piñones',
-        priority: 'recommended' as const,
-        condition: currentMileage > 8000 || vehicleAge > 3
-      }
-    ];
-
-    for (const service of basicServices) {
-      if (service.condition) {
-        reminders.push({
-          customerId: user.id,
-          vehicleId: vehicle.id,
-          serviceName: service.name,
-          priority: service.priority,
-          vehicleInfo: {
-            brand: motorcycle.brand,
-            model: motorcycle.model,
-            year: motorcycle.year,
-            plate: vehicle.plate
-          },
-          dueInfo: {
-            dueMileage: currentMileage > 0 ? currentMileage + 2000 : undefined,
-            currentMileage: currentMileage > 0 ? currentMileage : undefined
-          }
-        });
-      }
-    }
-
-    return reminders;
-  }
-
-  private getMotorcycleById(motorcycleId: string): any {
-    // This would need to be implemented to get motorcycle details
-    // For now, return a mock motorcycle
-    return {
-      id: motorcycleId,
-      brand: 'Yamaha',
-      model: 'R15',
-      year: 2020
-    };
-  }
-
-  private async generateServiceOrderAlerts(): Promise<void> {
-    try {
-      // This would check for work order status changes and notify customers
-      // Implementation depends on work order service integration
-      console.log('📋 AI Assistant: Service order alerts not yet implemented');
-    } catch (error) {
-      console.error('Error generating service order alerts:', error);
-    }
-  }
-
-  // General AI Chat/Assistant Features with Budget Circuit Breaker
-  async processUserQuery(query: string, context?: string): Promise<string> {
-    const aiContext = (context as 'chatbot' | 'productSearch' | 'scanner' | 'workOrder') || 'chatbot';
-    const userId = 'anonymous'; // In a real implementation, get from auth service
-
-    try {
-      // Execute AI operation through budget circuit breaker
-      const response = await this.budgetCircuitBreaker.executeAIOperation(
-        async () => {
-          const startTime = Date.now();
-
-          // First, try fallback responses (free and instant)
-          const fallbackMatch = await this.fallbackLibrary.findBestMatch(query, aiContext);
-          if (fallbackMatch) {
-            console.log('🤖 AI Assistant: Using fallback response for query');
-            return await this.fallbackLibrary.getResponseWithDynamicData(fallbackMatch);
-          }
-
-          // Generate semantic cache key for intelligent caching
-          const semanticKey = this.cacheService.generateSemanticKey(query, context || 'general');
-          const cacheKey = `ai_query_${semanticKey}_${query.length}`;
-
-          // Check cache first
-          const cachedResponse = await this.cacheService.get<string>(cacheKey);
-          if (cachedResponse) {
-            console.log('🤖 AI Assistant: Using cached response for query');
-            this.costMonitoring.trackFunctionInvocation(0.05, 0.05, 0); // Minimal cost for cache hit
-            return cachedResponse;
-          }
-
-          const systemPrompt = `Eres un asistente inteligente para Blue Dragon Motors, un taller de motocicletas.
-Puedes ayudar con:
-- Gestión de inventario y productos
-- Sistema de colas y citas
-- Notificaciones y comunicaciones
-- Reportes y análisis
-- Recomendaciones operativas
-
-${context ? `Contexto adicional: ${context}` : ''}
-
-Proporciona respuestas útiles, específicas y accionables. Si no tienes suficiente información, solicita más detalles.`;
-
-          const response = await this.groqService.generateResponse(query, systemPrompt);
-
-          // Track AI usage costs
-          const processingTime = Date.now() - startTime;
-          this.costMonitoring.trackFunctionInvocation(
-            processingTime / 1000, // Convert to seconds
-            processingTime / 2000, // Rough CPU estimate
-            0 // No network egress for internal processing
-          );
-
-          // Cache the response with semantic tags
-          await this.cacheService.set(
-            cacheKey,
-            response,
-            30 * 60 * 1000, // 30 minutes TTL
-            'ai_assistant',
-            undefined, // No version
-            semanticKey,
-            ['ai_response', context || 'general'],
-            'medium' // Medium priority for AI responses
-          );
-
-          return response;
-        },
-        aiContext,
-        userId,
-        query
-      );
-
-      return response;
-    } catch (error) {
-      console.error('Error processing user query:', error);
-
-      // If circuit breaker blocked the request, get fallback response
-      if (error instanceof Error && error.name === 'CircuitBreakerError') {
-        return await this.budgetCircuitBreaker.getFallbackResponse(query, aiContext);
-      }
-
-      // For other errors, still try fallback
-      return await this.budgetCircuitBreaker.getFallbackResponse(query, aiContext);
+      console.error('AI call failed:', error);
+      this.toast.error('Error procesando consulta. Mostrando información general.');
+      
+      // Fallback on error
+      return {
+        response: this.getSuggestedFallback(context),
+        tokens: 0,
+        cached: false,
+        provider: 'fallback',
+        timestamp: Timestamp.now()
+      };
     }
   }
 
   /**
-   * Get circuit breaker status (delegated to service)
+   * Generate semantic cache key
    */
-  getCircuitBreakerStatus() {
-    return this.budgetCircuitBreaker.getStatus();
+  private generateCacheKey(prompt: string, context: string): string {
+    // Normalize prompt for semantic matching
+    const normalized = prompt
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '') // Remove punctuation
+      .replace(/\s+/g, ' ')    // Collapse whitespace
+      .trim();
+    
+    // Hash for consistent key length
+    const hash = this.simpleHash(normalized);
+    return `ai_cache:${context}:${hash}`;
   }
 
   /**
-   * Manually reset circuit breaker (admin function)
+   * Simple hash function for cache keys
    */
-  resetCircuitBreaker(): void {
-    this.budgetCircuitBreaker.resetCircuitBreaker();
+  private simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
   }
 
   /**
-   * Update daily budget
+   * Find pre-generated fallback response
    */
-  updateDailyBudget(newBudget: number): void {
-    this.budgetCircuitBreaker.updateThresholds({ dailyBudget: newBudget });
-  }
+  private findFallback(prompt: string, context: string): string | null {
+    const normalized = prompt.toLowerCase();
+    const contextFallbacks = this.FALLBACK_RESPONSES[context];
+    
+    if (!contextFallbacks) return null;
 
-  /**
-   * Get fallback response when AI service is unavailable
-   */
-  private async getFallbackResponse(query: string, context?: string): Promise<string> {
-    const queryContext = (context as 'chatbot' | 'productSearch' | 'scanner' | 'workOrder') || 'chatbot';
-
-    try {
-      // Use the new FallbackLibraryService
-      const match = await this.fallbackLibrary.findBestMatch(query, queryContext);
-
-      if (match) {
-        const response = await this.fallbackLibrary.getResponseWithDynamicData(match);
+    // Exact keyword matching
+    for (const [keyword, response] of Object.entries(contextFallbacks)) {
+      if (normalized.includes(keyword.replace(/_/g, ' '))) {
         return response;
       }
-    } catch (error) {
-      console.error('Error getting fallback response:', error);
     }
 
-    // Generic fallback
-    return 'Lo siento, el servicio de asistencia IA no está disponible en este momento. Por favor, contacta al soporte técnico o intenta de nuevo más tarde.';
+    return null;
   }
 
   /**
-   * Detect query context from keywords
+   * Get suggested fallback when rate limited
    */
-  private detectQueryContext(query: string): 'inventory' | 'queue' | 'maintenance' | 'general' {
-    // This method is now handled by FallbackLibraryService
-    // Keeping for backward compatibility
-    const inventoryKeywords = ['stock', 'inventario', 'producto', 'repuesto', 'pieza'];
-    const queueKeywords = ['cola', 'espera', 'turno', 'fila', 'atención'];
-    const maintenanceKeywords = ['mantenimiento', 'revisión', 'servicio', 'reparación', 'cita'];
-
-    if (inventoryKeywords.some(keyword => query.includes(keyword))) return 'inventory';
-    if (queueKeywords.some(keyword => query.includes(keyword))) return 'queue';
-    if (maintenanceKeywords.some(keyword => query.includes(keyword))) return 'maintenance';
-
-    return 'general';
-  }
-
-  /**
-   * Calculate match score between query and fallback response
-   * Legacy method - now handled by FallbackLibraryService
-   */
-  private calculateMatchScore(query: string, response: FallbackResponse): number {
-    // This method is now handled by FallbackLibraryService
-    return 0;
-  }
-
-  /**
-   * Personalize fallback response with query-specific details
-   * Legacy method - now handled by FallbackLibraryService
-   */
-  private personalizeFallbackResponse(template: string, originalQuery: string): string {
-    // Dynamic personalization is now handled by FallbackLibraryService
-    return template;
-  }
-
-  /**
-   * Add new fallback response to library
-   */
-  addFallbackResponse(response: Omit<FallbackResponse, 'id' | 'lastUsed' | 'successRate' | 'usageCount' | 'createdAt' | 'updatedAt'>): void {
-    // Use the new FallbackLibraryService
-    this.fallbackLibrary.addResponse({
-      ...response,
-      context: response.context as 'chatbot' | 'productSearch' | 'scanner' | 'workOrder',
-      keywords: (response as any).keywords || []
-    });
-  }
-
-  /**
-   * Get fallback library statistics
-   */
-  getFallbackStats(): { totalResponses: number; categories: Record<string, number>; avgSuccessRate: number } {
-    const stats = this.fallbackLibrary.getStats();
-    return {
-      totalResponses: stats.totalResponses,
-      categories: stats.categories,
-      avgSuccessRate: stats.avgSuccessRate
+  private getSuggestedFallback(context: string): string {
+    const suggestions: Record<string, string> = {
+      chatbot: 'Para información general, consulta nuestras preguntas frecuentes en el menú principal o llámanos al +57 301 234 5678.',
+      productSearch: 'Consulta nuestro catálogo completo en la sección "Repuestos" o contacta a un asesor.',
+      scanner: 'El escáner IA tiene un límite diario. Intenta buscar el repuesto manualmente en el inventario.',
+      workOrder: 'Crea la orden manualmente o consulta las plantillas disponibles en el sistema.'
     };
+    
+    return suggestions[context] || 'Servicio temporalmente no disponible. Intenta nuevamente más tarde.';
   }
 
-  // Automated Report Generation
-  async generateDailyReport(): Promise<AIReport> {
+  /**
+   * Retrieve cached response
+   */
+  private async getCachedResponse(cacheKey: string): Promise<CachedResponse | null> {
     try {
-      const [inventoryReport, queueReport] = await Promise.all([
-        this.analyzeInventoryHealth(),
-        this.analyzeQueueEfficiency()
-      ]);
-
-      const dailyData = {
-        date: new Date().toISOString().split('T')[0],
-        inventory: inventoryReport.data,
-        queue: queueReport.data,
-        notifications: {
-          totalSent: this.notificationService.getSystemNotifications()().length,
-          unreadCount: this.notificationService.getUnreadCount()
-        }
-      };
-
-      const reportPrompt = `
-Genera un reporte diario ejecutivo para Blue Dragon Motors basado en estos datos:
-
-${JSON.stringify(dailyData, null, 2)}
-
-Incluye:
-1. Resumen ejecutivo del día
-2. Métricas clave de rendimiento
-3. Alertas y problemas identificados
-4. Recomendaciones para el día siguiente
-5. Tendencias y oportunidades
-
-Mantén un tono profesional pero actionable.`;
-
-      const aiSummary = await this.groqService.generateResponse(
-        reportPrompt,
-        'Genera un reporte ejecutivo diario completo y profesional'
-      );
-
-      const allInsights = [...inventoryReport.insights, ...queueReport.insights];
-      const criticalInsights = allInsights.filter(i => i.priority === 'critical' || i.priority === 'high');
-
-      return {
-        title: 'Reporte Ejecutivo Diario',
-        summary: aiSummary,
-        insights: criticalInsights,
-        recommendations: [
-          ...inventoryReport.recommendations.slice(0, 2),
-          ...queueReport.recommendations.slice(0, 2)
-        ],
-        generatedAt: new Date(),
-        data: dailyData
-      };
-
+      const docRef = doc(this.firestore, 'ai_cache', cacheKey);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) return null;
+      
+      const cached = docSnap.data() as CachedResponse;
+      
+      // Check if expired
+      const now = Timestamp.now();
+      if (cached.expiresAt.toMillis() < now.toMillis()) {
+        return null;
+      }
+      
+      return cached;
     } catch (error) {
-      console.error('Error generating daily report:', error);
-      throw error;
+      console.error('Cache retrieval error:', error);
+      return null;
     }
   }
 
-  // Predictive Analytics (Basic)
-  async predictDemand(productId: string, daysAhead: number = 7): Promise<any> {
+  /**
+   * Cache AI response
+   */
+  private async cacheResponse(
+    cacheKey: string,
+    response: { response: string; tokens: number },
+    context: string
+  ): Promise<void> {
     try {
-      const movements = await this.inventoryReportsService['stockMovementService'].getMovementsByProduct(productId);
-      const recentMovements = movements
-        .filter(m => m.type === 'sale')
-        .sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime())
-        .slice(0, 30); // Last 30 sales
-
-      const predictionPrompt = `
-Analiza estos datos de ventas recientes para predecir la demanda futura:
-
-${JSON.stringify(recentMovements.map(m => ({
-  date: m.createdAt.toDate().toISOString().split('T')[0],
-  quantity: m.quantity
-})), null, 2)}
-
-Producto ID: ${productId}
-Días a predecir: ${daysAhead}
-
-Proporciona:
-1. Tendencia de ventas (creciente/decreciente/estable)
-2. Predicción de demanda para los próximos ${daysAhead} días
-3. Nivel de confianza en la predicción
-4. Factores que podrían afectar la demanda
-5. Recomendaciones de stock basado en la predicción
-`;
-
-      const prediction = await this.groqService.generateResponse(
-        predictionPrompt,
-        'Realiza análisis predictivo de demanda de productos'
-      );
-
-      return {
-        productId,
-        prediction,
-        confidence: 'medium', // Could be calculated based on data consistency
-        generatedAt: new Date()
-      };
-
+      const ttl = (this.CACHE_TTL as any)[context] || this.CACHE_TTL.general;
+      const now = Timestamp.now();
+      const expiresAt = Timestamp.fromMillis(now.toMillis() + ttl);
+      
+      const docRef = doc(this.firestore, 'ai_cache', cacheKey);
+      await setDoc(docRef, {
+        response: response.response,
+        tokens: response.tokens,
+        createdAt: now,
+        expiresAt: expiresAt
+      });
     } catch (error) {
-      console.error('Error predicting demand:', error);
-      throw error;
+      console.error('Cache storage error:', error);
+      // Non-blocking error
     }
   }
 
-  // Integration Methods for Components
-  getInventoryInsights(): Observable<AIInsight[]> {
-    return from(this.analyzeInventoryHealth()).pipe(
-      map(report => report.insights)
-    );
+  /**
+   * Call Gemini API via Cloud Function
+   */
+  private async callGeminiAPI(
+    prompt: string,
+    context: string
+  ): Promise<{ response: string; tokens: number }> {
+    const callAIProxy = httpsCallable<
+      { prompt: string; context: string },
+      { response: string; tokens: number }
+    >(this.functions, 'aiProxy');
+    
+    const result = await callAIProxy({ prompt, context });
+    return result.data;
   }
 
-  getQueueInsights(): Observable<AIInsight[]> {
-    return from(this.analyzeQueueEfficiency()).pipe(
-      map(report => report.insights)
-    );
+  /**
+   * Invalidate cache for specific context (called when data updates)
+   */
+  async invalidateCache(pattern: string): Promise<void> {
+    // This would require a more sophisticated cache management system
+    // For now, TTLs handle expiration
+    console.log(`Cache invalidation requested for pattern: ${pattern}`);
   }
 
-  getDailyReport(): Observable<AIReport> {
-    return from(this.generateDailyReport());
+  /**
+   * Get cache statistics (for admin dashboard)
+   */
+  async getCacheStats(): Promise<{
+    totalEntries: number;
+    hitRate: number;
+    avgTokensSaved: number;
+  }> {
+    // Implementation would query analytics collection
+    return {
+      totalEntries: 0,
+      hitRate: 0,
+      avgTokensSaved: 0
+    };
   }
 }

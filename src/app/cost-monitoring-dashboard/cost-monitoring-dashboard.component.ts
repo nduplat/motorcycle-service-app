@@ -60,7 +60,7 @@ export class CostMonitoringDashboardComponent implements OnInit, OnDestroy {
       },
       tooltip: {
         callbacks: {
-          label: (context) => `$${context.parsed.y.toFixed(2)}`
+          label: (context) => `$${context.parsed.y?.toFixed(2) || '0.00'}`
         }
       }
     },

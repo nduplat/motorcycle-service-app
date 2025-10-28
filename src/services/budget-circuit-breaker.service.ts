@@ -271,7 +271,7 @@ export class BudgetCircuitBreakerService {
   /**
    * Activate emergency mode - aggressive cost saving
    */
-  private activateEmergencyMode(): void {
+  public activateEmergencyMode(): void {
     if (!this.status.emergencyMode) {
       this.status.emergencyMode = true;
       console.warn('🚨 Budget Circuit Breaker: EMERGENCY MODE ACTIVATED');
@@ -289,7 +289,7 @@ export class BudgetCircuitBreakerService {
   /**
    * Deactivate emergency mode
    */
-  private deactivateEmergencyMode(): void {
+  public deactivateEmergencyMode(): void {
     if (this.status.emergencyMode) {
       this.status.emergencyMode = false;
       console.log('✅ Budget Circuit Breaker: Emergency mode deactivated');
@@ -378,7 +378,7 @@ export class BudgetCircuitBreakerService {
   /**
    * Notify administrators of important events (deprecated - now using AlertingService)
    */
-  private notifyAdmins(event: string, data: any): void {
+  public notifyAdmin(event: string, data: any): void {
     // Legacy method - alerts are now handled by AlertingService
     console.log(`📢 Admin notification: ${event}`, data);
   }
@@ -416,12 +416,102 @@ export class BudgetCircuitBreakerService {
     console.log('💰 Budget thresholds updated:', this.status.thresholds);
   }
 
+  async getCostHistory(): Promise<any[]> {
+    try {
+      const history = await this.costMonitoring.getUsageHistory('daily', 30);
+      return history.map(record => ({
+        date: record.timestamp.toDate(),
+        costs: record.costs,
+        alerts: record.alertsTriggered
+      }));
+    } catch (error) {
+      console.error('Error getting cost history:', error);
+      return [];
+    }
+  }
+
+  async forceCacheClear(context?: string): Promise<void> {
+    console.log(`🗑️ Admin: Force clearing cache${context ? ` for context: ${context}` : ''}`);
+    if (context) {
+      await this.cacheService.clearContext(context);
+    } else {
+      await this.cacheService.clearAll();
+    }
+    this.notificationService.createAdminNotification('Cache Cleared', `Cache cleared${context ? ` for context: ${context}` : ''}`);
+  }
+
+  updateDailyBudget(budget: number): void {
+    if (budget <= 0) {
+      throw new Error('Budget must be greater than 0');
+    }
+
+    console.log(`💰 Admin: Updating daily budget to $${budget}`);
+    this.updateThresholds({ dailyBudget: budget });
+
+    // Notify admin of the change
+    this.notificationService.createAdminNotification('Budget Update', `Daily budget updated to $${budget}`);
+  }
+
   /**
    * Load configuration from storage (future enhancement)
    */
   private loadConfiguration(): void {
     // In a real implementation, load from Firestore or local storage
     // For now, use defaults
+  }
+
+  async getAdminDashboard(): Promise<{
+    circuitBreakerStatus: BudgetCircuitBreakerStatus;
+    costHistory: any[];
+    recommendations: string[];
+  }> {
+    const status = this.getStatus();
+    const costHistory = await this.getCostHistory();
+    const recommendations = this.generateAdminRecommendations(status, costHistory);
+
+    return {
+      circuitBreakerStatus: status,
+      costHistory,
+      recommendations
+    };
+  }
+
+  private generateAdminRecommendations(status: BudgetCircuitBreakerStatus, costHistory: any[]): string[] {
+    const recommendations: string[] = [];
+
+    // Circuit breaker state recommendations
+    if (status.circuitBreaker.state === 'OPEN') {
+      recommendations.push('Circuit breaker is OPEN. Consider increasing budget or optimizing AI usage.');
+    }
+
+    if (status.emergencyMode) {
+      recommendations.push('Emergency mode is active. Review budget settings and usage patterns.');
+    }
+
+    // Budget recommendations
+    const recentCosts = costHistory.slice(0, 7); // Last 7 days
+    if (recentCosts.length > 0) {
+      const avgDailyCost = recentCosts.reduce((sum, record) => sum + record.costs.total, 0) / recentCosts.length;
+
+      if (avgDailyCost > status.thresholds.dailyBudget * 0.9) {
+        recommendations.push(`Average daily cost ($${avgDailyCost.toFixed(2)}) is approaching budget limit. Consider budget increase.`);
+      }
+
+      if (avgDailyCost < status.thresholds.dailyBudget * 0.5) {
+        recommendations.push(`Average daily cost ($${avgDailyCost.toFixed(2)}) is well below budget. Consider reducing budget to optimize costs.`);
+      }
+    }
+
+    // Threshold recommendations
+    if (status.thresholds.warningThreshold > 90) {
+      recommendations.push('Warning threshold is very high. Consider lowering to get earlier alerts.');
+    }
+
+    if (status.thresholds.shutdownThreshold < 90) {
+      recommendations.push('Shutdown threshold is low. This may cause frequent service interruptions.');
+    }
+
+    return recommendations;
   }
 
   /**

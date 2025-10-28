@@ -10,6 +10,7 @@ import { UserService } from '../../../services/user.service';
 import { WorkshopCapacityService } from '../../../services/workshop-capacity.service';
 import { EmployeeScheduleService } from '../../../services/employee-schedule.service';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
+import { AppointmentStatus } from '../../../models';
 
 @Component({
   selector: 'app-schedule',
@@ -186,7 +187,7 @@ export class ScheduleComponent {
         vehicleId,
         scheduledAt: FirestoreTimestamp.fromDate(scheduledTime),
         assignedTo: assignedTechnician || undefined,
-        status: 'scheduled' as const,
+        status: AppointmentStatus.SCHEDULED,
         estimatedDuration: duration
       };
 

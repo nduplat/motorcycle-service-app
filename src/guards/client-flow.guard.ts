@@ -37,8 +37,8 @@ export class ClientFlowGuard implements CanActivate {
         return false;
       }
 
-      // Check if user has customer role (or admin/technician for testing)
-      const allowedRoles = ['customer', 'admin', 'technician'];
+      // Check if user has customer role
+      const allowedRoles = ['customer'];
       if (!allowedRoles.includes(currentUser.role)) {
         console.log('ClientFlowGuard: User does not have required role:', currentUser.role);
         this.router.navigate(['/'], {

@@ -34,35 +34,3 @@ export interface StockMovement {
   createdBy?: string; // user id - id de usuario
   createdAt: Timestamp;
 }
-
-/**
- * InventoryLocation Model - Storage locations for products.
- *
- * Purpose: Defines physical or logical storage locations within the workshop
- * for inventory organization and stock tracking.
- *
- * Propósito: Define ubicaciones físicas o lógicas de almacenamiento dentro del taller
- * para organización de inventario y seguimiento de stock.
- *
- * CRUD Operations:
- * - Save: Use Firestore setDoc() with collection 'inventoryLocations', auto-generated id
- * - Query: Use Firestore query() on 'inventoryLocations' collection, usually cached
- * - Delete: Use Firestore deleteDoc() or set active to false
- *
- * Operaciones CRUD:
- * - Guardar: Usar Firestore setDoc() con colección 'inventoryLocations', id auto-generado
- * - Consultar: Usar Firestore query() en colección 'inventoryLocations', usualmente cacheado
- * - Eliminar: Usar Firestore deleteDoc() o configurar active a false
- *
- * References: Exported from src/models/index.ts
- * Referencias: Exportado desde src/models/index.ts
- */
-export interface InventoryLocation {
-  id: string;
-  name: string; // e.g., "Bodega principal", "Anaquel A2"
-  description?: string;
-  address?: string; // if different warehouse - si es diferente bodega
-  active?: boolean;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}

@@ -31,40 +31,6 @@ export interface Category {
   updatedAt?: Timestamp;
 }
 
-/**
- * AppSettings Model - Global application configuration.
- *
- * Purpose: Singleton document containing system-wide settings like company info,
- * tax rates, and default configurations.
- *
- * Propósito: Documento singleton que contiene configuraciones de todo el sistema como información
- * de la empresa, tasas de impuestos y configuraciones predeterminadas.
- *
- * CRUD Operations:
- * - Save: Use Firestore setDoc() with collection 'settings', id = "singleton"
- * - Query: Use Firestore getDoc() on 'settings' collection with id "singleton"
- * - Delete: Never delete - system configuration
- *
- * Operaciones CRUD:
- * - Guardar: Usar Firestore setDoc() con colección 'settings', id = "singleton"
- * - Consultar: Usar Firestore getDoc() en colección 'settings' con id "singleton"
- * - Eliminar: Nunca eliminar - configuración del sistema
- *
- * References: Exported from src/models/index.ts
- * Referencias: Exportado desde src/models/index.ts
- */
-export interface AppSettings {
-  id: "singleton";
-  companyName: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  taxRates?: Array<{ name: string; percent: number }>;
-  currency?: import('./types').Currency;
-  invoicePrefix?: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
 
 /**
  * Customer Model - Customer information and profiles.

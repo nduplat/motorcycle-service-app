@@ -23,6 +23,16 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "/assets"
+              },
+              {
+                "glob": "firebase-messaging-sw.js",
+                "input": "./",
+                "output": "/"
+              },
+              {
+                "glob": "favicon.ico",
+                "input": "./",
+                "output": "/"
               }
             ]
           },

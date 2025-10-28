@@ -360,46 +360,7 @@ export class AdvancedServiceService {
     this.clearSelection();
   }
 
-  // Export methods
-  exportToCSV(): void {
-    const services = this.sortedServices();
-    const headers = [
-      'Código',
-      'Título',
-      'Descripción',
-      'Tipo',
-      'Horas Estimadas',
-      'Precio',
-      'Habilidades Requeridas',
-      'Estado',
-      'Fecha Creación'
-    ];
 
-    const csvContent = [
-      headers.join(','),
-      ...services.map(service => [
-        service.code || '',
-        `"${service.title || ''}"`,
-        `"${service.description || ''}"`,
-        service.type || '',
-        service.estimatedHours || '',
-        service.price || '',
-        `"${service.requiredSkills?.join('; ') || ''}"`,
-        service.isActive !== false ? 'Activo' : 'Inactivo',
-        service.createdAt?.toDate().toLocaleDateString('es-CO') || ''
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `servicios_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
 
   // Getters for external access
   getCurrentPage(): number {
@@ -424,5 +385,10 @@ export class AdvancedServiceService {
 
   getSelectedCount(): number {
     return this.selectedServiceIds().length;
+  }
+
+  // Public getter for sorted services (for CSV export)
+  getSortedServices(): ServiceItem[] {
+    return this.sortedServices();
   }
 }

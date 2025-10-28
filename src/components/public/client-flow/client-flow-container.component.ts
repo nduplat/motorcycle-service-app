@@ -16,9 +16,9 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ClientFlowService, ClientFlowStep } from '../../../services/client-flow.service';
 import { AuthService } from '../../../services/auth.service';
-import { PhoneVerificationComponent } from './phone-verification.component';
+import { PhoneVerificationComponent } from '../../shared/phone-verification.component';
 import { MotorcycleSelectionComponent } from './motorcycle-selection.component';
-import { ServiceSelectionComponent } from './service-selection.component';
+import { ServiceSelectionComponent } from '../../shared/service-selection.component';
 import { WaitTicketComponent } from './wait-ticket.component';
 
 @Component({

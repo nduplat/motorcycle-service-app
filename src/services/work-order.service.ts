@@ -1,5 +1,5 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
-import { WorkOrder, Appointment, ServiceItem, Timestamp, QueueEntry, WorkOrderFilter, WorkOrderStats, TimeEntryMetrics } from '../models';
+import { WorkOrder, Appointment, ServiceItem, Timestamp, QueueEntry, WorkOrderFilter, WorkOrderStats, TimeEntryMetrics, AppointmentStatus } from '../models';
 import { Observable, from, BehaviorSubject, combineLatest } from 'rxjs';
 import { map, switchMap, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { db } from '../firebase.config';
@@ -60,6 +60,9 @@ export class WorkOrderService {
   private firestoreReadCount = 0;
   private isLoading = false;
 
+  // Track current user ID to prevent duplicate loads
+  private currentUserId: string | null = null;
+
   // Pagination state
   private readonly PAGE_SIZE = 20;
   private lastDoc: any = null;
@@ -74,17 +77,18 @@ export class WorkOrderService {
     // Watch for user changes and reload work orders reactively
     effect(() => {
       const user = this.authService.currentUser();
-      if (user) {
-        console.log('🔍 WorkOrderService: User authenticated, loading work orders');
-        this.loadWorkOrders();
+
+      if (user && user.id !== this.currentUserId) {
+        console.log('🔍 WorkOrderService: User authenticated, starting real-time updates');
+        this.currentUserId = user.id;
         this.startRealtimeUpdates();
-        this.loadWorkOrderStats();
-      } else {
+      } else if (!user && this.currentUserId !== null) {
         console.log('🔍 WorkOrderService: User not authenticated, clearing work orders');
+        this.currentUserId = null;
         this.workOrders.set([]);
         this.stopRealtimeUpdates();
       }
-    });
+    }, { allowSignalWrites: true });
 
     // Setup search and filter observables
     this.setupSearchAndFilter();
@@ -409,7 +413,21 @@ export class WorkOrderService {
   createWorkOrderFromAppointment(appointment: Appointment): Observable<WorkOrder> {
     return from(new Promise<WorkOrder>(async (resolve, reject) => {
       try {
+        console.log('🔍 WorkOrderService: Creating work order from appointment', {
+          appointmentId: appointment.id,
+          appointmentStatus: appointment.status,
+          clientId: appointment.clientId,
+          vehicleId: appointment.vehicleId,
+          serviceId: appointment.serviceId,
+          assignedTo: appointment.assignedTo
+        });
+
         const serviceDetails = this.serviceItemService.getServices()().find(s => s.id === appointment.serviceId);
+        console.log('🔍 WorkOrderService: Service details lookup', {
+          serviceId: appointment.serviceId,
+          serviceFound: !!serviceDetails,
+          servicePrice: serviceDetails?.price
+        });
 
         const newWorkOrderData = {
           clientId: appointment.clientId,
@@ -422,21 +440,50 @@ export class WorkOrderService {
           createdAt: serverTimestamp(),
         };
 
+        console.log('🔍 WorkOrderService: Work order data prepared', newWorkOrderData);
+
         const docRef = await addDoc(collection(db, "workOrders"), newWorkOrderData);
+        console.log('🔍 WorkOrderService: Work order created in Firestore', { workOrderId: docRef.id });
+
         const newWorkOrder = {
             ...newWorkOrderData,
             id: docRef.id,
             createdAt: { toDate: () => new Date() }
         } as unknown as WorkOrder;
-        
-        this.workOrders.update(wos => [...wos, newWorkOrder]);
 
+        this.workOrders.update(wos => [...wos, newWorkOrder]);
         this.invalidateCache();
 
-        this.appointmentService.updateAppointmentStatus(appointment.id, 'in_progress', docRef.id).subscribe();
+        console.log('🔍 WorkOrderService: Updating appointment status to IN_PROGRESS', {
+          appointmentId: appointment.id,
+          workOrderId: docRef.id
+        });
 
+        this.appointmentService.updateAppointmentStatus(appointment.id, AppointmentStatus.IN_PROGRESS, docRef.id).subscribe({
+          next: (updatedAppointment) => {
+            console.log('🔍 WorkOrderService: Appointment status updated successfully', {
+              appointmentId: appointment.id,
+              newStatus: updatedAppointment?.status,
+              workOrderId: updatedAppointment?.workOrderId
+            });
+          },
+          error: (error) => {
+            console.error('🔍 WorkOrderService: Failed to update appointment status', {
+              appointmentId: appointment.id,
+              error: error instanceof Error ? error.message : String(error),
+              workOrderId: docRef.id
+            });
+          }
+        });
+
+        console.log('🔍 WorkOrderService: Work order creation completed', { workOrderId: docRef.id });
         resolve(newWorkOrder);
       } catch (e) {
+        console.error('🔍 WorkOrderService: Error creating work order from appointment', {
+          appointmentId: appointment.id,
+          error: e instanceof Error ? e.message : String(e),
+          stack: e instanceof Error ? e.stack : undefined
+        });
         reject(e);
       }
     }));
@@ -522,7 +569,7 @@ export class WorkOrderService {
 
         const appointment = this.appointmentService.getAppointments()().find(a => a.workOrderId === wo.id);
         if (appointment) {
-          await this.appointmentService.updateAppointmentStatus(appointment.id, 'completed').toPromise();
+          await this.appointmentService.updateAppointmentStatus(appointment.id, AppointmentStatus.COMPLETED).toPromise();
         }
 
         resolve(updatedWO);
@@ -644,7 +691,6 @@ export class WorkOrderService {
         const workOrders = snapshot.docs.map(doc => fromFirestore<WorkOrder>(doc));
         this.workOrders.set(workOrders);
         this.invalidateCache();
-        this.loadWorkOrderStats();
       },
       (error) => {
         console.error('Error in real-time work orders subscription:', error);

@@ -5,7 +5,7 @@ import { AppointmentService } from '../../../services/appointment.service';
 import { UserService } from '../../../services/user.service';
 import { UserVehicleService } from '../../../services/user-vehicle.service';
 import { MotorcycleService } from '../../../services/motorcycle.service';
-import { ServiceItem, UserVehicle, Motorcycle } from '../../../models';
+import { ServiceItem, UserVehicle, Motorcycle, AppointmentStatus } from '../../../models';
 import { AuthService } from '../../../services/auth.service';
 import { Timestamp } from 'firebase/firestore';
 import { WeeklyAvailabilityComponent } from './weekly-availability.component';
@@ -123,7 +123,7 @@ export class AppointmentsPageComponent {
       vehicleId: formValue.vehicle!,
       scheduledAt: Timestamp.fromDate(scheduledAtDate),
       estimatedDuration: (service.estimatedHours ?? 1) * 60,
-      status: 'pending_approval',
+      status: AppointmentStatus.PENDING_APPROVAL,
       serviceTypes: [service.title],
       assignedTo: slot.employeeId, // Assign to selected employee
       notes: formValue.notes || '',

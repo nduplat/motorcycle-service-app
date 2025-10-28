@@ -106,6 +106,38 @@ export type QueueEntryStatus = "waiting" | "called" | "in_service" | "served" | 
  * Tipos de servicio para entradas de cola.
  * Distingue entre citas programadas y llegadas directas.
  */
+export enum ServiceType {
+  MAINTENANCE = 'maintenance',
+  REPAIR = 'repair',
+  INSPECTION = 'inspection',
+  CUSTOMIZATION = 'customization'
+}
+
+export enum Priority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent'
+}
+
+export enum AppointmentStatus {
+  SCHEDULED = 'scheduled',
+  CONFIRMED = 'confirmed',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  NO_SHOW = 'no_show',
+  PENDING_APPROVAL = 'pending_approval'
+}
+
+export enum ServiceCategory {
+  MAINTENANCE = 'maintenance',
+  REPAIR = 'repair',
+  INSPECTION = 'inspection',
+  CUSTOMIZATION = 'customization',
+  EMERGENCY = 'emergency'
+}
+
 /**
  * Utility function to convert Firebase timestamp types to JavaScript Date.
  * Handles Date, Timestamp, and FieldValue types safely.

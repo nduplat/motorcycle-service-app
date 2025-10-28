@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, Timestamp, DocumentData } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, Timestamp, DocumentData, FieldValue } from '@angular/fire/firestore';
 
 export interface CacheEntry<T = any> {
   data: T;
@@ -61,7 +61,10 @@ export class CacheService {
         return null;
       }
 
-      const entry = docSnap.data() as CacheEntry<T>;
+      const rawData = docSnap.data();
+
+      // Deserialize the data from Firestore format back to proper types
+      const entry = this.deserializeFromFirestore(rawData) as CacheEntry<T>;
 
       // Validate expiration
       if (!this.isValid(entry)) {
@@ -122,13 +125,8 @@ export class CacheService {
     };
 
     try {
-      // Convert Timestamps to plain objects for Firestore serialization
-      const firestoreEntry = {
-        ...entry,
-        createdAt: entry.createdAt.toDate(),
-        expiresAt: entry.expiresAt.toDate(),
-        lastAccessed: entry.lastAccessed ? entry.lastAccessed.toDate() : null
-      };
+      // Recursively serialize the entire entry for Firestore compatibility
+      const firestoreEntry = this.serializeForFirestore(entry);
 
       // Set in Firestore (persistent)
       const docRef = doc(this.firestore, this.CACHE_COLLECTION, key);
@@ -466,6 +464,69 @@ export class CacheService {
   }
 
   // Private helper methods
+
+  /**
+   * Recursively serialize data for Firestore compatibility
+   * Converts Timestamps to plain objects and handles nested structures
+   */
+  private serializeForFirestore(data: any): any {
+    if (data === null || data === undefined) {
+      return data;
+    }
+
+    if (data instanceof Timestamp) {
+      return data.toDate();
+    }
+
+    if (data instanceof Date) {
+      return data;
+    }
+
+    if (Array.isArray(data)) {
+      return data.map(item => this.serializeForFirestore(item));
+    }
+
+    if (typeof data === 'object') {
+      const serialized: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        serialized[key] = this.serializeForFirestore(value);
+      }
+      return serialized;
+    }
+
+    return data;
+  }
+
+  /**
+   * Recursively deserialize data from Firestore
+   * Converts plain date objects back to Timestamps where appropriate
+   */
+  private deserializeFromFirestore(data: any): any {
+    if (data === null || data === undefined) {
+      return data;
+    }
+
+    if (Array.isArray(data)) {
+      return data.map(item => this.deserializeFromFirestore(item));
+    }
+
+    if (typeof data === 'object' && data.constructor === Object) {
+      const deserialized: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        // Convert date objects back to Timestamps for known timestamp fields
+        if ((key === 'createdAt' || key === 'expiresAt' || key === 'lastAccessed' || key === 'updatedAt' ||
+             key === 'joinedAt' || key === 'periodStart' || key === 'periodEnd' || key === 'calculatedAt') &&
+            value instanceof Date) {
+          deserialized[key] = Timestamp.fromDate(value);
+        } else {
+          deserialized[key] = this.deserializeFromFirestore(value);
+        }
+      }
+      return deserialized;
+    }
+
+    return data;
+  }
 
   private isValid(entry: CacheEntry): boolean {
     const now = Timestamp.now();
