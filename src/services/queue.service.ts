@@ -903,10 +903,26 @@ export class QueueService {
          notes: data.notes || `Asignación creada durante unión a cola`
        };
 
-       // Motorcycle assignment is now handled internally by the queue service
-       // No need to create separate assignment records
-       console.log('✅ [DEBUG] Motorcycle assignment handled by queue service');
-       return 'assignment-handled-by-queue';
+       // Create assignment in motorcycleAssignments collection
+       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+       const { db } = await import('../firebase.config');
+
+       const assignmentDoc = {
+         userId: data.userId,
+         motorcycleId: finalMotorcycleId,
+         assignedBy: assignedBy,
+         status: 'active' as const,
+         plate: data.plate,
+         mileageKm: data.mileageKm,
+         notes: data.notes || `Asignación creada durante unión a cola`,
+         assignedAt: serverTimestamp(),
+         createdAt: serverTimestamp(),
+         updatedAt: serverTimestamp()
+       };
+
+       const assignmentRef = await addDoc(collection(db, 'motorcycleAssignments'), assignmentDoc);
+       console.log('✅ [DEBUG] Motorcycle assignment created with ID:', assignmentRef.id);
+       return assignmentRef.id;
 
      } catch (error) {
        console.error('❌ [DEBUG] Error creating motorcycle assignment via service:', error);

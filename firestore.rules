@@ -98,10 +98,10 @@ service cloud.firestore {
     }
 
     // ========================================
-    // VEHICLES COLLECTION
+    // USER VEHICLES COLLECTION
     // ========================================
 
-    match /vehicles/{vehicleId} {
+    match /userVehicles/{vehicleId} {
       // Customers can read their own vehicles, Technicians, Admins and Managers can read/write all vehicles.
       allow read: if (isCustomer() && resource.data.userId == request.auth.uid) || isTechnician() || isAdmin() || isManager();
       allow write: if isTechnician() || isAdmin() || isManager();
@@ -127,6 +127,86 @@ service cloud.firestore {
       allow read, write: if (isCustomer() && resource.data.customerId == request.auth.uid) || 
                          (isTechnician() && resource.data.assignedTo == request.auth.uid) || 
                          isAdmin() || isManager();
+    }
+
+
+    // ========================================
+    // CACHE COLLECTION
+    // ========================================
+
+    match /cache/{cacheId} {
+      // Users can read and write their own cache entries
+      allow read, write: if resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // NOTIFICATION TEMPLATES COLLECTION
+    // ========================================
+
+    match /notificationTemplates/{templateId} {
+      // All authenticated users can read notification templates
+      allow read: if true;
+    }
+
+    // ========================================
+    // SERVICES COLLECTION
+    // ========================================
+
+    match /services/{serviceId} {
+      // Admins and Managers can read/write services, Technicians and Customers can read services.
+      allow read: if isTechnician() || isAdmin() || isManager() || isCustomer();
+      allow write: if isAdmin() || isManager();
+    }
+
+    // ========================================
+    // CATEGORIES COLLECTION
+    // ========================================
+
+    match /categories/{categoryId} {
+      // Technicians, Admins, Managers and Customers can read categories
+      allow read: if isTechnician() || isAdmin() || isManager() || isCustomer();
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+
+    // ========================================
+    // MAINTENANCE REMINDERS COLLECTION
+    // ========================================
+
+    match /maintenanceReminders/{reminderId} {
+      // Customers can read their own reminders, Technicians, Admins and Managers can read all reminders.
+      allow read: if (isCustomer() && resource.data.customerId == request.auth.uid) || isTechnician() || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager';
+      // Only admins can write
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ========================================
+    // WORK SESSIONS COLLECTION
+    // ========================================
+
+    match /workSessions/{sessionId} {
+      // Technicians, Admins and Managers can read/write work sessions.
+      allow read, write: if isTechnician() || isAdmin() || isManager();
+    }
+
+    // ========================================
+    // EMPLOYEE SCHEDULES COLLECTION
+    // ========================================
+
+    match /employeeSchedules/{scheduleId} {
+      // Technicians, Admins and Managers can read employee schedules.
+      allow read: if isTechnician() || isAdmin() || isManager();
+      // Only admins and managers can write
+      allow write: if isAdmin() || isManager();
+    }
+
+    // ========================================
+    // TIME ENTRIES COLLECTION
+    // ========================================
+
+    match /timeEntries/{entryId} {
+      // Technicians can read/write their own time entries, and Admins/Managers can read/write all time entries.
+      allow read, write: if (isTechnician() && resource.data.technicianId == request.auth.uid) || isAdmin() || isManager();
     }
 
     // ========================================

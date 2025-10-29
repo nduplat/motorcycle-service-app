@@ -24,7 +24,7 @@
 }
 
 .loading-section p {
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--muted-foreground);
   font-size: 16px;
 }
 
@@ -34,7 +34,7 @@
   align-items: center;
   padding: 48px;
   gap: 16px;
-  color: #f44336;
+  color: var(--destructive);
 }
 
 .error-section mat-icon {
@@ -79,7 +79,7 @@
   font-size: 32px;
   width: 32px;
   height: 32px;
-  color: #1976d2;
+  color: var(--primary);
 }
 
 .kpi-info {
@@ -90,14 +90,14 @@
   display: block;
   font-size: 28px;
   font-weight: 500;
-  color: #1976d2;
+  color: var(--primary);
   line-height: 1.2;
 }
 
 .kpi-label {
   display: block;
   font-size: 14px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--muted-foreground);
   margin-top: 4px;
 }
 
@@ -115,19 +115,19 @@
 }
 
 .kpi-comparison .positive {
-  color: #4caf50;
+  color: var(--accent);
 }
 
 .kpi-comparison .negative {
-  color: #f44336;
+  color: var(--destructive);
 }
 
 .comparison-text.positive {
-  color: #4caf50;
+  color: var(--accent);
 }
 
 .comparison-text.negative {
-  color: #f44336;
+  color: var(--destructive);
 }
 
 .rating-stars {
@@ -151,7 +151,7 @@
 }
 
 .goals-card mat-card-header {
-  background-color: #f5f5f5;
+  background-color: var(--secondary);
   padding: 16px 24px;
   margin: -24px -24px 16px -24px;
 }
@@ -167,7 +167,7 @@
 
 .goal-item {
   padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border);
 }
 
 .goal-item:last-child {
@@ -183,12 +183,12 @@
 
 .goal-label {
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.87);
+  color: var(--foreground);
 }
 
 .goal-progress {
   font-size: 14px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--muted-foreground);
 }
 
 .goal-progress-bar {
@@ -197,7 +197,7 @@
 }
 
 .goal-progress-bar ::ng-deep .mat-mdc-progress-bar-primary-bar {
-  background-color: #4caf50;
+  background-color: var(--accent);
 }
 
 /* Trends Section */
@@ -206,7 +206,7 @@
 }
 
 .trends-card mat-card-header {
-  background-color: #f5f5f5;
+  background-color: var(--secondary);
   padding: 16px 24px;
   margin: -24px -24px 16px -24px;
 }
@@ -232,7 +232,7 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--muted-foreground);
 }
 
 .legend-color {
@@ -242,15 +242,15 @@
 }
 
 .legend-color.jobs {
-  background-color: #2196f3;
+  background-color: var(--primary);
 }
 
 .legend-color.hours {
-  background-color: #ff9800;
+  background-color: var(--accent);
 }
 
 .legend-color.efficiency {
-  background-color: #4caf50;
+  background-color: #4caf50; /* This is a specific green, should be mapped to a variable if possible */
 }
 
 .chart-bars {
@@ -284,20 +284,20 @@
 }
 
 .bar.jobs-bar {
-  background-color: #2196f3;
+  background-color: var(--primary);
 }
 
 .bar.hours-bar {
-  background-color: #ff9800;
+  background-color: var(--accent);
 }
 
 .bar.efficiency-bar {
-  background-color: #4caf50;
+  background-color: #4caf50; /* This is a specific green, should be mapped to a variable if possible */
 }
 
 .bar-label {
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--muted-foreground);
   text-align: center;
 }
 
@@ -307,7 +307,7 @@
 }
 
 .additional-metrics-card mat-card-header {
-  background-color: #f5f5f5;
+  background-color: var(--secondary);
   padding: 16px 24px;
   margin: -24px -24px 16px -24px;
 }
@@ -328,7 +328,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border);
 }
 
 .metric-item:last-child {
@@ -337,12 +337,12 @@
 
 .metric-label {
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.87);
+  color: var(--foreground);
 }
 
 .metric-value {
   font-weight: 500;
-  color: #1976d2;
+  color: var(--primary);
 }
 
 /* Responsive Design */

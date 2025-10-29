@@ -27,9 +27,13 @@
       --accent-foreground: oklch(0.98 0.005 240);
       --destructive: oklch(0.55 0.22 25);
       --destructive-foreground: oklch(0.98 0.005 240);
+      --destructive-background: oklch(0.55 0.22 25 / 0.1);
       --border: oklch(0.90 0.01 240);
       --input: oklch(0.99 0.005 240);
       --ring: oklch(0.35 0.08 240);
+      --z-index-dialog: 1000;
+      --z-index-toast: 10000;
+      --backdrop-background: oklch(0.15 0.01 240 / 0.5);
     }
 
     .dark {
@@ -49,13 +53,14 @@
       --accent-foreground: oklch(0.12 0.015 240);
       --destructive: oklch(0.65 0.25 25);
       --destructive-foreground: oklch(0.12 0.015 240);
+      --destructive-background: oklch(0.65 0.25 25 / 0.1);
       --border: oklch(0.22 0.02 240);
       --input: oklch(0.12 0.015 240);
       --ring: oklch(0.65 0.12 240);
+      --backdrop-background: oklch(0.95 0.005 240 / 0.5);
     }
   </style>
 
-  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-background text-foreground antialiased">
   <app-root></app-root>

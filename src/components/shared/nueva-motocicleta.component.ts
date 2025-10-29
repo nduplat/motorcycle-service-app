@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, computed, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed, output, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MotorcycleService } from '../../services/motorcycle.service';
@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { Motorcycle } from '../../models';
 import { MotorcycleFiltersComponent, MotorcycleFilters } from '../home/motorcycle-search/motorcycle-search.component';
+import { MotorcycleAssignmentService } from '../../services/motorcycle-assignment.service';
 
 @Component({
   selector: 'app-nueva-motocicleta',
@@ -18,6 +19,7 @@ export class NuevaMotocicletaComponent {
   motorcycleService = inject(MotorcycleService);
   authService = inject(AuthService);
   userService = inject(UserService);
+  motorcycleAssignmentService = inject(MotorcycleAssignmentService);
 
   isSubmitting = signal(false);
   selectedMotorcycle = signal<Motorcycle | null>(null);
@@ -75,7 +77,7 @@ export class NuevaMotocicletaComponent {
 
   requestForm = this.fb.group({
     phone: ['', [Validators.pattern(/^(\+57|57)?[3-5]\d{8}$/)]],
-    motorcycleId: ['', Validators.required],
+    motorcycleId: [''],
     licensePlate: ['', [
       Validators.required,
       Validators.minLength(5),
@@ -83,6 +85,7 @@ export class NuevaMotocicletaComponent {
       Validators.pattern(/^[A-Z0-9]+$/)
     ]],
     currentMileage: [0, [Validators.required, Validators.min(0)]],
+    cylinderCapacity: [0, [Validators.required, Validators.min(50)]],
     photos: [[] as string[]],
     notes: ['']
   });
@@ -146,14 +149,7 @@ export class NuevaMotocicletaComponent {
   }
 
   async checkPlateUniqueness(plate: string): Promise<boolean> {
-    try {
-      // Since motorcycle assignments are now handled by queue service,
-      // we can skip this check as it's handled during queue joining
-      return true;
-    } catch (error) {
-      console.error('Error checking plate uniqueness:', error);
-      return false;
-    }
+    return this.motorcycleAssignmentService.checkPlateUniqueness(plate);
   }
 
   async submitRequest(): Promise<void> {
@@ -167,7 +163,6 @@ export class NuevaMotocicletaComponent {
     const user = this.currentUser()!;
 
     try {
-      // Check plate uniqueness
       const isUnique = await this.checkPlateUniqueness(formData.licensePlate);
       if (!isUnique) {
         alert('Esta placa ya está registrada en el sistema. Por favor, verifica la información.');
@@ -175,16 +170,26 @@ export class NuevaMotocicletaComponent {
         return;
       }
 
-      // Update phone if provided
       if (formData.phone) {
         await this.userService.updateUser({ id: user.id, phone: formData.phone }).toPromise();
       }
 
-      // Motorcycle assignment is now handled by the queue service
-      // This component is now only used for creating new motorcycles in the catalog
-      alert('Motocicleta registrada exitosamente.');
+      const assignmentData = {
+        userId: user.id,
+        motorcycleId: formData.motorcycleId || null,
+        status: 'active',
+        plate: formData.licensePlate,
+        mileageKm: formData.currentMileage,
+        cylinderCapacity: formData.cylinderCapacity,
+        notes: formData.notes || null,
+      };
+
+      await this.motorcycleAssignmentService.createAssignment(assignmentData as any);
+
+      alert('Motocicleta asignada exitosamente.');
       this.motorcycleAssigned.emit();
     } catch (error: any) {
+      console.error('Error in submitRequest:', error);
       alert(`Error: ${error.message}`);
     } finally {
       this.isSubmitting.set(false);

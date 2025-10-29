@@ -5,53 +5,30 @@ import { UserService } from './user.service';
 import { EventBusService } from './event-bus.service';
 import { CacheService } from './cache.service';
 import { CostMonitoringService } from './cost-monitoring.service';
-/// <reference types="jest" />
+import { MOCK_PROVIDERS } from './mock-providers';
 
 describe('NotificationService', () => {
   let service: NotificationService;
-  let authServiceSpy: jest.SpyInstance;
-  let userServiceSpy: jest.SpyInstance;
-  let eventBusSpy: jest.SpyInstance;
-  let cacheServiceSpy: jest.SpyInstance;
-  let costMonitoringSpy: jest.SpyInstance;
+  let authService: AuthService;
+  let userService: UserService;
+  let eventBus: EventBusService;
+  let cacheService: CacheService;
+  let costMonitoringService: CostMonitoringService;
 
   beforeEach(() => {
-    const authSpy = {
-      currentUser: jest.fn().mockReturnValue({ id: 'user1', role: 'customer' })
-    };
-    const userSpy = {
-      getUsers: jest.fn().mockReturnValue([]),
-      getUserById: jest.fn()
-    };
-    const eventBusSpyObj = {
-      emit: jest.fn()
-    };
-    const cacheSpy = {
-      get: jest.fn().mockResolvedValue(null),
-      set: jest.fn().mockResolvedValue(undefined)
-    };
-    const costSpy = {
-      trackFirestoreRead: jest.fn(),
-      trackFirestoreWrite: jest.fn()
-    };
-
     TestBed.configureTestingModule({
       providers: [
         NotificationService,
-        { provide: AuthService, useValue: authSpy },
-        { provide: UserService, useValue: userSpy },
-        { provide: EventBusService, useValue: eventBusSpyObj },
-        { provide: CacheService, useValue: cacheSpy },
-        { provide: CostMonitoringService, useValue: costSpy }
+        ...MOCK_PROVIDERS
       ]
     });
 
     service = TestBed.inject(NotificationService);
-    authServiceSpy = authSpy.currentUser;
-    userServiceSpy = userSpy.getUsers;
-    eventBusSpy = eventBusSpyObj.emit;
-    cacheServiceSpy = cacheSpy.get;
-    costMonitoringSpy = costSpy.trackFirestoreRead;
+    authService = TestBed.inject(AuthService);
+    userService = TestBed.inject(UserService);
+    eventBus = TestBed.inject(EventBusService);
+    cacheService = TestBed.inject(CacheService);
+    costMonitoringService = TestBed.inject(CostMonitoringService);
   });
 
   it('should be created', () => {
@@ -69,7 +46,7 @@ describe('NotificationService', () => {
 
       await service.createInventoryAlert(productInfo, 'low_stock', 'Main Warehouse');
 
-      expect(eventBusSpy).toHaveBeenCalledWith({
+      expect(eventBus.emit).toHaveBeenCalledWith({
         type: 'notification.created',
         entity: expect.objectContaining({
           type: 'inventory',
@@ -92,7 +69,7 @@ describe('NotificationService', () => {
 
       await service.createCategorizedNotification(notificationData);
 
-      expect(eventBusSpy).toHaveBeenCalledWith({
+      expect(eventBus.emit).toHaveBeenCalledWith({
         type: 'notification.created',
         entity: expect.objectContaining(notificationData)
       });
@@ -107,7 +84,7 @@ describe('NotificationService', () => {
 
       await service.createQueueNotification(queueData);
 
-      expect(eventBusSpy).toHaveBeenCalledWith({
+      expect(eventBus.emit).toHaveBeenCalledWith({
         type: 'notification.queue_update',
         entity: expect.objectContaining({
           type: 'queue_update',
@@ -130,7 +107,7 @@ describe('NotificationService', () => {
 
       await service.createMaintenanceReminder(reminderData);
 
-      expect(eventBusSpy).toHaveBeenCalledWith({
+      expect(eventBus.emit).toHaveBeenCalledWith({
         type: 'notification.maintenance_reminder',
         entity: expect.objectContaining({
           type: 'maintenance_reminder',
@@ -229,7 +206,7 @@ describe('NotificationService', () => {
       };
 
       // Mock eventBus.emit to throw error
-      eventBusSpy.mockImplementation(() => {
+      (eventBus.emit as jest.Mock).mockImplementation(() => {
         throw new Error('Event bus error');
       });
 
@@ -247,7 +224,7 @@ describe('NotificationService', () => {
 
       await service.createCategorizedNotification(emptyData);
 
-      expect(eventBusSpy).toHaveBeenCalledWith({
+      expect(eventBus.emit).toHaveBeenCalledWith({
         type: 'notification.created',
         entity: expect.objectContaining({
           title: '',
@@ -272,14 +249,14 @@ describe('NotificationService', () => {
         }
       ];
 
-      cacheServiceSpy.mockResolvedValue(cachedNotifications);
+      (cacheService.get as jest.Mock).mockResolvedValue(cachedNotifications);
 
       // Mock the getSystemNotifications method
       jest.spyOn(service as any, 'getSystemNotifications').mockResolvedValue([]);
 
       const result = await service.getSystemNotifications();
 
-      expect(cacheServiceSpy).toHaveBeenCalled();
+      expect(cacheService.get).toHaveBeenCalled();
       expect(result).toEqual([]);
     });
 
@@ -300,7 +277,7 @@ describe('NotificationService', () => {
 
       await service.getSystemNotifications();
 
-      expect(cacheServiceSpy).toHaveBeenCalled();
+      expect(cacheService.get).toHaveBeenCalled();
     });
   });
 
@@ -316,7 +293,7 @@ describe('NotificationService', () => {
 
       await service.createInventoryAlert(alertData);
 
-      expect(costMonitoringSpy).toHaveBeenCalled();
+      expect(costMonitoringService.trackFirestoreRead).toHaveBeenCalled();
     });
 
     it('should track multiple operations', async () => {
@@ -336,7 +313,7 @@ describe('NotificationService', () => {
       });
 
       // Should track multiple Firestore operations
-      expect(costMonitoringSpy).toHaveBeenCalledTimes(2);
+      expect(costMonitoringService.trackFirestoreRead).toHaveBeenCalledTimes(2);
     });
   });
 });

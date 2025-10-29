@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/firebase-messaging-sw.js",
+        "destination": "/firebase-messaging-sw.js"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -28,6 +32,15 @@
           {
             "key": "Cache-Control",
             "value": "max-age=31536000"
+          }
+        ]
+      },
+      {
+        "source": "**/*.js",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/javascript"
           }
         ]
       },
@@ -55,7 +68,8 @@
       "predeploy": [
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ],
-      "runtime": "nodejs20"
+      "runtime": "nodejs20",
+      "timeoutSeconds": 120
     }
   ],
   "firestore": {

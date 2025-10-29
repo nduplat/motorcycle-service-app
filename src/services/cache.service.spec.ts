@@ -1,12 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { CacheService, CacheEntry } from './cache.service';
+import { MOCK_PROVIDERS } from './mock-providers';
 
 describe('CacheService - Cost Optimization', () => {
   let service: CacheService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [CacheService]
+      providers: [CacheService, ...MOCK_PROVIDERS]
     });
 
     service = TestBed.inject(CacheService);

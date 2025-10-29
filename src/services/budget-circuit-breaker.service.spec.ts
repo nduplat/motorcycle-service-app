@@ -1,10 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClient } from '@angular/common/http';
 import { BudgetCircuitBreakerService, CircuitBreakerState } from './budget-circuit-breaker.service';
 import { CostMonitoringService } from './cost-monitoring.service';
-import { CacheService } from './cache.service';
-import { FallbackLibraryService } from './fallback-library.service';
-import { NotificationService } from './notification.service';
+import { MOCK_PROVIDERS } from './mock-providers';
 
 describe('BudgetCircuitBreakerService - Three-State Logic', () => {
   let service: BudgetCircuitBreakerService;
@@ -14,28 +11,10 @@ describe('BudgetCircuitBreakerService - Three-State Logic', () => {
   let notificationServiceSpy: any;
 
   beforeEach(() => {
-    const costSpy = {
-      getCurrentCosts: jest.fn()
-    };
-    const cacheSpy = {
-      clearContext: jest.fn()
-    };
-    const fallbackSpy = {
-      findBestMatch: jest.fn(),
-      getResponseWithDynamicData: jest.fn()
-    };
-    const notificationSpy = {
-      createAdminAlert: jest.fn()
-    };
-
     TestBed.configureTestingModule({
       providers: [
         BudgetCircuitBreakerService,
-        { provide: CostMonitoringService, useValue: costSpy },
-        { provide: CacheService, useValue: cacheSpy },
-        { provide: FallbackLibraryService, useValue: fallbackSpy },
-        { provide: NotificationService, useValue: notificationSpy },
-        { provide: HttpClient, useValue: {} }
+        ...MOCK_PROVIDERS
       ]
     });
 
@@ -51,13 +30,11 @@ describe('BudgetCircuitBreakerService - Three-State Logic', () => {
   });
 
   describe('Three-State Circuit Breaker Logic', () => {
-    beforeEach(() => {
-      costMonitoringSpy.getCurrentCosts.and.returnValue({
-        firestore: 0, storage: 0, functions: 0, hosting: 0, realtime: 0, total: 5.0
-      });
-    });
 
     it('should start in CLOSED state when budget is normal', () => {
+      costMonitoringSpy.getCurrentCosts.mockReturnValue({
+        firestore: 0, storage: 0, functions: 0, hosting: 0, realtime: 0, total: 5.0
+      });
       const status = service.getStatus();
 
       expect(status.circuitBreaker.state).toBe(CircuitBreakerState.CLOSED);

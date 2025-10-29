@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal, computed, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal, computed, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ServiceItem } from '../../models';
@@ -64,7 +64,8 @@ export class ServiceSelectionComponent implements OnInit {
       const query = this.searchQuery().toLowerCase();
       services = services.filter(service =>
         service.title.toLowerCase().includes(query) ||
-        service.description?.toLowerCase().includes(query)
+        service.description?.toLowerCase().includes(query) ||
+        service.code?.toLowerCase().includes(query)
       );
     }
 
@@ -88,7 +89,14 @@ export class ServiceSelectionComponent implements OnInit {
 
   // Total cost calculation
   totalCost = computed(() => {
-    return this.selectedServicesData().reduce((total, service) => total + (service.price || 0), 0);
+    return this.selectedServicesData().reduce((total, service) => {
+      // Calculate base labor cost + parts cost
+      const laborCost = service.price || 0;
+      const partsCost = service.partsSuggested?.reduce((partsTotal, part) => {
+        return partsTotal + ((part as any).totalEstimatedPrice || ((part as any).price || 0) * part.qty);
+      }, 0) || 0;
+      return total + laborCost + partsCost;
+    }, 0);
   });
 
   // Estimated time calculation
@@ -125,6 +133,20 @@ export class ServiceSelectionComponent implements OnInit {
     }
 
     return recommendations;
+  }
+
+  // Display service parts information
+  getServicePartsInfo(service: ServiceItem): string {
+    if (!service.partsSuggested || service.partsSuggested.length === 0) {
+      return 'Sin partes sugeridas';
+    }
+
+    const partsCount = service.partsSuggested.length;
+    const totalPartsCost = service.partsSuggested.reduce((total, part) => {
+      return total + ((part as any).totalEstimatedPrice || ((part as any).price || 0) * part.qty);
+    }, 0);
+
+    return `${partsCount} parte${partsCount > 1 ? 's' : ''} sugerida${partsCount > 1 ? 's' : ''} (${this.formatCurrency(totalPartsCost)})`;
   }
 
   // Event handlers

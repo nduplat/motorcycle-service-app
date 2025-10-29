@@ -61,6 +61,11 @@
         {{ service.description }}
       </div>
 
+      <!-- Service parts information -->
+      <div class="service-parts" *ngIf="service.partsSuggested && service.partsSuggested.length > 0">
+        <small class="parts-info">{{ getServicePartsInfo(service) }}</small>
+      </div>
+
       <!-- Service dependencies -->
       <div class="service-dependencies" *ngIf="getServiceDependencies(service).length > 0">
         <small class="dependency-label">Requiere:</small>
@@ -103,15 +108,22 @@
 
     <div class="selected-services-list">
       <div *ngFor="let service of selectedServicesData()" class="selected-service-item">
-        <span class="service-name">{{ service.title }}</span>
-        <span class="service-price">{{ formatCurrency(service.price || 0) }}</span>
-        <button
-          (click)="onServiceToggle(service)"
-          class="remove-service"
-          title="Remover servicio"
-        >
-          ×
-        </button>
+        <div class="service-details">
+          <span class="service-name">{{ service.title }}</span>
+          <div class="service-breakdown" *ngIf="service.partsSuggested && service.partsSuggested.length > 0">
+            <small class="parts-breakdown">{{ getServicePartsInfo(service) }}</small>
+          </div>
+        </div>
+        <div class="service-pricing">
+          <span class="service-price">{{ formatCurrency(service.price || 0) }}</span>
+          <button
+            (click)="onServiceToggle(service)"
+            class="remove-service"
+            title="Remover servicio"
+          >
+            ×
+          </button>
+        </div>
       </div>
     </div>
 

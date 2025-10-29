@@ -5,16 +5,16 @@
 }
 
 h2, h3, h4 {
-  color: #333;
+  color: var(--foreground);
   margin-bottom: 20px;
 }
 
 .vehicle-selection {
   margin-bottom: 30px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 20px;
-  background-color: #f9f9f9;
+  background-color: var(--card);
 }
 
 .search-container {
@@ -24,7 +24,7 @@ h2, h3, h4 {
 .search-input {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 16px;
 }
@@ -32,24 +32,24 @@ h2, h3, h4 {
 .vehicle-list {
   max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 4px;
 }
 
 .vehicle-item {
   padding: 12px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .vehicle-item:hover {
-  background-color: #e9ecef;
+  background-color: var(--secondary);
 }
 
 .vehicle-item.selected {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .vehicle-item:last-child {
@@ -62,22 +62,21 @@ h2, h3, h4 {
 
 .no-results {
   padding: 20px;
-  text-align: center;
-  color: #666;
+  color: var(--muted-foreground);
   font-style: italic;
 }
 
 .selected-vehicle-info {
   margin-bottom: 30px;
   padding: 15px;
-  background-color: #e7f3ff;
-  border: 1px solid #b3d9ff;
+  background-color: var(--secondary);
+  border: 1px solid var(--secondary-foreground);
   border-radius: 8px;
 }
 
 .clear-btn {
-  background-color: #6c757d;
-  color: white;
+  background-color: var(--muted);
+  color: var(--muted-foreground);
   border: none;
   padding: 8px 16px;
   border-radius: 4px;
@@ -86,7 +85,7 @@ h2, h3, h4 {
 }
 
 .clear-btn:hover {
-  background-color: #5a6268;
+  background-color: var(--muted-foreground);
 }
 
 .report-section {
@@ -97,7 +96,7 @@ h2, h3, h4 {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 30px;
-  background-color: white;
+  background-color: var(--card);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -105,21 +104,19 @@ h2, h3, h4 {
 .usage-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border);
 }
 
 .usage-table th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  color: #495057;
+  color: var(--muted-foreground);
 }
 
 .usage-table tbody tr:hover {
-  background-color: #f8f9fa;
+  background-color: var(--secondary);
 }
 
 .summary-section {
-  border-top: 2px solid #007bff;
+  border-top: 2px solid var(--primary);
   padding-top: 20px;
 }
 
@@ -134,29 +131,28 @@ h2, h3, h4 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
-  background-color: #f8f9fa;
+  background-color: var(--secondary);
   border-radius: 8px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border);
 }
 
 .summary-item .label {
   font-weight: 600;
-  color: #495057;
+  color: var(--muted-foreground);
 }
 
 .summary-item .value {
   font-size: 18px;
   font-weight: bold;
-  color: #007bff;
+  color: var(--primary);
 }
 
 .no-data {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--muted-foreground);
   font-style: italic;
-  background-color: #f8f9fa;
+  background-color: var(--secondary);
   border-radius: 8px;
   margin-top: 20px;
 }

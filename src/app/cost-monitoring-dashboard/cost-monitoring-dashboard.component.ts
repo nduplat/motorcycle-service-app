@@ -26,8 +26,7 @@ import { AlertingService, Alert } from '../../services/alerting.service';
     MatChipsModule,
     MatButtonModule
   ],
-  templateUrl: './cost-monitoring-dashboard.component.html',
-  styleUrls: ['./cost-monitoring-dashboard.component.css']
+  templateUrl: './cost-monitoring-dashboard.component.html'
 })
 export class CostMonitoringDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();

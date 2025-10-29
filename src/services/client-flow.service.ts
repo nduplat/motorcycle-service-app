@@ -366,6 +366,10 @@ export class ClientFlowService {
     this.serviceValidated.set(service !== null);
   }
 
+  setError(message: string): void {
+    this.error.set(message);
+  }
+
   // ========== FLOW COMPLETION ==========
 
   async completeFlow(): Promise<void> {

@@ -3,34 +3,24 @@ import { ScheduleWorkflowService, CreateScheduleRequest, ScheduleWorkflowResult,
 import { EmployeeScheduleService } from './employee-schedule.service';
 import { AuthService } from './auth.service';
 import { EmployeeSchedule, ShiftConfig, BreakConfig, User, TimeBlock } from '../models';
+import { MOCK_PROVIDERS } from './mock-providers';
 
 describe('ScheduleWorkflowService', () => {
   let service: ScheduleWorkflowService;
-  let employeeScheduleServiceSpy: any;
-  let authServiceSpy: any;
+  let employeeScheduleService: EmployeeScheduleService;
+  let authService: AuthService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         ScheduleWorkflowService,
-        {
-          provide: EmployeeScheduleService,
-          useValue: jasmine.createSpyObj('EmployeeScheduleService', [
-            'createSchedule',
-            'getEmployeeSchedule',
-            'calculateWorkingHours'
-          ])
-        },
-        {
-          provide: AuthService,
-          useValue: jasmine.createSpyObj('AuthService', [])
-        }
+        ...MOCK_PROVIDERS
       ]
     });
 
     service = TestBed.inject(ScheduleWorkflowService);
-    employeeScheduleServiceSpy = TestBed.inject(EmployeeScheduleService);
-    authServiceSpy = TestBed.inject(AuthService);
+    employeeScheduleService = TestBed.inject(EmployeeScheduleService);
+    authService = TestBed.inject(AuthService);
   });
 
   it('should be created', () => {
@@ -93,14 +83,14 @@ describe('ScheduleWorkflowService', () => {
 
     beforeEach(() => {
       // Mock the private getEmployeeById method
-      spyOn<any>(service, 'validateEmployee').and.callThrough();
-      (service as any).validateEmployee = jasmine.createSpy('validateEmployee').and.returnValue(
+      jest.spyOn(service as any, 'validateEmployee');
+      (service as any).validateEmployee.mockReturnValue(
         Promise.resolve({ valid: true, employee: mockEmployee })
       );
 
-      employeeScheduleServiceSpy.getEmployeeSchedule.and.returnValue(Promise.resolve(null));
-      employeeScheduleServiceSpy.calculateWorkingHours.and.returnValue(7);
-      employeeScheduleServiceSpy.createSchedule.and.returnValue(Promise.resolve(mockSchedule));
+      (employeeScheduleService.getEmployeeSchedule as jest.Mock).mockReturnValue(Promise.resolve(null));
+      (employeeScheduleService.calculateWorkingHours as jest.Mock).mockReturnValue(7);
+      (employeeScheduleService.createSchedule as jest.Mock).mockReturnValue(Promise.resolve(mockSchedule));
     });
 
     it('should successfully create a schedule through the workflow', async () => {
@@ -113,7 +103,7 @@ describe('ScheduleWorkflowService', () => {
     });
 
     it('should fail if employee validation fails', async () => {
-      (service as any).validateEmployee = jasmine.createSpy('validateEmployee').and.returnValue(
+      (service as any).validateEmployee.mockReturnValue(
         Promise.resolve({ valid: false, error: 'Employee not found' })
       );
 
@@ -126,7 +116,7 @@ describe('ScheduleWorkflowService', () => {
     });
 
     it('should fail if schedule already exists', async () => {
-      employeeScheduleServiceSpy.getEmployeeSchedule.and.returnValue(Promise.resolve(mockSchedule));
+      (employeeScheduleService.getEmployeeSchedule as jest.Mock).mockReturnValue(Promise.resolve(mockSchedule));
 
       const result: ScheduleWorkflowResult = await service.createScheduleWorkflow(validRequest);
 
@@ -136,7 +126,7 @@ describe('ScheduleWorkflowService', () => {
     });
 
     it('should fail if total hours calculation results in zero or negative', async () => {
-      employeeScheduleServiceSpy.calculateWorkingHours.and.returnValue(0);
+      (employeeScheduleService.calculateWorkingHours as jest.Mock).mockReturnValue(0);
 
       const result: ScheduleWorkflowResult = await service.createScheduleWorkflow(validRequest);
 
@@ -146,7 +136,7 @@ describe('ScheduleWorkflowService', () => {
     });
 
     it('should handle errors during schedule creation', async () => {
-      employeeScheduleServiceSpy.createSchedule.and.throwError('Database connection failed');
+      (employeeScheduleService.createSchedule as jest.Mock).mockRejectedValue('Database connection failed');
 
       const result: ScheduleWorkflowResult = await service.createScheduleWorkflow(validRequest);
 
@@ -158,7 +148,7 @@ describe('ScheduleWorkflowService', () => {
     it('should calculate total hours correctly', async () => {
       await service.createScheduleWorkflow(validRequest);
 
-      expect(employeeScheduleServiceSpy.calculateWorkingHours).toHaveBeenCalledWith(
+      expect(employeeScheduleService.calculateWorkingHours).toHaveBeenCalledWith(
         validRequest.shifts,
         validRequest.breaks || []
       );
@@ -167,7 +157,7 @@ describe('ScheduleWorkflowService', () => {
     it('should call createSchedule with correct parameters', async () => {
       await service.createScheduleWorkflow(validRequest);
 
-      expect(employeeScheduleServiceSpy.createSchedule).toHaveBeenCalledWith(
+      expect(employeeScheduleService.createSchedule).toHaveBeenCalledWith(
         validRequest.employeeId,
         validRequest.date,
         validRequest.shifts,
@@ -192,7 +182,7 @@ describe('ScheduleWorkflowService', () => {
 
       // Mock the private method access
       const employeeScheduleService = TestBed.inject(EmployeeScheduleService);
-      spyOn(employeeScheduleService as any, 'getEmployeeById').and.returnValue(Promise.resolve(mockEmployee));
+      (employeeScheduleService.getEmployeeById as jest.Mock).mockReturnValue(Promise.resolve(mockEmployee));
 
       const result = await (service as any).validateEmployee('emp-123');
 
@@ -214,7 +204,7 @@ describe('ScheduleWorkflowService', () => {
       };
 
       const employeeScheduleService = TestBed.inject(EmployeeScheduleService);
-      spyOn(employeeScheduleService as any, 'getEmployeeById').and.returnValue(Promise.resolve(mockEmployee));
+      (employeeScheduleService.getEmployeeById as jest.Mock).mockReturnValue(Promise.resolve(mockEmployee));
 
       const result = await (service as any).validateEmployee('emp-123');
 
@@ -236,7 +226,7 @@ describe('ScheduleWorkflowService', () => {
       };
 
       const employeeScheduleService = TestBed.inject(EmployeeScheduleService);
-      spyOn(employeeScheduleService as any, 'getEmployeeById').and.returnValue(Promise.resolve(mockEmployee));
+      (employeeScheduleService.getEmployeeById as jest.Mock).mockReturnValue(Promise.resolve(mockEmployee));
 
       const result = await (service as any).validateEmployee('emp-123');
 
@@ -246,7 +236,7 @@ describe('ScheduleWorkflowService', () => {
 
     it('should reject non-existent employee', async () => {
       const employeeScheduleService = TestBed.inject(EmployeeScheduleService);
-      spyOn(employeeScheduleService as any, 'getEmployeeById').and.returnValue(Promise.resolve(null));
+      (employeeScheduleService.getEmployeeById as jest.Mock).mockReturnValue(Promise.resolve(null));
 
       const result = await (service as any).validateEmployee('emp-123');
 
@@ -297,7 +287,7 @@ describe('ScheduleWorkflowService', () => {
     };
 
     beforeEach(() => {
-      employeeScheduleServiceSpy.getEmployeeSchedule.and.returnValue(Promise.resolve(mockSchedule));
+      (employeeScheduleService.getEmployeeSchedule as jest.Mock).mockReturnValue(Promise.resolve(mockSchedule));
     });
 
     it('should return available when employee has schedule and time is within shift', async () => {
@@ -309,7 +299,7 @@ describe('ScheduleWorkflowService', () => {
     });
 
     it('should return not available when no schedule exists', async () => {
-      employeeScheduleServiceSpy.getEmployeeSchedule.and.returnValue(Promise.resolve(null));
+      (employeeScheduleService.getEmployeeSchedule as jest.Mock).mockReturnValue(Promise.resolve(null));
 
       const result: AvailabilityCheckResult = await service.checkAvailabilityWorkflow(validRequest);
 
@@ -363,10 +353,10 @@ describe('ScheduleWorkflowService', () => {
       };
 
       // Mock the toDate() method for time blocks
-      spyOn(scheduleWithTimeBlock.timeBlocks[0].startTime, 'toDate').and.returnValue(new Date('2024-01-15T10:30:00'));
-      spyOn(scheduleWithTimeBlock.timeBlocks[0].endTime, 'toDate').and.returnValue(new Date('2024-01-15T11:30:00'));
+      jest.spyOn(scheduleWithTimeBlock.timeBlocks[0].startTime, 'toDate').mockReturnValue(new Date('2024-01-15T10:30:00'));
+      jest.spyOn(scheduleWithTimeBlock.timeBlocks[0].endTime, 'toDate').mockReturnValue(new Date('2024-01-15T11:30:00'));
 
-      employeeScheduleServiceSpy.getEmployeeSchedule.and.returnValue(Promise.resolve(scheduleWithTimeBlock));
+      (employeeScheduleService.getEmployeeSchedule as jest.Mock).mockReturnValue(Promise.resolve(scheduleWithTimeBlock));
 
       const result: AvailabilityCheckResult = await service.checkAvailabilityWorkflow(validRequest);
 
@@ -376,7 +366,7 @@ describe('ScheduleWorkflowService', () => {
     });
 
     it('should handle errors during availability check', async () => {
-      employeeScheduleServiceSpy.getEmployeeSchedule.and.throwError('Database connection failed');
+      (employeeScheduleService.getEmployeeSchedule as jest.Mock).mockRejectedValue('Database connection failed');
 
       const result: AvailabilityCheckResult = await service.checkAvailabilityWorkflow(validRequest);
 

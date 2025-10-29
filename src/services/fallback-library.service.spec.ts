@@ -3,33 +3,29 @@ import { FallbackLibraryService } from './fallback-library.service';
 import { QueueService } from './queue.service';
 import { InventoryReportsService } from './inventory-reports.service';
 import { ProductService } from './product.service';
+import { MOCK_PROVIDERS } from './mock-providers';
 
 describe('FallbackLibraryService - Intelligent Matching and Learning', () => {
   let service: FallbackLibraryService;
-  let queueServiceSpy: any;
-  let inventoryReportsServiceSpy: any;
-  let productServiceSpy: any;
+  let queueService: QueueService;
+  let inventoryReportsService: InventoryReportsService;
+  let productService: ProductService;
 
   beforeEach(() => {
-    const queueSpy = jasmine.createSpyObj('QueueService', ['getQueueStatus']);
-    const inventorySpy = jasmine.createSpyObj('InventoryReportsService', [
-      'getStockReportByLocation', 'getLowStockReport'
-    ]);
-    const productSpy = jasmine.createSpyObj('ProductService', ['getProducts']);
-
     TestBed.configureTestingModule({
       providers: [
         FallbackLibraryService,
-        { provide: QueueService, useValue: queueSpy },
-        { provide: InventoryReportsService, useValue: inventorySpy },
-        { provide: ProductService, useValue: productSpy }
+        ...MOCK_PROVIDERS,
+        { provide: QueueService, useValue: { getQueueStatus: jest.fn() } },
+        { provide: InventoryReportsService, useValue: { getStockReportByLocation: jest.fn(), getLowStockReport: jest.fn() } },
+        { provide: ProductService, useValue: { getProducts: jest.fn() } }
       ]
     });
 
     service = TestBed.inject(FallbackLibraryService);
-    queueServiceSpy = TestBed.inject(QueueService);
-    inventoryReportsServiceSpy = TestBed.inject(InventoryReportsService);
-    productServiceSpy = TestBed.inject(ProductService);
+    queueService = TestBed.inject(QueueService);
+    inventoryReportsService = TestBed.inject(InventoryReportsService);
+    productService = TestBed.inject(ProductService);
   });
 
   it('should be created', () => {
@@ -73,20 +69,20 @@ describe('FallbackLibraryService - Intelligent Matching and Learning', () => {
   describe('Dynamic Data Population', () => {
     beforeEach(() => {
       // Setup mock data for dynamic fields
-      queueServiceSpy.getQueueStatus.and.returnValue({
+      (queueService.getQueueStatus as jest.Mock).mockReturnValue({
         isOpen: true,
         currentCount: 8,
         averageWaitTime: 35,
         operatingHours: '8:00-18:00'
       });
 
-      inventoryReportsServiceSpy.getStockReportByLocation.and.returnValue([
+      (inventoryReportsService.getStockReportByLocation as jest.Mock).mockReturnValue([
         { id: '1', status: 'normal', availableStock: 15, minStock: 5, productName: 'Test Product 1' },
         { id: '2', status: 'critical', availableStock: 3, minStock: 10, productName: 'Test Product 2' },
         { id: '3', status: 'out_of_stock', availableStock: 0, minStock: 5, productName: 'Test Product 3' }
       ]);
 
-      inventoryReportsServiceSpy.getLowStockReport.and.returnValue([
+      (inventoryReportsService.getLowStockReport as jest.Mock).mockReturnValue([
         { productName: 'Low Stock Item', availableStock: 4, minStock: 10, status: 'low_stock' }
       ]);
     });
@@ -118,7 +114,7 @@ describe('FallbackLibraryService - Intelligent Matching and Learning', () => {
 
     it('should handle missing dynamic data gracefully', async () => {
       // Mock empty data
-      queueServiceSpy.getQueueStatus.and.returnValue(null);
+      (queueService.getQueueStatus as jest.Mock).mockReturnValue(null);
 
       const match = await service.findBestMatch('estado de la cola', 'chatbot');
       const response = await service.getResponseWithDynamicData(match!);

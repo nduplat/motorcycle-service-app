@@ -263,16 +263,19 @@ export const sendNotification = functions.https.onCall(async (data, context) => 
   }
 });
 
-export const getProducts = functions.https.onRequest(async (req, res) => {
-  return corsHandler(req, res, async () => {
-    try {
-      const snapshot = await admin.firestore().collection('products').get();
-      const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      res.status(200).json(products);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+export const getProducts = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Usuario no autenticado');
+  }
+
+  try {
+    const snapshot = await admin.firestore().collection('products').get();
+    const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return { products };
+  } catch (error: any) {
+    console.error('Error getting products:', error);
+    throw new functions.https.HttpsError('internal', `Error al obtener productos: ${error.message}`);
+  }
 });
 
 // ========================================

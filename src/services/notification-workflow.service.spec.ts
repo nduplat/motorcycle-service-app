@@ -9,44 +9,28 @@ import { NotificationService } from './notification.service';
 import { EventBusService } from './event-bus.service';
 import { UserService } from './user.service';
 import { QrCodeService } from './qr-code.service';
+import { MOCK_PROVIDERS } from './mock-providers';
 
 describe('NotificationWorkflowService', () => {
   let service: NotificationWorkflowService;
-  let notificationServiceSpy: any;
-  let eventBusSpy: any;
-  let userServiceSpy: any;
-  let qrCodeServiceSpy: any;
+  let notificationService: NotificationService;
+  let eventBus: EventBusService;
+  let userService: UserService;
+  let qrCodeService: QrCodeService;
 
   beforeEach(() => {
-    const notificationSpy = jasmine.createSpyObj('NotificationService', [
-      'getUserPreferences',
-      'createCategorizedNotification',
-      'sendPushNotification'
-    ]);
-    const eventBusSpyObj = jasmine.createSpyObj('EventBusService', ['events$']);
-    const userSpy = jasmine.createSpyObj('UserService', [
-      'getUsersByRole',
-      'getUserById'
-    ]);
-    const qrSpy = jasmine.createSpyObj('QrCodeService', [
-      'generateQrCodeDataUrl'
-    ]);
-
     TestBed.configureTestingModule({
       providers: [
         NotificationWorkflowService,
-        { provide: NotificationService, useValue: notificationSpy },
-        { provide: EventBusService, useValue: eventBusSpyObj },
-        { provide: UserService, useValue: userSpy },
-        { provide: QrCodeService, useValue: qrSpy }
+        ...MOCK_PROVIDERS
       ]
     });
 
     service = TestBed.inject(NotificationWorkflowService);
-    notificationServiceSpy = TestBed.inject(NotificationService);
-    eventBusSpy = TestBed.inject(EventBusService);
-    userServiceSpy = TestBed.inject(UserService);
-    qrCodeServiceSpy = TestBed.inject(QrCodeService);
+    notificationService = TestBed.inject(NotificationService);
+    eventBus = TestBed.inject(EventBusService);
+    userService = TestBed.inject(UserService);
+    qrCodeService = TestBed.inject(QrCodeService);
   });
 
   it('should be created', () => {
@@ -66,21 +50,21 @@ describe('NotificationWorkflowService', () => {
         timestamp: new Date()
       };
 
-      notificationServiceSpy.getUserPreferences.and.returnValue(Promise.resolve({
+      (notificationService.getUserPreferences as jest.Mock).mockReturnValue(Promise.resolve({
         id: 'tech-1',
         userId: 'tech-1',
         pushNotifications: true,
         serviceOrderUpdates: true
       } as any));
 
-      notificationServiceSpy.createCategorizedNotification.and.returnValue(Promise.resolve([]));
+      (notificationService.createCategorizedNotification as jest.Mock).mockReturnValue(Promise.resolve([]));
 
-      qrCodeServiceSpy.generateQrCodeDataUrl.and.returnValue('data:image/png;base64,test');
+      (qrCodeService.generateQrCodeDataUrl as jest.Mock).mockReturnValue('data:image/png;base64,test');
 
       await service.processEvent(event);
 
-      expect(notificationServiceSpy.getUserPreferences).toHaveBeenCalledWith('tech-1');
-      expect(notificationServiceSpy.createCategorizedNotification).toHaveBeenCalled();
+      expect(notificationService.getUserPreferences).toHaveBeenCalledWith('tech-1');
+      expect(notificationService.createCategorizedNotification).toHaveBeenCalled();
     });
 
     it('should skip notifications when user preferences disable them', async () => {
@@ -95,7 +79,7 @@ describe('NotificationWorkflowService', () => {
         timestamp: new Date()
       };
 
-      notificationServiceSpy.getUserPreferences.and.returnValue(Promise.resolve({
+      (notificationService.getUserPreferences as jest.Mock).mockReturnValue(Promise.resolve({
         id: 'tech-1',
         userId: 'tech-1',
         pushNotifications: false,
@@ -104,7 +88,7 @@ describe('NotificationWorkflowService', () => {
 
       await service.processEvent(event);
 
-      expect(notificationServiceSpy.createCategorizedNotification).not.toHaveBeenCalled();
+      expect(notificationService.createCategorizedNotification).not.toHaveBeenCalled();
     });
 
     it('should handle status change events', async () => {
@@ -119,22 +103,22 @@ describe('NotificationWorkflowService', () => {
         timestamp: new Date()
       };
 
-      notificationServiceSpy.getUserPreferences.and.returnValue(Promise.resolve({
+      (notificationService.getUserPreferences as jest.Mock).mockReturnValue(Promise.resolve({
         id: 'customer-1',
         userId: 'customer-1',
         pushNotifications: true,
         serviceOrderUpdates: true
       } as any));
 
-      notificationServiceSpy.createCategorizedNotification.and.returnValue(Promise.resolve([]));
+      (notificationService.createCategorizedNotification as jest.Mock).mockReturnValue(Promise.resolve([]));
 
       await service.processEvent(event);
 
-      expect(notificationServiceSpy.createCategorizedNotification).toHaveBeenCalledWith(
+      expect(notificationService.createCategorizedNotification).toHaveBeenCalledWith(
         'service_orders',
         '¡Servicio Completado!',
         'Tu orden de trabajo ha sido completada. Ya puedes recoger tu vehículo.',
-        jasmine.objectContaining({
+        expect.objectContaining({
           userId: 'customer-1',
           priority: 'high'
         })
@@ -155,24 +139,24 @@ describe('NotificationWorkflowService', () => {
         timestamp: new Date()
       };
 
-      notificationServiceSpy.getUserPreferences.and.returnValue(Promise.resolve({
+      (notificationService.getUserPreferences as jest.Mock).mockReturnValue(Promise.resolve({
         id: 'customer-1',
         userId: 'customer-1',
         pushNotifications: true,
         queueNotifications: true
       } as any));
 
-      notificationServiceSpy.createCategorizedNotification.and.returnValue(Promise.resolve([]));
-      qrCodeServiceSpy.generateQrCodeDataUrl.and.returnValue('data:image/png;base64,qrtest');
+      (notificationService.createCategorizedNotification as jest.Mock).mockReturnValue(Promise.resolve([]));
+      (qrCodeService.generateQrCodeDataUrl as jest.Mock).mockReturnValue('data:image/png;base64,qrtest');
 
       await service.processEvent(event);
 
-      expect(qrCodeServiceSpy.generateQrCodeDataUrl).toHaveBeenCalledWith('queue-entry', 'queue-entry-1');
-      expect(notificationServiceSpy.createCategorizedNotification).toHaveBeenCalledWith(
+      expect(qrCodeService.generateQrCodeDataUrl).toHaveBeenCalledWith('queue-entry', 'queue-entry-1');
+      expect(notificationService.createCategorizedNotification).toHaveBeenCalledWith(
         'queue',
         '¡Es tu turno!',
         expect.stringContaining('Código: ABC123'),
-        jasmine.objectContaining({
+        expect.objectContaining({
           userId: 'customer-1',
           priority: 'critical'
         })
@@ -192,22 +176,22 @@ describe('NotificationWorkflowService', () => {
         timestamp: new Date()
       };
 
-      notificationServiceSpy.getUserPreferences.and.returnValue(Promise.resolve({
+      (notificationService.getUserPreferences as jest.Mock).mockReturnValue(Promise.resolve({
         id: 'customer-1',
         userId: 'customer-1',
         pushNotifications: true,
         maintenanceReminders: true
       } as any));
 
-      notificationServiceSpy.createCategorizedNotification.and.returnValue(Promise.resolve([]));
+      (notificationService.createCategorizedNotification as jest.Mock).mockReturnValue(Promise.resolve([]));
 
       await service.processEvent(event);
 
-      expect(notificationServiceSpy.createCategorizedNotification).toHaveBeenCalledWith(
+      expect(notificationService.createCategorizedNotification).toHaveBeenCalledWith(
         'maintenance_reminders',
         'Recordatorio de Mantenimiento',
         expect.stringContaining('Cambio de aceite'),
-        jasmine.objectContaining({
+        expect.objectContaining({
           userId: 'customer-1',
           priority: 'medium'
         })
@@ -229,25 +213,25 @@ describe('NotificationWorkflowService', () => {
       };
 
       const mockAdmin = { id: 'admin-1', name: 'Admin User', role: 'admin' };
-      userServiceSpy.getUsersByRole.and.returnValue([mockAdmin]);
+      (userService.getUsersByRole as jest.Mock).mockReturnValue([mockAdmin]);
 
-      notificationServiceSpy.getUserPreferences.and.returnValue(Promise.resolve({
+      (notificationService.getUserPreferences as jest.Mock).mockReturnValue(Promise.resolve({
         id: 'admin-1',
         userId: 'admin-1',
         pushNotifications: true,
         inventoryAlerts: true
       } as any));
 
-      notificationServiceSpy.createCategorizedNotification.and.returnValue(Promise.resolve([]));
+      (notificationService.createCategorizedNotification as jest.Mock).mockReturnValue(Promise.resolve([]));
 
       await service.processEvent(event);
 
-      expect(userServiceSpy.getUsersByRole).toHaveBeenCalledWith('admin');
-      expect(notificationServiceSpy.createCategorizedNotification).toHaveBeenCalledWith(
+      expect(userService.getUsersByRole).toHaveBeenCalledWith('admin');
+      expect(notificationService.createCategorizedNotification).toHaveBeenCalledWith(
         'inventory',
         'Stock Bajo',
         expect.stringContaining('Filtro de aceite'),
-        jasmine.objectContaining({
+        expect.objectContaining({
           priority: 'high',
           targetAudience: 'admins'
         })
@@ -264,11 +248,11 @@ describe('NotificationWorkflowService', () => {
         customerId: 'customer-1'
       };
 
-      spyOn(service, 'processEvent');
+      jest.spyOn(service, 'processEvent');
 
       await service.triggerAssignmentNotification(assignmentData);
 
-      expect(service.processEvent).toHaveBeenCalledWith(jasmine.objectContaining({
+      expect(service.processEvent).toHaveBeenCalledWith(expect.objectContaining({
         type: 'assignment',
         entityId: 'appointment-1',
         metadata: assignmentData
@@ -283,11 +267,11 @@ describe('NotificationWorkflowService', () => {
         status: 'completed'
       };
 
-      spyOn(service, 'processEvent');
+      jest.spyOn(service, 'processEvent');
 
       await service.triggerStatusChangeNotification(statusData);
 
-      expect(service.processEvent).toHaveBeenCalledWith(jasmine.objectContaining({
+      expect(service.processEvent).toHaveBeenCalledWith(expect.objectContaining({
         type: 'status_change',
         entityId: 'work-order-1',
         metadata: statusData
@@ -302,11 +286,11 @@ describe('NotificationWorkflowService', () => {
         dueDate: new Date()
       };
 
-      spyOn(service, 'processEvent');
+      jest.spyOn(service, 'processEvent');
 
       await service.triggerMaintenanceReminder(reminderData);
 
-      expect(service.processEvent).toHaveBeenCalledWith(jasmine.objectContaining({
+      expect(service.processEvent).toHaveBeenCalledWith(expect.objectContaining({
         type: 'maintenance_reminder',
         entityId: 'vehicle-1',
         metadata: reminderData
@@ -322,11 +306,11 @@ describe('NotificationWorkflowService', () => {
         minStock: 10
       };
 
-      spyOn(service, 'processEvent');
+      jest.spyOn(service, 'processEvent');
 
       await service.triggerInventoryAlert(alertData);
 
-      expect(service.processEvent).toHaveBeenCalledWith(jasmine.objectContaining({
+      expect(service.processEvent).toHaveBeenCalledWith(expect.objectContaining({
         type: 'inventory_alert',
         entityId: 'product-1',
         metadata: alertData
@@ -346,7 +330,7 @@ describe('NotificationWorkflowService', () => {
 
       const result = (service as any).convertToWorkflowEvent(eventBusEvent);
 
-      expect(result).toEqual(jasmine.objectContaining({
+      expect(result).toEqual(expect.objectContaining({
         type: 'appointment_created',
         entityId: 'appointment-1',
         entityType: 'appointment',
@@ -383,7 +367,7 @@ describe('NotificationWorkflowService', () => {
         timestamp: new Date()
       };
 
-      qrCodeServiceSpy.generateQrCodeDataUrl.and.returnValue('qr-data-url');
+      (qrCodeService.generateQrCodeDataUrl as jest.Mock).mockReturnValue('qr-data-url');
 
       const assignmentMessage = await (service as any).generateMessageForTarget(assignmentEvent, target);
       expect(assignmentMessage?.title).toBe('Nueva Asignación');
@@ -418,7 +402,7 @@ describe('NotificationWorkflowService', () => {
         timestamp: new Date()
       };
 
-      qrCodeServiceSpy.generateQrCodeDataUrl.and.returnValue('qr-data-url');
+      (qrCodeService.generateQrCodeDataUrl as jest.Mock).mockReturnValue('qr-data-url');
 
       const message = await (service as any).generateMessageForTarget(queueEvent, target);
       expect(message?.qrCodeData).toBe('qr-data-url');
@@ -441,13 +425,13 @@ describe('NotificationWorkflowService', () => {
 
       const targets = await (service as any).determineNotificationTargets(event);
 
-      expect(targets).toContain(jasmine.objectContaining({
+      expect(targets).toContain(expect.objectContaining({
         userId: 'tech-1',
         channels: ['in_app', 'push'],
         priority: 'high'
       }));
 
-      expect(targets).toContain(jasmine.objectContaining({
+      expect(targets).toContain(expect.objectContaining({
         userId: 'customer-1',
         channels: ['in_app', 'push', 'sms'],
         priority: 'medium'
@@ -468,11 +452,11 @@ describe('NotificationWorkflowService', () => {
         { id: 'admin-2', name: 'Admin 2', role: 'admin' }
       ];
 
-      userServiceSpy.getUsersByRole.and.returnValue(mockAdmins);
+      (userService.getUsersByRole as jest.Mock).mockReturnValue(mockAdmins);
 
       const targets = await (service as any).determineNotificationTargets(event);
 
-      expect(userServiceSpy.getUsersByRole).toHaveBeenCalledWith('admin');
+      expect(userService.getUsersByRole).toHaveBeenCalledWith('admin');
       expect(targets.length).toBe(2);
       expect(targets[0].userId).toBe('admin-1');
       expect(targets[0].channels).toEqual(['in_app', 'push', 'email']);
@@ -495,7 +479,7 @@ describe('NotificationWorkflowService', () => {
       ];
 
       // User 1 has notifications enabled
-      notificationServiceSpy.getUserPreferences.and.callFake((userId: string) => {
+      (notificationService.getUserPreferences as jest.Mock).mockImplementation((userId: string) => {
         if (userId === 'user-1') {
           return Promise.resolve({
             id: 'user-1',
@@ -527,7 +511,7 @@ describe('NotificationWorkflowService', () => {
         priority: 'medium'
       }];
 
-      notificationServiceSpy.getUserPreferences.and.returnValue(Promise.reject(new Error('DB error')));
+      (notificationService.getUserPreferences as jest.Mock).mockReturnValue(Promise.reject(new Error('DB error')));
 
       const enabledTargets = await (service as any).filterEnabledNotifications(targets);
 

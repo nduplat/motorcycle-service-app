@@ -683,6 +683,8 @@ export class WorkOrderService {
     let queryConstraints: QueryConstraint[] = [];
     if (currentUser.role === 'technician') {
       queryConstraints = [where("assignedTo", "==", currentUser.id)];
+    } else if (currentUser.role === 'customer') {
+      queryConstraints = [where("clientId", "==", currentUser.id)];
     }
 
     this.realtimeSubscription = onSnapshot(

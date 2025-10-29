@@ -11,68 +11,36 @@ import { CacheService } from './cache.service';
 import { AppointmentService } from './appointment.service';
 import { WorkOrderService } from './work-order.service';
 import { QueueEntry, QueueStatus, QueueServiceType } from '../models';
-/// <reference types="jest" />
+import { MOCK_PROVIDERS } from './mock-providers';
 
 describe('QueueService', () => {
   let service: QueueService;
-  let authServiceSpy: jest.SpyInstance;
-  let userServiceSpy: jest.SpyInstance;
-  let eventBusSpy: jest.SpyInstance;
-  let qrCodeServiceSpy: jest.SpyInstance;
-  let schedulingServiceSpy: jest.SpyInstance;
-  let cacheServiceSpy: jest.SpyInstance;
-  let appointmentServiceSpy: jest.SpyInstance;
-  let workOrderServiceSpy: jest.SpyInstance;
+  let authService: AuthService;
+  let userService: UserService;
+  let eventBus: EventBusService;
+  let qrCodeService: QrCodeService;
+  let schedulingService: SchedulingService;
+  let cacheService: CacheService;
+  let appointmentService: AppointmentService;
+  let workOrderService: WorkOrderService;
 
   beforeEach(() => {
-    const authSpy = {
-      currentUser: jest.fn().mockReturnValue({ id: 'user1', role: 'customer' })
-    };
-    const userSpy = {
-      getUserById: jest.fn(),
-      getUsers: jest.fn().mockReturnValue([])
-    };
-    const eventBusSpyObj = {
-      emit: jest.fn()
-    };
-    const qrCodeSpy = {
-      generateQrCodeDataUrl: jest.fn().mockReturnValue('data:image/png;base64,test')
-    };
-    const schedulingSpy = {
-      autoAssignTechnician: jest.fn().mockReturnValue('tech1')
-    };
-    const cacheSpy = {
-      get: jest.fn().mockResolvedValue(null),
-      set: jest.fn().mockResolvedValue(undefined)
-    };
-    const appointmentSpy = {};
-    const workOrderSpy = {
-      createWorkOrderFromQueueEntry: jest.fn().mockReturnValue(of({ id: 'wo1' }))
-    };
-
     TestBed.configureTestingModule({
       providers: [
         QueueService,
-        { provide: AuthService, useValue: authSpy },
-        { provide: UserService, useValue: userSpy },
-        { provide: EventBusService, useValue: eventBusSpyObj },
-        { provide: QrCodeService, useValue: qrCodeSpy },
-        { provide: SchedulingService, useValue: schedulingSpy },
-        { provide: CacheService, useValue: cacheSpy },
-        { provide: AppointmentService, useValue: appointmentSpy },
-        { provide: WorkOrderService, useValue: workOrderSpy }
+        ...MOCK_PROVIDERS
       ]
     });
 
     service = TestBed.inject(QueueService);
-    authServiceSpy = authSpy.currentUser;
-    userServiceSpy = userSpy.getUserById;
-    eventBusSpy = eventBusSpyObj.emit;
-    qrCodeServiceSpy = qrCodeSpy.generateQrCodeDataUrl;
-    schedulingServiceSpy = schedulingSpy.autoAssignTechnician;
-    cacheServiceSpy = cacheSpy.get;
-    appointmentServiceSpy = appointmentSpy as any;
-    workOrderServiceSpy = workOrderSpy.createWorkOrderFromQueueEntry;
+    authService = TestBed.inject(AuthService);
+    userService = TestBed.inject(UserService);
+    eventBus = TestBed.inject(EventBusService);
+    qrCodeService = TestBed.inject(QrCodeService);
+    schedulingService = TestBed.inject(SchedulingService);
+    cacheService = TestBed.inject(CacheService);
+    appointmentService = TestBed.inject(AppointmentService);
+    workOrderService = TestBed.inject(WorkOrderService);
   });
 
   it('should be created', () => {
@@ -111,8 +79,8 @@ describe('QueueService', () => {
 
       expect(result).toBeDefined();
       expect(typeof result).toBe('string');
-      expect(qrCodeServiceSpy).toHaveBeenCalled();
-      expect(eventBusSpy).toHaveBeenCalledWith({
+      expect(qrCodeService.generateQrCodeDataUrl).toHaveBeenCalled();
+      expect(eventBus.emit).toHaveBeenCalledWith({
         type: 'queue.entry_added',
         entity: expect.any(Object)
       });
@@ -142,8 +110,8 @@ describe('QueueService', () => {
       expect(result).toBeDefined();
       expect(result?.status).toBe('called');
       expect(result?.assignedTo).toBe('tech1');
-      expect(workOrderServiceSpy).toHaveBeenCalledWith(mockEntry, 'tech1');
-      expect(eventBusSpy).toHaveBeenCalledWith({
+      expect(workOrderService.createWorkOrderFromQueueEntry).toHaveBeenCalledWith(mockEntry, 'tech1');
+      expect(eventBus.emit).toHaveBeenCalledWith({
         type: 'queue.called',
         entity: expect.any(Object),
         technicianName: expect.any(String)
@@ -385,7 +353,7 @@ describe('QueueService', () => {
       };
 
       jest.spyOn(service as any, 'queueEntries', 'get').mockReturnValue(signal([mockEntry]));
-      workOrderServiceSpy.mockRejectedValue(new Error('Work order creation failed'));
+      (workOrderService.createWorkOrderFromQueueEntry as jest.Mock).mockRejectedValue(new Error('Work order creation failed'));
 
       await expect(service.callNext('tech1')).rejects.toThrow('Failed to create work order from queue entry');
     });
@@ -405,7 +373,7 @@ describe('QueueService', () => {
         status: { id: 'singleton', isOpen: true, currentCount: 0 }
       };
 
-      cacheServiceSpy.mockResolvedValue(cachedData);
+      (cacheService.get as jest.Mock).mockResolvedValue(cachedData);
 
       // Trigger loadQueueData
       await (service as any).loadQueueData();
@@ -415,11 +383,11 @@ describe('QueueService', () => {
     });
 
     it('should refresh cache when forceRefresh is true', async () => {
-      cacheServiceSpy.mockResolvedValue(null); // No cache
+      (cacheService.get as jest.Mock).mockResolvedValue(null); // No cache
 
       await service.refreshQueueData();
 
-      expect(cacheServiceSpy).toHaveBeenCalled();
+      expect(cacheService.get).toHaveBeenCalled();
     });
   });
 

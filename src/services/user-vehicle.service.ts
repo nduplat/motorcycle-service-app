@@ -72,8 +72,12 @@ export class UserVehicleService {
         return;
       }
 
-      // Load all user vehicles for better performance and real-time updates
-      const q = query(collection(db, "userVehicles"));
+      let q;
+      if (currentUser.role === 'customer') {
+        q = query(collection(db, "userVehicles"), where("userId", "==", currentUser.id));
+      } else {
+        q = query(collection(db, "userVehicles"));
+      }
       const querySnapshot = await getDocs(q);
       const vehicles = querySnapshot.docs.map(doc => fromFirestore<UserVehicle>(doc));
 

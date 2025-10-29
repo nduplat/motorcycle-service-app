@@ -16,10 +16,12 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ClientFlowService, ClientFlowStep } from '../../../services/client-flow.service';
 import { AuthService } from '../../../services/auth.service';
-import { PhoneVerificationComponent } from '../../shared/phone-verification.component';
+import { PhoneVerificationComponent, PhoneVerificationResult } from '../../shared/phone-verification.component';
 import { MotorcycleSelectionComponent } from './motorcycle-selection.component';
 import { ServiceSelectionComponent } from '../../shared/service-selection.component';
 import { WaitTicketComponent } from './wait-ticket.component';
+
+import { ServiceItemService } from '../../../services/service-item.service';
 
 @Component({
   selector: 'app-client-flow-container',
@@ -40,6 +42,7 @@ export class ClientFlowContainerComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private flowService = inject(ClientFlowService);
   private authService = inject(AuthService);
+  private serviceItemService = inject(ServiceItemService);
 
   // Flow state
   readonly flowState = this.flowService.flowState;
@@ -47,6 +50,7 @@ export class ClientFlowContainerComponent implements OnInit, OnDestroy {
   readonly isLoading = computed(() => this.flowState().isLoading);
   readonly error = computed(() => this.flowState().error);
   readonly isAuthenticated = computed(() => this.flowState().isAuthenticated);
+  readonly availableServices = this.serviceItemService.getServices();
 
   // Navigation state
   readonly canGoBack = computed(() => {
@@ -131,6 +135,15 @@ export class ClientFlowContainerComponent implements OnInit, OnDestroy {
       this.flowService.resetFlow();
       this.router.navigate(['/']);
     }
+  }
+
+  onPhoneVerificationSuccess(result: PhoneVerificationResult): void {
+    this.flowService.setPhone(result.phoneNumber);
+    this.flowService.nextStep();
+  }
+
+  onPhoneVerificationFailure(result: PhoneVerificationResult): void {
+    this.flowService.setError(result.error || 'Verificación fallida');
   }
 
   // Template helpers

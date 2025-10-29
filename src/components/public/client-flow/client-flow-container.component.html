@@ -122,7 +122,11 @@
       <!-- Phone Verification Step -->
       @if (currentStep() === 'phone') {
         <div class="animate-fade-in">
-          <app-phone-verification></app-phone-verification>
+          <app-phone-verification
+            [initialPhoneNumber]="flowState().phone || ''"
+            (verificationSuccess)="onPhoneVerificationSuccess($event)"
+            (verificationFailure)="onPhoneVerificationFailure($event)">
+          </app-phone-verification>
         </div>
       }
 
@@ -136,7 +140,7 @@
       <!-- Service Selection Step -->
       @if (currentStep() === 'service') {
         <div class="animate-fade-in">
-          <app-service-selection></app-service-selection>
+          <app-service-selection [availableServices]="availableServices()"></app-service-selection>
         </div>
       }
 

@@ -31,7 +31,7 @@ describe('authGuard', () => {
 
   it('should allow access when user is logged in and no roles required', () => {
     authServiceSpy.mockReturnValue({ id: '1', role: 'customer' });
-    const route = {} as ActivatedRouteSnapshot;
+    const route = { data: {} } as ActivatedRouteSnapshot;
     const state = { url: '/test' } as RouterStateSnapshot;
 
     const result = TestBed.runInInjectionContext(() => authGuard(route, state));
@@ -41,7 +41,7 @@ describe('authGuard', () => {
 
   it('should deny access when user is not logged in', () => {
     authServiceSpy.mockReturnValue(null);
-    const route = {} as ActivatedRouteSnapshot;
+    const route = { data: {} } as ActivatedRouteSnapshot;
     const state = { url: '/test' } as RouterStateSnapshot;
 
     const result = TestBed.runInInjectionContext(() => authGuard(route, state));

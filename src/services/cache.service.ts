@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, Timestamp, DocumentData, FieldValue } from '@angular/fire/firestore';
 
+import { AuthService } from './auth.service';
+
 export interface CacheEntry<T = any> {
   data: T;
   createdAt: Timestamp;
@@ -13,6 +15,7 @@ export interface CacheEntry<T = any> {
   priority?: 'low' | 'medium' | 'high'; // Cache priority for eviction
   accessCount?: number; // Track usage for LRU
   lastAccessed?: Timestamp;
+  userId?: string | null;
 }
 
 export interface CacheStats {
@@ -28,6 +31,7 @@ export interface CacheStats {
 })
 export class CacheService {
   private firestore = inject(Firestore);
+  private authService = inject(AuthService);
   private memoryCache = new Map<string, CacheEntry>();
   private readonly MEMORY_CACHE_SIZE = 100; // LRU cache size
   private readonly CACHE_COLLECTION = 'cache';
@@ -110,6 +114,7 @@ export class CacheService {
     const now = Timestamp.now();
     const expiresAt = Timestamp.fromMillis(now.toMillis() + ttlMs);
 
+    const currentUser = this.authService.currentUser();
     const entry: CacheEntry<T> = {
       data,
       createdAt: now,
@@ -121,7 +126,8 @@ export class CacheService {
       tags,
       priority,
       accessCount: 0,
-      lastAccessed: now
+      lastAccessed: now,
+      userId: currentUser ? currentUser.id : null
     };
 
     try {
