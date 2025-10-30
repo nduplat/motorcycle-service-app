@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, computed, output, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed, output, ChangeDetectorRef, Input } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MotorcycleService } from '../../services/motorcycle.service';
@@ -25,6 +25,8 @@ export class NuevaMotocicletaComponent {
   selectedMotorcycle = signal<Motorcycle | null>(null);
   showMotorcycleGrid = signal(false);
 
+  @Input() quickMode: boolean = false; // ← AGREGAR
+
   // Filter signals
   searchQuery = signal('');
   brandFilter = signal('');
@@ -39,6 +41,7 @@ export class NuevaMotocicletaComponent {
 
   // Outputs
   motorcycleAssigned = output<void>();
+  cancel = output<void>(); // AGREGAR
 
   availableBrands = computed(() => {
     const brands = new Set(this.motorcycles().map(m => m.brand).filter(Boolean));
@@ -170,24 +173,40 @@ export class NuevaMotocicletaComponent {
         return;
       }
 
-      if (formData.phone) {
-        await this.userService.updateUser({ id: user.id, phone: formData.phone }).toPromise();
+      if (this.quickMode) {
+        // Crear asignación rápida sin foto ni documentos
+        await this.motorcycleAssignmentService.createQuickAssignment({
+          userId: user.id,
+          motorcycleId: formData.motorcycleId || null,
+          plate: formData.licensePlate,
+          mileageKm: formData.currentMileage,
+          cylinderCapacity: formData.cylinderCapacity,
+          brand: this.selectedMotorcycle()?.brand, // Pass brand and model for quick display
+          model: this.selectedMotorcycle()?.model
+        });
+        alert('Motocicleta asignada rápidamente.');
+        this.motorcycleAssigned.emit(); // Cerrar y continuar
+      } else {
+        // Flujo completo con fotos y documentos
+        if (formData.phone) {
+          await this.userService.updateUser({ id: user.id, phone: formData.phone }).toPromise();
+        }
+
+        const assignmentData = {
+          userId: user.id,
+          motorcycleId: formData.motorcycleId || null,
+          status: 'active',
+          plate: formData.licensePlate,
+          mileageKm: formData.currentMileage,
+          cylinderCapacity: formData.cylinderCapacity,
+          notes: formData.notes || null,
+        };
+
+        await this.motorcycleAssignmentService.createAssignment(assignmentData as any);
+
+        alert('Motocicleta asignada exitosamente.');
+        this.motorcycleAssigned.emit();
       }
-
-      const assignmentData = {
-        userId: user.id,
-        motorcycleId: formData.motorcycleId || null,
-        status: 'active',
-        plate: formData.licensePlate,
-        mileageKm: formData.currentMileage,
-        cylinderCapacity: formData.cylinderCapacity,
-        notes: formData.notes || null,
-      };
-
-      await this.motorcycleAssignmentService.createAssignment(assignmentData as any);
-
-      alert('Motocicleta asignada exitosamente.');
-      this.motorcycleAssigned.emit();
     } catch (error: any) {
       console.error('Error in submitRequest:', error);
       alert(`Error: ${error.message}`);

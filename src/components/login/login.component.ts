@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -14,29 +13,21 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
     ButtonComponent,
     ...CARD_COMPONENTS,
   ]
 })
 export class LoginComponent implements OnInit {
-  loginForm: FormGroup;
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private fb = inject(FormBuilder);
 
   isLoading = signal(false);
   error = signal<string | null>(null);
   accessDenied = signal<string | null>(null);
 
   constructor() {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
-    });
   }
 
   ngOnInit() {
@@ -45,30 +36,6 @@ export class LoginComponent implements OnInit {
       this.accessDenied.set('No tienes permisos para acceder a esa página. Contacta al administrador si crees que es un error.');
     }
   }
-
-  async onEmailSignIn() {
-    if (this.loginForm.invalid) {
-      this.error.set('Por favor, ingresa un email y contraseña válidos.');
-      return;
-    }
-
-    this.isLoading.set(true);
-    this.error.set(null);
-
-    const { email, password } = this.loginForm.value;
-    const success = await this.authService.login(email, password);
-
-    if (success) {
-      const user = await this.authService.waitForUser();
-      console.log('🔐 LoginComponent: User data loaded after email/pass login:', user?.role);
-      this.navigateAfterLogin();
-    } else {
-      this.error.set('Credenciales incorrectas. Verifica tu email y contraseña.');
-      this.isLoading.set(false);
-    }
-  }
-
-  
 
   async onGoogleSignIn() {
     this.isLoading.set(true);

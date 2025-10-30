@@ -1,53 +1,68 @@
-.queue-status-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+// Queue Status Component - BEM Methodology
+@use '../../../styles/global-imports' as *;
 
-// Header
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+// Component-specific variables
+$queue-status-min-height: 100vh;
+$queue-status-background: linear-gradient(135deg, $primary 0%, $accent 100%);
+$queue-status-header-padding: $spacing-xl $spacing-2xl;
+$queue-status-logo-height: 50px;
+$queue-status-logo-section-gap: $spacing-lg;
+$queue-status-header-title-size: $font-size-2xl;
+$queue-status-back-btn-padding: $spacing-md constants.$spacing-xl;
 
-  .logo-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-
-    .logo {
-      height: 50px;
-      width: auto;
-    }
-
-    h1 {
-      margin: 0;
-      color: #2d3748;
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
+// BEM Block: queue-status
+.queue-status {
+  // Element: container
+  &__container {
+    min-height: $queue-status-min-height;
+    background: $queue-status-background;
+    font-family: $font-family-base;
   }
 
-  .back-btn {
-    display: flex;
+  // Element: header
+  &__header {
+    @include flex-between;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: #e2e8f0;
-    border: none;
-    border-radius: 8px;
-    color: #4a5568;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    padding: $queue-status-header-padding;
+    background: color.change($card, $alpha: 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: $shadow-lg;
 
-    &:hover {
-      background: #cbd5e0;
-      transform: translateY(-1px);
+    // Element: logo-section
+@include flex-center;
+      gap: $queue-status-logo-section-gap;
+
+      // Element: logo
+      .logo {
+        height: $queue-status-logo-height;
+        width: auto;
+      }
+
+      h1 {
+        margin: 0;
+        color: $foreground;
+        font-size: $queue-status-header-title-size;
+        font-weight: $font-weight-semibold;
+      }
+    }
+
+    // Element: back-btn
+    .back-btn {
+      @include mixins.flex-center;
+      gap: $spacing-sm;
+      padding: $queue-status-back-btn-padding;
+      background: variables.$muted;
+      border: none;
+@include border-radius($border-radius-lg);
+      color: $muted-foreground;
+      font-weight: $font-weight-medium;
+      cursor: pointer;
+      @include transition(all $transition-fast);
+
+      &:hover {
+        background: color.adjust($muted $lightness: -5%);
+        transform: translateY(-1px);
+      }
     }
   }
 }
@@ -161,7 +176,7 @@
     background: white;
     border-radius: 16px;
     padding: 2rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 40px color.change(#000000, 0.1);
     margin-bottom: 2rem;
 
     &.active {
@@ -701,3 +716,34 @@
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

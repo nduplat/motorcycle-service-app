@@ -1,9 +1,10 @@
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
-import { UserVehicle, Timestamp } from '../models';
+import { MotorcycleAssignment, Timestamp } from '../models';
 import { Observable, from } from 'rxjs';
 import { db } from '../firebase.config';
 import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, where, DocumentData, DocumentSnapshot, onSnapshot } from 'firebase/firestore';
 import { AuthService } from './auth.service';
+import { MotorcycleAssignmentService } from './motorcycle-assignment.service';
 
 const fromFirestore = <T>(snapshot: DocumentSnapshot<DocumentData, DocumentData>): T => {
     const data = snapshot.data() as any;
@@ -14,13 +15,14 @@ const fromFirestore = <T>(snapshot: DocumentSnapshot<DocumentData, DocumentData>
   providedIn: 'root'
 })
 export class UserVehicleService {
-  private allUserVehicles = signal<UserVehicle[]>([]);
+  private allUserVehicles = signal<MotorcycleAssignment[]>([]);
   private isLoading = signal(true);
   private loadingError = signal<string | null>(null);
-  private cache: UserVehicle[] | null = null;
+  private cache: MotorcycleAssignment[] | null = null;
   private cacheTimestamp: number = 0;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes for vehicle data
   private authService = inject(AuthService);
+  private motorcycleAssignmentService = inject(MotorcycleAssignmentService);
 
   // Computed signals for external access
   userVehicles = computed(() => this.allUserVehicles());
@@ -32,10 +34,10 @@ export class UserVehicleService {
     effect(() => {
       const user = this.authService.currentUser();
       if (user) {
-        console.log('UserVehicleService: User authenticated, loading user vehicles');
+        console.log('UserVehicleService: User authenticated, loading user vehicle assignments');
         this.loadAllUserVehicles();
       } else {
-        console.log('UserVehicleService: User not authenticated, clearing user vehicles');
+        console.log('UserVehicleService: User not authenticated, clearing user vehicle assignments');
         this.allUserVehicles.set([]);
         this.isLoading.set(false);
         this.loadingError.set(null);
@@ -59,7 +61,7 @@ export class UserVehicleService {
       // Get current user from AuthService
       const currentUser = this.authService.currentUser();
 
-      console.log("UserVehicleService: Loading user vehicles - Auth check:", {
+      console.log("UserVehicleService: Loading user vehicle assignments - Auth check:", {
         isAuthenticated: !!currentUser,
         userId: currentUser?.id,
         userEmail: currentUser?.email,
@@ -67,38 +69,23 @@ export class UserVehicleService {
       });
 
       if (!currentUser) {
-        console.warn("UserVehicleService: No authenticated user - cannot load user vehicles");
+        console.warn("UserVehicleService: No authenticated user - cannot load user vehicle assignments");
         this.isLoading.set(false);
         return;
       }
 
-      let q;
-      if (currentUser.role === 'customer') {
-        q = query(collection(db, "userVehicles"), where("userId", "==", currentUser.id));
-      } else {
-        q = query(collection(db, "userVehicles"));
-      }
-      const querySnapshot = await getDocs(q);
-      const vehicles = querySnapshot.docs.map(doc => fromFirestore<UserVehicle>(doc));
+      const assignments = await this.motorcycleAssignmentService.getUserAssignments(currentUser.id);
 
       // Update cache
-      this.cache = vehicles;
+      this.cache = assignments;
       this.cacheTimestamp = now;
 
-      this.allUserVehicles.set(vehicles);
+      this.allUserVehicles.set(assignments);
       this.isLoading.set(false);
 
-      // Set up real-time listener for updates (temporarily disabled)
-      /*
-      onSnapshot(q, (snapshot) => {
-        const updatedVehicles = snapshot.docs.map(doc => fromFirestore<UserVehicle>(doc));
-        this.allUserVehicles.set(updatedVehicles);
-      });
-      */
-
     } catch (error: any) {
-      console.error('Error loading user vehicles:', error);
-      this.loadingError.set(error.message || 'Error loading user vehicles');
+      console.error('Error loading user vehicle assignments:', error);
+      this.loadingError.set(error.message || 'Error loading user vehicle assignments');
       this.isLoading.set(false);
 
       // If cache exists and fetch fails, use cached data
@@ -119,90 +106,72 @@ export class UserVehicleService {
     this.cache = null;
   }
 
-  getVehiclesForUser(userId: string): Observable<UserVehicle[]> {
-    return from(new Promise<UserVehicle[]>(async (resolve, reject) => {
+  getVehiclesForUser(userId: string): Observable<MotorcycleAssignment[]> {
+    return from(this.motorcycleAssignmentService.getUserAssignments(userId));
+  }
+
+  getVehicleByPlate(plate: string): Observable<MotorcycleAssignment | undefined> {
+    return from(this.motorcycleAssignmentService.getAssignmentByPlate(plate).then(assignment => assignment || undefined));
+  }
+
+  getVehiclesByPlate(plate: string): Observable<MotorcycleAssignment[]> {
+    return from(this.motorcycleAssignmentService.getAssignmentByPlate(plate).then(assignment => assignment ? [assignment] : []));
+  }
+
+  addUserVehicle(assignment: Omit<MotorcycleAssignment, 'id' | 'createdAt' | 'updatedAt' | 'assignedAt' | 'assignedBy'>): Observable<MotorcycleAssignment> {
+    return from(new Promise<MotorcycleAssignment>(async (resolve, reject) => {
       try {
-        // First try to get from preloaded data
-        const preloadedVehicles = this.allUserVehicles().filter(vehicle => vehicle.userId === userId);
-        if (preloadedVehicles.length > 0) {
-          resolve(preloadedVehicles);
-          return;
-        }
-
-        // Fallback to direct query if not in preloaded data
-        const q = query(collection(db, "userVehicles"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        const vehicles = querySnapshot.docs.map(doc => fromFirestore<UserVehicle>(doc));
-        resolve(vehicles);
-      } catch (e) {
-        reject(e);
-      }
-    }));
-  }
-
-  getVehicleByPlate(plate: string): UserVehicle | undefined {
-    return this.allUserVehicles().find(vehicle =>
-      vehicle.plate?.toLowerCase() === plate.toLowerCase()
-    );
-  }
-
-  getVehiclesByPlate(plate: string): UserVehicle[] {
-    return this.allUserVehicles().filter(vehicle =>
-      vehicle.plate?.toLowerCase() === plate.toLowerCase()
-    );
-  }
-
-  addUserVehicle(vehicle: Omit<UserVehicle, 'id' | 'createdAt' | 'updatedAt'>): Observable<UserVehicle> {
-    return from(new Promise<UserVehicle>(async (resolve, reject) => {
-      try {
-        // Check authentication
         const currentUser = this.authService.currentUser();
         if (!currentUser) {
           reject(new Error('User not authenticated'));
           return;
         }
 
-        const docRef = await addDoc(collection(db, "userVehicles"), {
-          ...vehicle,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+        const newAssignmentId = await this.motorcycleAssignmentService.createAssignment({
+          ...assignment,
+          userId: currentUser.id,
+          assignedBy: currentUser.id,
+          status: 'active',
+          mileageKm: assignment.mileageKm || 0,
+          cylinderCapacity: assignment.cylinderCapacity || 0,
+          brand: assignment.brand || 'Unknown',
+          model: assignment.model || 'Unknown',
+          year: assignment.year || new Date().getFullYear(),
+          displacementCc: assignment.displacementCc || 0,
+          category: assignment.category || 'Unknown',
+          type: assignment.type || 'Unknown',
+          isActive: assignment.isActive !== undefined ? assignment.isActive : true,
         });
-        const newUserVehicle = {
-            ...vehicle,
-            id: docRef.id,
-            createdAt: { toDate: () => new Date() },
-            updatedAt: { toDate: () => new Date() }
-        } as UserVehicle;
 
-        // Update local state immediately
-        this.allUserVehicles.update(vehicles => [...vehicles, newUserVehicle]);
+        const newAssignment = await this.motorcycleAssignmentService.getAssignmentByPlate(newAssignmentId);
 
-        // Invalidate cache
-        this.invalidateCache();
-
-        resolve(newUserVehicle);
+        if (newAssignment) {
+          this.allUserVehicles.update(assignments => [...assignments, newAssignment]);
+          this.invalidateCache();
+          resolve(newAssignment);
+        } else {
+          reject(new Error('Failed to retrieve new assignment'));
+        }
       } catch (e) {
         reject(e);
       }
     }));
   }
 
-  deleteUserVehicle(id: string): Observable<boolean> {
+  deleteUserVehicle(plate: string): Observable<boolean> {
       return from(new Promise<boolean>(async (resolve, reject) => {
        try {
-         // Check authentication
          const currentUser = this.authService.currentUser();
          if (!currentUser) {
            reject(new Error('User not authenticated'));
            return;
          }
 
-         await deleteDoc(doc(db, "userVehicles", id));
+         // Assuming a method to deactivate/delete assignment by plate
+         await this.motorcycleAssignmentService.updateAssignment(plate, { status: 'inactive' });
 
-         // Update local state immediately
-         this.allUserVehicles.update(vehicles => vehicles.filter(v => v.id !== id));
+         this.allUserVehicles.update(assignments => assignments.filter(a => a.plate !== plate));
 
-         // Invalidate cache
          this.invalidateCache();
 
          resolve(true);

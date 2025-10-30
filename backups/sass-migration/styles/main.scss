@@ -1,0 +1,24 @@
+// Main SCSS file - imports all partials
+
+// Variables and utilities
+@import 'variables';
+@import 'mixins';
+@import 'functions';
+@import 'breakpoints';
+
+// Core styles
+@import 'core/reset';
+@import 'core/typography';
+@import 'core/base';
+
+// Component styles
+@import 'components/buttons';
+@import 'components/cards';
+@import 'components/forms';
+@import 'components/modals';
+@import 'components/tables';
+
+// Utility styles
+@import 'utilities/spacing';
+@import 'utilities/layout';
+@import 'utilities/animations';

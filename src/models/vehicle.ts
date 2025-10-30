@@ -1,37 +1,5 @@
 import { Timestamp } from './types';
 
-/**
- * Vehicle Model - Customer-owned motorcycles.
- *
- * Purpose: Represents motorcycles owned by customers that need service.
- * Links customers to their vehicles for work orders and service history.
- *
- * Propósito: Representa motocicletas propiedad de clientes que necesitan servicio.
- * Vincula clientes con sus vehículos para órdenes de trabajo e historial de servicio.
- *
- * CRUD Operations:
- * - Save: Use Firestore setDoc() with collection 'vehicles', auto-generated id
- * - Query: Use Firestore query() on 'vehicles' collection by ownerId
- * - Delete: Use Firestore deleteDoc() (rare, usually keep for history)
- *
- * Operaciones CRUD:
- * - Guardar: Usar Firestore setDoc() con colección 'vehicles', id auto-generado
- * - Consultar: Usar Firestore query() en colección 'vehicles' por ownerId
- * - Eliminar: Usar Firestore deleteDoc() (raro, usualmente mantener para historial)
- *
- * References: Exported from src/models/index.ts
- * Referencias: Exportado desde src/models/index.ts
- */
-export interface Vehicle {
-  id: string;
-  brand: string;
-  model: string;
-  year: number;
-  licensePlate: string;
-  ownerId: string; // ref to customers - referencia a customers
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
 
 /**
  * Motorcycle Model - Catalog of motorcycle models.
@@ -177,25 +145,9 @@ export interface Brand {
  * References: Exported from src/models/index.ts
  * Referencias: Exportado desde src/models/index.ts
  */
-export interface UserVehicle {
-  id: string;
-  userId: string; // ref to users - referencia a users
-  baseVehicleId: string; // ref to vehicles (the catalog model) - referencia a vehicles (el modelo del catálogo)
-  plate?: string;
-  vin?: string;
-  mileageKm?: number;
-  notes?: string;
-  soatUrl?: string; // URL to SOAT document in Cloud Storage - URL al documento SOAT en Cloud Storage
-  tecnoUrl?: string; // URL to Tecnomecanica document in Cloud Storage - URL al documento Tecnomecanica en Cloud Storage
-  soatExpiresAt?: Timestamp;
-  tecnoExpiresAt?: Timestamp;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
 
 /**
- * MotorcycleAssignment Model - Assignment of motorcycles to users with plate-based logic.
+ * MotorcycleAssignments Model - Assignment of motorcycles to users with plate-based logic.
  *
  * Purpose: Tracks motorcycle assignments using license plates as unique identifiers.
  * Supports plate-based operations and user access control.
@@ -217,15 +169,32 @@ export interface UserVehicle {
  * Referencias: Exportado desde src/models/index.ts
  */
 export interface MotorcycleAssignment {
-  id: string;
-  userId: string;
-  motorcycleId: string;
-  assignedBy: string;
-  status: 'active' | 'inactive';
-  plate: string;
-  mileageKm?: number;
-  notes?: string;
-  assignedAt: Timestamp;
+  id: string;                // Igual a la placa
+  plate: string;             // Obligatorio
+  motorcycleId: string;      // ID de la moto base (referencia)
+  userId: string;            // Usuario asignado
+  assignedBy: string;        // ID del administrador o técnico que asigna
+  assignedAt: Timestamp;     // Fecha/hora de asignación
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  mileageKm?: number;
+  status: 'active' | 'inactive';
+  notes?: string | null;
+
+  // Documentos legales - SOAT y Tecnomecánica
+  soatUrl?: string;           // URL to SOAT document in Cloud Storage
+  tecnoUrl?: string;          // URL to Tecnomecanica document in Cloud Storage
+  soatExpiresAt?: Timestamp;  // Fecha de vencimiento del SOAT
+  tecnoExpiresAt?: Timestamp; // Fecha de vencimiento de la Tecnomecánica
+
+  // Datos de referencia del modelo original (mantener por compatibilidad)
+  brand?: string;
+  model?: string;
+  year?: number;
+  displacementCc?: number;
+  category?: string;
+  type?: string;
+  isActive?: boolean;
+  cylinderCapacity?: number; // ← AGREGAR
+  quickAssigned?: boolean; // ← AGREGAR
 }

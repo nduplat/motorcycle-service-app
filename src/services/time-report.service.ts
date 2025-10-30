@@ -152,7 +152,6 @@ export class TimeReportService {
         workOrderId,
         workOrderNumber: workOrder.number,
         clientId: workOrder.clientId,
-        vehicleId: workOrder.vehicleId,
         totalMinutes,
         totalPausedMinutes,
         totalBillableMinutes,

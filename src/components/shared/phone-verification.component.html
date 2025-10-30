@@ -1,35 +1,34 @@
-<div class="phone-verification-container">
+<div class="max-w-md mx-auto p-5 bg-white rounded-xl shadow-md">
   <!-- reCAPTCHA container (invisible) -->
   <div id="recaptcha-container"></div>
 
   <!-- Phone Number Input Step -->
   <div *ngIf="!otpSent()" class="phone-input-section">
-    <h3 class="section-title">
+    <h3 class="text-2xl font-semibold text-gray-800 mb-5 text-center">
       {{ flow === 'registration' ? 'Verificar Número de Teléfono' : 'Iniciar Sesión con Teléfono' }}
     </h3>
 
-    <form [formGroup]="phoneForm" (ngSubmit)="sendOTP()" class="phone-form">
-      <div class="form-group">
-        <label for="phone" class="form-label">Número de Teléfono</label>
+    <form [formGroup]="phoneForm" (ngSubmit)="sendOTP()" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-2">
+        <label for="phone" class="font-medium text-gray-700 text-sm">Número de Teléfono</label>
         <input
           id="phone"
           type="tel"
           formControlName="phone"
           placeholder="+57 300 123 4567"
-          class="phone-input"
+          class="px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors duration-200 ease-in-out bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           [class.error]="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched"
         />
-        <div class="form-help">Formato colombiano: +57 300 123 4567</div>
-        <div *ngIf="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched" class="error-message">
+        <div class="text-xs text-gray-600">Formato colombiano: +57 300 123 4567</div>
+        <div *ngIf="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched" class="text-xs text-red-600 font-medium">
           <span *ngIf="phoneForm.get('phone')?.errors?.['required']">Número de teléfono requerido</span>
           <span *ngIf="phoneForm.get('phone')?.errors?.['invalidColombianPhone']">Número de teléfono colombiano inválido</span>
         </div>
       </div>
 
-      <button
-        type="submit"
-        class="btn btn-primary send-otp-btn"
-        [disabled]="isLoading() || phoneForm.invalid"
+              <button
+                type="submit"
+                class="w-full px-6 py-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 ease-in-out flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"        [disabled]="isLoading() || phoneForm.invalid"
       >
         <span *ngIf="isLoading()" class="loading-spinner"></span>
         Enviar Código de Verificación
@@ -38,20 +37,18 @@
   </div>
 
   <!-- OTP Input Step -->
-  <div *ngIf="otpSent()" class="otp-input-section">
-    <h3 class="section-title">Ingrese el Código de Verificación</h3>
-    <p class="otp-instructions">
+  <div *ngIf="otpSent()">
+    <h3 class="text-2xl font-semibold text-gray-800 mb-5 text-center">Ingrese el Código de Verificación</h3>
+    <p class="text-center text-gray-600 text-sm mb-5">
       Hemos enviado un código de 6 dígitos al {{ formatPhoneNumber(phoneForm.value.phone!) }}
     </p>
 
-    <form [formGroup]="otpForm" (ngSubmit)="verifyOTP()" class="otp-form">
-      <div class="otp-inputs-container">
+    <form [formGroup]="otpForm" (ngSubmit)="verifyOTP()" class="flex flex-col gap-4">
+      <div class="flex gap-2 justify-center my-5">
         <input
           #digit1
           type="text"
-          formControlName="digit1"
-          maxlength="1"
-          class="otp-digit-input"
+          class="w-10 h-12 text-center text-2xl font-semibold p-0 border-2 border-gray-200 rounded-lg transition-colors duration-200 ease-in-out bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           [class.error]="otpForm.get('digit1')?.invalid && otpForm.get('digit1')?.touched"
           (input)="onOtpInput($event, digit2)"
           (keydown)="onOtpKeyDown($event)"
@@ -60,9 +57,7 @@
         <input
           #digit2
           type="text"
-          formControlName="digit2"
-          maxlength="1"
-          class="otp-digit-input"
+          class="w-10 h-12 text-center text-2xl font-semibold p-0 border-2 border-gray-200 rounded-lg transition-colors duration-200 ease-in-out bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           [class.error]="otpForm.get('digit2')?.invalid && otpForm.get('digit2')?.touched"
           (input)="onOtpInput($event, digit3)"
           (keydown)="onOtpKeyDown($event, digit1)"
@@ -71,9 +66,7 @@
         <input
           #digit3
           type="text"
-          formControlName="digit3"
-          maxlength="1"
-          class="otp-digit-input"
+          class="w-10 h-12 text-center text-2xl font-semibold p-0 border-2 border-gray-200 rounded-lg transition-colors duration-200 ease-in-out bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           [class.error]="otpForm.get('digit3')?.invalid && otpForm.get('digit3')?.touched"
           (input)="onOtpInput($event, digit4)"
           (keydown)="onOtpKeyDown($event, digit2)"
@@ -82,9 +75,7 @@
         <input
           #digit4
           type="text"
-          formControlName="digit4"
-          maxlength="1"
-          class="otp-digit-input"
+          class="w-10 h-12 text-center text-2xl font-semibold p-0 border-2 border-gray-200 rounded-lg transition-colors duration-200 ease-in-out bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           [class.error]="otpForm.get('digit4')?.invalid && otpForm.get('digit4')?.touched"
           (input)="onOtpInput($event, digit5)"
           (keydown)="onOtpKeyDown($event, digit3)"
@@ -95,7 +86,7 @@
           type="text"
           formControlName="digit5"
           maxlength="1"
-          class="otp-digit-input"
+          class="w-10 h-12 text-center text-2xl font-semibold p-0 border-2 border-gray-200 rounded-lg transition-colors duration-200 ease-in-out bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           [class.error]="otpForm.get('digit5')?.invalid && otpForm.get('digit5')?.touched"
           (input)="onOtpInput($event, digit6)"
           (keydown)="onOtpKeyDown($event, digit4)"
@@ -106,7 +97,7 @@
           type="text"
           formControlName="digit6"
           maxlength="1"
-          class="otp-digit-input"
+          class="w-10 h-12 text-center text-2xl font-semibold p-0 border-2 border-gray-200 rounded-lg transition-colors duration-200 ease-in-out bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           [class.error]="otpForm.get('digit6')?.invalid && otpForm.get('digit6')?.touched"
           (input)="onOtpInput($event)"
           (keydown)="onOtpKeyDown($event, digit5)"
@@ -114,23 +105,23 @@
         />
       </div>
 
-      <div *ngIf="otpForm.invalid && otpForm.touched" class="error-message">
+      <div *ngIf="otpForm.invalid && otpForm.touched" class="text-xs text-red-600 font-medium">
         Ingrese el código completo de 6 dígitos
       </div>
 
-      <div class="otp-actions">
+      <div class="flex flex-col gap-3">
         <button
           type="submit"
-          class="btn btn-primary verify-otp-btn"
+          class="w-full px-6 py-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 ease-in-out flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
           [disabled]="isLoading() || otpForm.invalid"
         >
-          <span *ngIf="isLoading()" class="loading-spinner"></span>
+        <span *ngIf="isLoading()" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
           Verificar Código
         </button>
 
         <button
           type="button"
-          class="btn btn-secondary resend-btn"
+          class="px-4 py-2 text-sm border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 ease-in-out flex items-center justify-center gap-2 bg-gray-600 text-white hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed"
           [disabled]="!canResendOTP()"
           (click)="resendOTP()"
         >
@@ -138,15 +129,15 @@
         </button>
       </div>
 
-      <div class="change-phone-link">
-        <a href="#" (click)="$event.preventDefault(); reset()">Cambiar número de teléfono</a>
+      <div class="text-center mt-4">
+        <a href="#" (click)="$event.preventDefault(); reset()" class="text-blue-600 no-underline text-sm hover:underline">Cambiar número de teléfono</a>
       </div>
     </form>
   </div>
 
   <!-- Error Display -->
-  <div *ngIf="error()" class="error-alert">
-    <div class="error-icon">⚠️</div>
-    <div class="error-text">{{ error() }}</div>
+  <div *ngIf="error()" class="flex items-start gap-3 px-4 py-3 bg-red-100 border border-red-200 rounded-lg text-red-800 mt-4">
+    <div class="text-xl flex-shrink-0">⚠️</div>
+    <div class="text-sm font-medium">{{ error() }}</div>
   </div>
 </div>

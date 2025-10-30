@@ -1,0 +1,60 @@
+// Button component styles
+
+// Base button class
+.btn {
+  @include button-base;
+}
+
+// Button variants
+.btn-primary {
+  @include button-variant(variables.$primary, variables.$primary-foreground);
+}
+
+.btn-secondary {
+  @include button-variant(variables.$secondary, variables.$secondary-foreground);
+}
+
+.btn-outline {
+  @include button-variant(transparent, variables.$primary, variables.$primary);
+}
+
+.btn-ghost {
+  @include button-variant(transparent, variables.$foreground);
+
+  &:hover:not(:disabled) {
+    background-color: variables.$muted;
+  }
+}
+
+.btn-danger {
+  @include button-variant(variables.$destructive, variables.$destructive-foreground);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

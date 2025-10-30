@@ -1,162 +1,214 @@
-.time-blocks-manager {
-  min-height: 100vh;
-  background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
-  padding: 2rem;
+// Time Blocks Manager Component - BEM Methodology
+@use '../../../../src/styles/_global-imports' as g;
 
-  .header {
-    margin-bottom: 2rem;
+// Component-specific variables
+$time-blocks-manager-min-height: 100vh;
+$time-blocks-manager-background: linear-gradient(135deg, g.$background 0%, g.$muted 100%);
+$time-blocks-manager-padding: g.$spacing-2xl;
+$time-blocks-manager-padding-mobile: g.$spacing-lg;
+$time-blocks-manager-max-width: 1200px;
+$time-blocks-manager-transition-duration: g.$transition-fast;
+$time-blocks-manager-modal-z-index: 1000;
+$time-blocks-manager-modal-max-width: 800px;
+$time-blocks-manager-modal-max-width-approval: 600px;
+$time-blocks-manager-modal-border-radius: g.$border-radius-xl;
+$time-blocks-manager-loading-padding: 4rem g.$spacing-2xl;
+
+// BEM Block: time-blocks-manager
+.time-blocks-manager {
+  min-height: $time-blocks-manager-min-height;
+  background: $time-blocks-manager-background;
+  padding: $time-blocks-manager-padding;
+
+  @include g.respond-to(md) {
+    padding: $time-blocks-manager-padding-mobile;
   }
 
-  .filters {
+  // Element: header
+  &__header {
+    margin-bottom: g.$spacing-2xl;
+  }
+
+  // Element: filters
+  &__filters {
+    // Modifier: filters--active
     .active {
-      background: hsl(var(--primary));
-      color: hsl(var(--primary-foreground));
-      border-color: hsl(var(--primary));
+      background: g.$primary;
+      color: g.$primary-foreground;
+      border-color: g.$primary;
     }
   }
 
-  .content {
-    max-width: 1200px;
+  // Element: content
+  &__content {
+    max-width: $time-blocks-manager-max-width;
     margin: 0 auto;
   }
 
-  .time-blocks-grid {
+  // Element: time-blocks-grid
+  &__time-blocks-grid {
+    // Element: loading-state
     .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
+      @include g.flex-column;
+      @include g.flex-center;
+      padding: $time-blocks-manager-loading-padding;
       text-align: center;
 
+      // Element: animate-spin
       .animate-spin {
         animation: spin 1s linear infinite;
       }
 
       p {
-        margin-top: 1rem;
+        margin-top: g.$spacing-lg;
       }
     }
 
+    // Element: empty-state
     .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
+      @include g.flex-column;
+      @include g.flex-center;
+      padding: $time-blocks-manager-loading-padding;
       text-align: center;
 
       svg {
-        margin-bottom: 1rem;
+        margin-bottom: g.$spacing-lg;
       }
 
       h3 {
-        margin-bottom: 0.5rem;
+        margin-bottom: g.$spacing-sm;
       }
     }
 
+    // Element: time-block-card
     .time-block-card {
-      transition: all 0.2s ease-in-out;
+      @include g.transition(all $time-blocks-manager-transition-duration);
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        box-shadow: g.$shadow-xl;
       }
     }
   }
 
-  .modal-overlay {
+  // Element: modal-overlay
+  &__modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 2rem;
+    @include g.flex-center;
+    z-index: $time-blocks-manager-modal-z-index;
+    padding: g.$spacing-2xl;
+
+    @include g.respond-to(md) {
+      padding: g.$spacing-lg;
+    }
   }
 
-  .modal-content {
-    background: hsl(var(--background));
-    border-radius: 1rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    max-width: 800px;
+  // Element: modal-content
+  &__modal-content {
+    background: g.$card;
+    @include g.border-radius($time-blocks-manager-modal-border-radius);
+    box-shadow: g.$shadow-2xl;
+    max-width: $time-blocks-manager-modal-max-width;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
 
-    &.approval-modal {
-      max-width: 600px;
+    // Modifier: modal-content--approval-modal
+    &--approval-modal {
+      max-width: $time-blocks-manager-modal-max-width-approval;
     }
 
+    @include g.respond-to(md) {
+      max-width: 100%;
+      margin: 0;
+    }
+
+    // Element: modal-header
     .modal-header {
-      display: flex;
-      justify-content: space-between;
+      @include g.flex-between;
       align-items: center;
-      padding: 1.5rem 2rem;
-      border-bottom: 1px solid hsl(var(--border));
+      padding: g.$spacing-xl g.$spacing-2xl;
+      border-bottom: g.$border-width-thin solid g.$border;
 
       h2 {
         margin: 0;
       }
 
       button {
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        transition: background-color 0.2s;
+        padding: g.$spacing-sm;
+        @include g.border-radius(g.$border-radius-md);
+        @include g.transition(background-color g.$transition-fast);
+      }
+
+      @include g.respond-to(md) {
+        padding: g.$spacing-lg;
       }
     }
 
+    // Element: modal-body
     .modal-body {
-      padding: 2rem;
+      padding: g.$spacing-2xl;
+
+      @include g.respond-to(md) {
+        padding: g.$spacing-lg;
+      }
     }
 
+    // Element: modal-footer
     .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      padding: 1.5rem 2rem;
-      border-top: 1px solid hsl(var(--border));
+      @include g.flex-end;
+      gap: g.$spacing-lg;
+      padding: g.$spacing-xl g.$spacing-2xl;
+      border-top: g.$border-width-thin solid g.$border;
 
       button {
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 500;
-        transition: all 0.2s;
+        padding: g.$spacing-md g.$spacing-xl;
+        @include g.border-radius(g.$border-radius-lg);
+        font-weight: g.$font-weight-medium;
+        @include g.transition(all g.$transition-fast);
 
         &:first-child {
           background: transparent;
-          border: 1px solid hsl(var(--border));
-          color: hsl(var(--foreground));
+          border: g.$border-width-thin solid g.$border;
+          color: g.$foreground;
 
           &:hover {
-            background: hsl(var(--muted));
+            background: g.$muted;
           }
         }
 
         &:last-child {
-          background: hsl(var(--primary));
-          color: hsl(var(--primary-foreground));
+          background: g.$primary;
+          color: g.$primary-foreground;
 
-          &:hover {
-            background: hsl(var(--primary) / 0.9);
+          &:hover:not(:disabled) {
+            background: g.color.adjust(g.$primary, -10%, oklch);
           }
 
+          // Modifier: disabled
           &:disabled {
             opacity: 0.5;
             cursor: not-allowed;
           }
         }
       }
+
+      @include g.respond-to(md) {
+        padding: g.$spacing-lg;
+      }
     }
 
+    // Element: review-card
     .review-card {
-      margin-bottom: 2rem;
+      margin-bottom: g.$spacing-2xl;
     }
 
+    // Element: action-buttons
     .action-buttons {
       button {
         min-width: 120px;
@@ -166,6 +218,7 @@
   }
 }
 
+// Keyframes
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -176,28 +229,11 @@
 }
 
 // Responsive design
-@media (max-width: 768px) {
+@include g.respond-to(md) {
   .time-blocks-manager {
-    padding: 1rem;
-
-    .modal-overlay {
-      padding: 1rem;
-    }
-
-    .modal-content {
-      max-width: 100%;
-      margin: 0;
-
-      .modal-header,
-      .modal-body,
-      .modal-footer {
-        padding: 1rem;
-      }
-    }
-
-    .filters {
+    &__filters {
       .flex {
-        flex-direction: column;
+        @include g.flex-column;
 
         button {
           width: 100%;
@@ -205,12 +241,48 @@
       }
     }
 
+    &__modal-content {
+      .modal-header,
+      .modal-body,
+      .modal-footer {
+        padding: g.$spacing-lg;
+      }
+    }
+
     .action-buttons {
-      flex-direction: column;
+      @include g.flex-column;
 
       button {
         width: 100%;
       }
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .time-blocks-manager {
+    background: linear-gradient(135deg, g.$background 0%, g.$muted 100%);
+
+    &__modal-content {
+      background: g.$card;
+    }
+  }
+}
+
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .time-blocks-manager {
+    &__time-blocks-grid .time-block-card {
+      transition: none;
+
+      &:hover {
+        transform: none;
+      }
+    }
+
+    &__modal-content .modal-footer button {
+      transition: none;
     }
   }
 }

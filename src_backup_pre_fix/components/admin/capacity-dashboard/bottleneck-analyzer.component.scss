@@ -1,0 +1,499 @@
+// Bottleneck Analyzer Component - BEM Methodology
+@use '../../../styles/variables';
+@use 'mixins' as mixins;
+@use '../../../styles/_constants' as constants;
+
+// Bottleneck Analyzer Component Variables
+$bottleneck-analyzer-gradient-start: #f8fafc;
+$bottleneck-analyzer-gradient-end: #e2e8f0;
+$bottleneck-analyzer-border-color: #cbd5e1;
+$bottleneck-analyzer-transition-duration: 0.2s;
+$bottleneck-analyzer-hover-transform: translateX(2px);
+$bottleneck-analyzer-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+$bottleneck-analyzer-progress-height: 6px;
+$bottleneck-analyzer-progress-radius: 3px;
+$bottleneck-analyzer-icon-size: 14px;
+$bottleneck-analyzer-expansion-margin: 0.5rem;
+$bottleneck-analyzer-expansion-padding: 1rem;
+$bottleneck-analyzer-chip-font-size: 0.75rem;
+$bottleneck-analyzer-chip-height: 24px;
+$bottleneck-analyzer-expansion-body-padding: 0 1rem 1rem 1rem;
+$bottleneck-analyzer-chip-min-height: 32px;
+$bottleneck-analyzer-color-primary-bg: #dbeafe;
+$bottleneck-analyzer-color-primary-text: #1e40af;
+$bottleneck-analyzer-color-accent-bg: #fef3c7;
+$bottleneck-analyzer-color-accent-text: #92400e;
+$bottleneck-analyzer-color-warn-bg: #fee2e2;
+$bottleneck-analyzer-color-warn-text: #991b1b;
+$bottleneck-analyzer-progress-primary: #16a34a;
+$bottleneck-analyzer-progress-accent: #ea580c;
+$bottleneck-analyzer-progress-warn: #dc2626;
+$bottleneck-analyzer-mobile-font-size: 0.875rem;
+
+// BEM Block: bottleneck-analyzer
+.bottleneck-analyzer {
+  // Element: header
+  &__header {
+    @include mixins.flex-between;
+    margin-bottom: constants.$spacing-2xl;
+  }
+
+  // Element: title
+  &__title {
+    @include mixins.heading(2);
+    margin: 0;
+  }
+
+  // Element: controls
+  &__controls {
+    @include mixins.flex-center;
+    gap: constants.$spacing-sm;
+  }
+
+  // Element: last-analysis
+  &__last-analysis {
+    font-size: constants.$font-size-sm;
+    color: constants.$muted-foreground;
+  }
+
+  // Element: refresh-button
+  &__refresh-button {
+    @include mixins.button-base;
+    @include mixins.button-variant(variables.$primary, variables.$primary-foreground);
+  }
+
+  // Element: efficiency-summary
+  &__efficiency-summary {
+    @include mixins.card-base;
+    background: linear-gradient(135deg, $bottleneck-analyzer-gradient-start 0%, $bottleneck-analyzer-gradient-end 100%);
+    border: constants.$border-width-thin solid $bottleneck-analyzer-border-color;
+  }
+
+  // Element: summary-grid
+  &__summary-grid {
+    @include mixins.grid-cols(3);
+    gap: constants.$spacing-lg;
+  }
+
+  // Element: summary-item
+  &__summary-item {
+    text-align: center;
+  }
+
+  // Element: efficiency-value
+  &__efficiency-value {
+    font-size: constants.$font-size-4xl;
+    font-weight: constants.$font-weight-bold;
+    margin-bottom: constants.$spacing-sm;
+
+    &--excellent {
+      color: $bottleneck-analyzer-progress-primary;
+    }
+
+    &--good {
+      color: #ca8a04;
+    }
+
+    &--fair {
+      color: $bottleneck-analyzer-progress-accent;
+    }
+
+    &--critical {
+      color: $bottleneck-analyzer-progress-warn;
+    }
+  }
+
+  // Element: efficiency-label
+  &__efficiency-label {
+    font-size: constants.$font-size-lg;
+    font-weight: constants.$font-weight-medium;
+  }
+
+  // Element: efficiency-status
+  &__efficiency-status {
+    font-size: constants.$font-size-sm;
+    color: constants.$muted-foreground;
+  }
+
+  // Element: critical-count
+  &__critical-count {
+    font-size: constants.$font-size-4xl;
+    font-weight: constants.$font-weight-bold;
+    margin-bottom: constants.$spacing-sm;
+    color: $bottleneck-analyzer-progress-warn;
+  }
+
+  // Element: total-count
+  &__total-count {
+    font-size: constants.$font-size-4xl;
+    font-weight: constants.$font-weight-bold;
+    margin-bottom: constants.$spacing-sm;
+    color: $bottleneck-analyzer-progress-accent;
+  }
+
+  // Element: bottlenecks-card
+  &__bottlenecks-card {
+    @include mixins.card-base;
+  }
+
+  // Element: bottleneck-item
+  &__bottleneck-item {
+    @include mixins.card-base;
+    padding: constants.$spacing-lg;
+    border-left: constants.$border-width-thick solid;
+    @include mixins.transition(all, $bottleneck-analyzer-transition-duration);
+
+    &:hover {
+      @include mixins.transform($bottleneck-analyzer-hover-transform);
+      box-shadow: $bottleneck-analyzer-hover-shadow;
+    }
+
+    &--critical {
+      border-left-color: $bottleneck-analyzer-progress-warn;
+      background-color: rgba($bottleneck-analyzer-progress-warn, 0.1);
+    }
+
+    &--high {
+      border-left-color: $bottleneck-analyzer-progress-accent;
+      background-color: rgba($bottleneck-analyzer-progress-accent, 0.1);
+    }
+
+    &--medium {
+      border-left-color: #ca8a04;
+      background-color: rgba(#ca8a04, 0.1);
+    }
+
+    &--low {
+      border-left-color: $bottleneck-analyzer-progress-primary;
+      background-color: rgba($bottleneck-analyzer-progress-primary, 0.1);
+    }
+  }
+
+  // Element: bottleneck-content
+  &__bottleneck-content {
+    @include mixins.flex-column;
+    gap: constants.$spacing-sm;
+  }
+
+  // Element: bottleneck-header
+  &__bottleneck-header {
+    @include mixins.flex-center;
+    gap: constants.$spacing-sm;
+    margin-bottom: constants.$spacing-sm;
+  }
+
+  // Element: bottleneck-type
+  &__bottleneck-type {
+    font-weight: constants.$font-weight-semibold;
+  }
+
+  // Element: bottleneck-description
+  &__bottleneck-description {
+    font-size: constants.$font-size-sm;
+    color: constants.$muted-foreground;
+    margin-bottom: constants.$spacing-lg;
+  }
+
+  // Element: impact-indicator
+  &__impact-indicator {
+    margin-bottom: constants.$spacing-lg;
+  }
+
+  // Element: impact-label
+  &__impact-label {
+    font-size: constants.$font-size-sm;
+    font-weight: constants.$font-weight-medium;
+    margin-bottom: constants.$spacing-xs;
+  }
+
+  // Element: recommendations
+  &__recommendations {
+    h5 {
+      font-size: constants.$font-size-sm;
+      font-weight: constants.$font-weight-medium;
+      margin-bottom: constants.$spacing-sm;
+    }
+
+    ul {
+      font-size: constants.$font-size-sm;
+      color: #6b7280;
+
+      li {
+        @include mixins.flex-center;
+        gap: constants.$spacing-sm;
+        margin-bottom: constants.$spacing-xs;
+
+        mat-icon {
+          font-size: $bottleneck-analyzer-icon-size;
+          width: $bottleneck-analyzer-icon-size;
+          height: $bottleneck-analyzer-icon-size;
+          color: $bottleneck-analyzer-progress-primary;
+        }
+      }
+    }
+  }
+
+  // Element: no-bottlenecks
+  &__no-bottlenecks {
+    text-align: center;
+    padding: constants.$spacing-3xl;
+
+    mat-icon {
+      font-size: constants.$font-size-5xl;
+      width: constants.$font-size-6xl;
+      height: constants.$font-size-6xl;
+      margin-bottom: constants.$spacing-lg;
+      color: $bottleneck-analyzer-progress-primary;
+    }
+
+    h3 {
+      font-size: constants.$font-size-xl;
+      font-weight: constants.$font-weight-semibold;
+      margin-bottom: constants.$spacing-sm;
+      color: #16a34a;
+    }
+
+    p {
+      color: #6b7280;
+    }
+  }
+
+  // Element: optimization-card
+  &__optimization-card {
+    @include mixins.card-base;
+  }
+
+  // Element: expansion-panel
+  &__expansion-panel {
+    margin-bottom: $bottleneck-analyzer-expansion-margin;
+  }
+
+  // Element: expansion-header
+  &__expansion-header {
+    padding: $bottleneck-analyzer-expansion-padding;
+  }
+
+  // Element: expansion-chip
+  &__expansion-chip {
+    font-size: $bottleneck-analyzer-chip-font-size;
+    height: $bottleneck-analyzer-chip-height;
+  }
+
+  // Element: expansion-body
+  &__expansion-body {
+    padding: $bottleneck-analyzer-expansion-body-padding;
+  }
+
+  // Element: expansion-content
+  &__expansion-content {
+    padding: constants.$spacing-lg;
+  }
+
+  // Element: expansion-grid
+  &__expansion-grid {
+    @include mixins.grid-cols(2);
+    gap: constants.$spacing-lg;
+    margin-bottom: constants.$spacing-lg;
+  }
+
+  // Element: expansion-section
+  &__expansion-section {
+    h5 {
+      font-size: constants.$font-size-sm;
+      font-weight: constants.$font-weight-medium;
+      margin-bottom: constants.$spacing-xs;
+    }
+
+    p {
+      font-size: constants.$font-size-sm;
+    }
+  }
+
+  // Element: implement-button
+  &__implement-button {
+    @include mixins.button-base;
+    @include mixins.button-variant(variables.$primary, variables.$primary-foreground);
+    width: 100%;
+
+    @include mixins.respond-to(md) {
+      width: auto;
+    }
+  }
+
+  // Element: manual-chip
+  &__manual-chip {
+    width: 100%;
+    text-align: center;
+
+    @include mixins.respond-to(md) {
+      width: auto;
+    }
+  }
+
+  // Element: loading
+  &__loading {
+    text-align: center;
+    padding: constants.$spacing-3xl;
+
+    mat-icon {
+      font-size: constants.$font-size-4xl;
+      width: constants.$font-size-4xl;
+      height: constants.$font-size-4xl;
+      margin-bottom: constants.$spacing-lg;
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+// Material component customizations (removed ::ng-deep)
+.mat-mdc-chip {
+  &.mat-primary {
+    --mdc-chip-container-color: $bottleneck-analyzer-color-primary-bg;
+    --mdc-chip-label-text-color: $bottleneck-analyzer-color-primary-text;
+  }
+
+  &.mat-accent {
+    --mdc-chip-container-color: $bottleneck-analyzer-color-accent-bg;
+    --mdc-chip-label-text-color: $bottleneck-analyzer-color-accent-text;
+  }
+
+  &.mat-warn {
+    --mdc-chip-container-color: $bottleneck-analyzer-color-warn-bg;
+    --mdc-chip-label-text-color: $bottleneck-analyzer-color-warn-text;
+  }
+}
+
+.mat-mdc-progress-bar {
+  &.mat-primary .mdc-linear-progress__primary-bar {
+    background-color: $bottleneck-analyzer-progress-primary;
+  }
+
+  &.mat-accent .mdc-linear-progress__primary-bar {
+    background-color: $bottleneck-analyzer-progress-accent;
+  }
+
+  &.mat-warn .mdc-linear-progress__primary-bar {
+    background-color: $bottleneck-analyzer-progress-warn;
+  }
+}
+
+.mat-mdc-accordion {
+  .mat-expansion-panel-spacing {
+    margin: 0;
+  }
+}
+
+// Responsive design
+@include mixins.respond-to(md) {
+  .bottleneck-analyzer {
+    &__summary-grid {
+      @include mixins.grid-cols(1);
+      gap: constants.$spacing-md;
+    }
+
+    &__bottleneck-item {
+      .flex {
+        flex-direction: column;
+        gap: constants.$spacing-md;
+      }
+
+      &__recommendations ul li {
+        font-size: $bottleneck-analyzer-mobile-font-size;
+      }
+    }
+
+    &__expansion-header {
+      padding: constants.$spacing-md;
+
+      .mat-mdc-chip {
+        display: none; // Hide chips on mobile for space
+      }
+    }
+  }
+}
+
+@include mixins.respond-to(sm) {
+  .bottleneck-analyzer {
+    &__expansion-grid {
+      @include mixins.grid-cols(1);
+      gap: constants.$spacing-md;
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .bottleneck-analyzer {
+    &__efficiency-summary {
+      background: linear-gradient(135deg, color.adjust($bottleneck-analyzer-gradient-start, 20%, $lightness: -$bottleneck-analyzer-gradient-start, 20) 0%, color.adjust($bottleneck-analyzer-gradient-end, 20%, $lightness: -$bottleneck-analyzer-gradient-end, 20) 100%);
+      border-color: variables.$border;
+    }
+
+    &__bottleneck-item {
+      &--critical {
+        background-color: rgba($bottleneck-analyzer-progress-warn, 0.2);
+      }
+
+      &--high {
+        background-color: rgba($bottleneck-analyzer-progress-accent, 0.2);
+      }
+
+      &--medium {
+        background-color: rgba(#ca8a04, 0.2);
+      }
+
+      &--low {
+        background-color: rgba($bottleneck-analyzer-progress-primary, 0.2);
+      }
+    }
+
+    &__bottleneck-description {
+      color: constants.$muted-foreground;
+    }
+
+    &__recommendations ul {
+      color: constants.$muted-foreground;
+    }
+
+    &__no-bottlenecks p {
+      color: constants.$muted-foreground;
+    }
+
+    &__efficiency-status {
+      color: constants.$muted-foreground;
+    }
+
+    &__last-analysis {
+      color: constants.$muted-foreground;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, effect } from '@angular/core';
-import { ServiceItem, MaintenanceReminder, UserVehicle, UserProfile, Timestamp } from '../models';
+import { ServiceItem, MaintenanceReminder, MotorcycleAssignment, UserProfile, Timestamp } from '../models';
 import { ServiceItemService } from './service-item.service';
 import { UserService } from './user.service';
 import { UserVehicleService } from './user-vehicle.service';
@@ -118,7 +118,7 @@ export class MaintenanceNotificationService {
 
   private async checkServiceForVehicle(
     service: ServiceItem,
-    vehicle: UserVehicle,
+    vehicle: MotorcycleAssignment,
     user: UserProfile
   ): Promise<void> {
     // Calculate next service date based on service requirements
@@ -137,7 +137,7 @@ export class MaintenanceNotificationService {
     }
   }
 
-  private calculateNextServiceDate(service: ServiceItem, vehicle: UserVehicle): Date | null {
+  private calculateNextServiceDate(service: ServiceItem, vehicle: MotorcycleAssignment,): Date | null {
     // This is a simplified calculation - in a real app, you'd have service history
     // For now, we'll assume services are due every 6 months for maintenance
     // Since UserVehicle doesn't have service history, we'll use created date as fallback
@@ -152,14 +152,14 @@ export class MaintenanceNotificationService {
 
   private async createOrUpdateReminder(
     service: ServiceItem,
-    vehicle: UserVehicle,
+    vehicle: MotorcycleAssignment,
     user: UserProfile,
     nextServiceDate: Date,
     daysUntilDue: number
   ): Promise<void> {
     const existingReminder = this.reminders().find(r =>
       r.customerId === user.id &&
-      r.vehicleId === vehicle.id &&
+      r.plate === vehicle.plate &&
       r.serviceId === service.id
     );
 
@@ -176,6 +176,7 @@ export class MaintenanceNotificationService {
 
     const reminderData = {
       customerId: user.id,
+      plate: vehicle.plate || '',
       vehicleId: vehicle.id,
       serviceId: service.id,
       serviceName: service.title,
@@ -239,11 +240,11 @@ export class MaintenanceNotificationService {
     switch (reminder.dueType) {
       case 'overdue':
         title = '🚨 Servicio de Mantenimiento Vencido';
-        message = `El servicio "${reminder.serviceName}" para tu ${reminder.vehicleId} está vencido. Te recomendamos programarlo lo antes posible.`;
+        message = `El servicio "${reminder.serviceName}" para tu motocicleta con placa ${reminder.plate} está vencido. Te recomendamos programarlo lo antes posible.`;
         break;
       case 'due_soon':
         title = '⚠️ Servicio de Mantenimiento Próximo';
-        message = `El servicio "${reminder.serviceName}" para tu ${reminder.vehicleId} vencerá pronto. Considera programarlo.`;
+        message = `El servicio "${reminder.serviceName}" para tu motocicleta con placa ${reminder.plate} vencerá pronto. Considera programarlo.`;
         break;
       case 'upcoming':
         title = '📅 Recordatorio de Mantenimiento';

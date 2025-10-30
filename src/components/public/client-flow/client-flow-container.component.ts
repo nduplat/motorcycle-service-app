@@ -79,6 +79,7 @@ export class ClientFlowContainerComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.detectEntranceSource();
     this.checkAuthentication();
+    this.initializeFlowState();
   }
 
   ngOnDestroy(): void {
@@ -100,18 +101,38 @@ export class ClientFlowContainerComponent implements OnInit, OnDestroy {
   }
 
   private async checkAuthentication(): Promise<void> {
-    // Wait for authentication to be resolved
     await this.authService.waitForAuth();
 
     if (!this.authService.currentUser()) {
-      // Redirect to login if not authenticated
+      // ❌ NO crear cuenta automáticamente
+      // ✅ Redirigir a login social
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/queue/join' }
+        queryParams: {
+          returnUrl: '/queue/join',
+          source: 'qr',  // ← AGREGAR: indica origen QR
+          location: this.route.snapshot.queryParams['location'] // ← PASAR ubicación
+        }
       });
       return;
     }
 
-    // Authentication is good, flow service will handle initialization
+    // Usuario autenticado → continuar flujo
+    this.initializeFlowState();
+  }
+
+  private initializeFlowState(): void {
+    // Ensure QueueService is initialized and synchronized with ClientFlowService
+    // This method ensures that any existing queue entry ID in ClientFlowService
+    // is properly synchronized with the QueueService state
+    const currentEntryId = this.flowService.flowState().currentQueueEntryId;
+    if (currentEntryId) {
+      // Verify the entry exists in QueueService, if not clear the local state
+      const entries = this.flowService.getCurrentQueueEntry();
+      if (!entries) {
+        console.warn('Queue entry not found in QueueService, clearing local state');
+        this.flowService.resetFlow();
+      }
+    }
   }
 
   onPrevious(): void {

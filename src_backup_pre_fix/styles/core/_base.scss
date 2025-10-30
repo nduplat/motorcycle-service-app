@@ -1,0 +1,190 @@
+// Base Styles - Global body styles, links, selection, and smooth scrolling
+
+// Global body styles
+body {
+  font-family: constants.$font-family-base;
+  font-size: constants.$font-size-base;
+  font-weight: constants.$font-weight-normal;
+  line-height: constants.$line-height-normal;
+  color: variables.$foreground;
+  background-color: variables.$background;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Smooth scrolling
+html {
+  scroll-behavior: smooth;
+}
+
+// Focus styles
+*:focus {
+  outline: 2px solid variables.$ring;
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid variables.$ring;
+  outline-offset: 2px;
+}
+
+// Selection styles
+::selection {
+  background-color: color-change(variables.$primary, 0.2);
+  color: variables.$primary;
+}
+
+::-moz-selection {
+  background-color: color-change(variables.$primary, 0.2);
+  color: variables.$primary;
+}
+
+// Link styles
+a {
+  color: variables.$primary;
+  text-decoration: none;
+  transition: color constants.$transition-fast;
+
+  &:hover {
+    color: color.adjust(variables.$primary, 10%, $lightness: -variables.$primary, 10);
+  }
+
+  &:focus {
+    outline: 2px solid variables.$ring;
+    outline-offset: 2px;
+  }
+
+  &:active {
+    color: color.adjust(variables.$primary, 15%, $lightness: -variables.$primary, 15);
+  }
+}
+
+// Button reset
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+
+  &:focus {
+    outline: 2px solid variables.$ring;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// Image styles
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// Form elements
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+
+  &:focus {
+    outline: 2px solid variables.$ring;
+    outline-offset: 2px;
+  }
+}
+
+// Code blocks
+code,
+pre {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875em;
+}
+
+code {
+  background-color: variables.$muted;
+  padding: 0.125rem 0.25rem;
+  border-radius: constants.$border-radius-sm;
+}
+
+pre {
+  background-color: variables.$muted;
+  padding: constants.$spacing-md;
+  border-radius: constants.$border-radius-md;
+  overflow-x: auto;
+
+  code {
+    background: none;
+    padding: 0;
+  }
+}
+
+// Dark theme overrides
+@media (prefers-color-scheme: dark) {
+  body {
+    color: $foreground-dark;
+    background-color: $background-dark;
+  }
+
+  a {
+    color: $primary-dark;
+
+    &:hover {
+      color: lighten($primary-dark, 10%);
+    }
+
+    &:active {
+      color: lighten($primary-dark, 15%);
+    }
+  }
+
+  ::selection,
+  ::-moz-selection {
+      background-color: color-change($primary-dark, 0.2);
+      color: $primary-dark;
+  }
+
+  code,
+  pre {
+    background-color: $muted-dark;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -5,7 +5,7 @@ import { AppointmentService } from '../../../../services/appointment.service';
 import { ServiceItemService } from '../../../../services/service-item.service';
 import { AuthService } from '../../../../services/auth.service';
 import { UserVehicleService } from '../../../../services/user-vehicle.service';
-import { ServiceItem, UserVehicle, Appointment, AppointmentStatus } from '../../../../models';
+import { ServiceItem, MotorcycleAssignment, Appointment, AppointmentStatus } from '../../../../models';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 
 @Component({
@@ -22,7 +22,7 @@ export class AppointmentBookingComponent implements OnInit {
   private userVehicleService = inject(UserVehicleService);
 
   services = signal<ServiceItem[]>([]);
-  userVehicles = signal<UserVehicle[]>([]);
+  userVehicles = signal<MotorcycleAssignment[]>([]);
   availableTimes = signal<string[]>([]);
   selectedDate = signal<Date | null>(null);
   isLoggedIn = this.authService.currentUser;
@@ -100,7 +100,7 @@ export class AppointmentBookingComponent implements OnInit {
 
       const appointmentData = {
         clientId: this.isLoggedIn()?.id || 'public',
-        vehicleId: vehicleId,
+        plate: formValue.vehiclePlate || vehicleId,
         serviceId: formValue.serviceId,
         scheduledAt: FirestoreTimestamp.fromDate(dateTime),
         estimatedDuration: (selectedService.estimatedHours || 1) * 60,

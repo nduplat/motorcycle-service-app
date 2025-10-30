@@ -1,0 +1,348 @@
+// Code Validation Component - BEM Methodology
+@use '../../styles/variables';
+@use '../../styles/mixins';
+// Component-specific variables
+$code-validation-max-width: 600px;
+$code-validation-container-padding: constants.$spacing-2xl;
+$code-validation-container-padding-mobile: constants.$spacing-lg;
+$code-validation-border-radius: constants.$border-radius-xl;
+$code-validation-shadow: constants.$shadow-md;
+$code-validation-input-font-size: 1.5rem;
+$code-validation-input-font-size-mobile: 1.25rem;
+$code-validation-input-letter-spacing: 0.5rem;
+$code-validation-transition-duration: constants.$transition-fast;
+$code-validation-loading-z-index: 1000;
+$code-validation-result-icon-size: 2rem;
+
+// BEM Block: code-validation
+.code-validation {
+  // Element: container
+  &__container {
+    max-width: $code-validation-max-width;
+    margin: 0 auto;
+    padding: $code-validation-container-padding;
+    background: variables.$card;
+    @include border-radius($code-validation-border-radius);
+    box-shadow: $code-validation-shadow;
+
+    @include respond-to(md) {
+      margin: constants.$spacing-lg;
+      padding: $code-validation-container-padding-mobile;
+    }
+  }
+
+  // Element: header
+  &__header {
+    text-align: center;
+    margin-bottom: constants.$spacing-2xl;
+
+    // Element: title
+    .validation-title {
+      color: variables.$foreground;
+      font-size: $font-size-3xl;
+      font-weight: constants.$font-weight-bold;
+      margin: 0 0 constants.$spacing-sm 0;
+
+      @include respond-to(md) {
+        font-size: $font-size-2xl;
+      }
+    }
+
+    // Element: description
+    .validation-description {
+      color: $muted-foreground;
+      font-size: constants.$font-size-base;
+      margin: 0;
+      line-height: $line-height-relaxed;
+    }
+  }
+
+  // Element: form
+  &__form {
+    margin-bottom: constants.$spacing-2xl;
+  }
+
+  // Element: input-group
+  &__input-group {
+    margin-bottom: constants.$spacing-xl;
+
+    // Element: label
+    .input-label {
+      display: block;
+      font-weight: constants.$font-weight-semibold;
+      color: variables.$foreground;
+      margin-bottom: constants.$spacing-sm;
+      font-size: constants.$font-size-sm;
+    }
+
+    // Element: input
+    .code-input {
+      width: 100%;
+      padding: constants.$spacing-md constants.$spacing-lg;
+      border: constants.$border-width-thick solid variables.$border;
+      @include border-radius(constants.$border-radius-lg);
+      font-size: $code-validation-input-font-size;
+      font-weight: constants.$font-weight-semibold;
+      text-align: center;
+      letter-spacing: $code-validation-input-letter-spacing;
+      @include transition(all $code-validation-transition-duration);
+      background: variables.$card;
+
+      &:focus {
+        outline: none;
+        border-color: variables.$primary;
+        box-shadow: 0 0 0 3px color-change(variables.$primary, 0.1);
+      }
+
+      // Modifier: input--error
+      &--error {
+        border-color: variables.$destructive;
+        box-shadow: 0 0 0 3px rgba(variables.$destructive, 0.1);
+      }
+
+      // Modifier: input--disabled
+      &--disabled {
+        background: variables.$muted;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      &::placeholder {
+        color: $muted-foreground;
+        letter-spacing: normal;
+      }
+
+      @include respond-to(md) {
+        font-size: $code-validation-input-font-size-mobile;
+        padding: constants.$spacing-sm constants.$spacing-md;
+      }
+    }
+
+    // Element: help-text
+    .input-help {
+      display: block;
+      color: $muted-foreground;
+      font-size: constants.$font-size-xs;
+      margin-top: constants.$spacing-xs;
+    }
+  }
+
+  // Element: validate-btn
+  &__validate-btn {
+    width: 100%;
+    padding: constants.$spacing-md constants.$spacing-xl;
+    background: variables.$primary;
+    color: $primary-foreground;
+    border: none;
+    @include border-radius(constants.$border-radius-lg);
+    font-size: constants.$font-size-base;
+    font-weight: constants.$font-weight-semibold;
+    cursor: pointer;
+    @include transition(all $code-validation-transition-duration);
+    @include flex-center;
+    gap: constants.$spacing-sm;
+    min-height: 44px; // Touch-friendly
+
+    &:hover:not(:disabled) {
+      background: darken(variables.$primary, 10%);
+      transform: translateY(-1px);
+      box-shadow: constants.$shadow-lg;
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    // Modifier: validate-btn--disabled
+    &--disabled {
+      background: $muted-foreground;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  // Element: result
+  &__result {
+    margin-top: constants.$spacing-2xl;
+  }
+
+  // Element: result-card
+  &__result-card {
+    padding: constants.$spacing-xl;
+    @include border-radius(constants.$border-radius-lg);
+    border: constants.$border-width-thin solid;
+    @include flex-start;
+    gap: constants.$spacing-lg;
+
+    // Modifier: result-card--success
+    &--success {
+      background: rgba(variables.$accent, 0.05);
+      border-color: variables.$accent;
+    }
+
+    // Modifier: result-card--error
+    &--error {
+      background: rgba(variables.$destructive, 0.05);
+      border-color: variables.$destructive;
+    }
+  }
+
+  // Element: result-icon
+  &__result-icon {
+    flex-shrink: 0;
+    width: $code-validation-result-icon-size;
+    height: $code-validation-result-icon-size;
+    @include border-radius(constants.$border-radius-full);
+    @include flex-center;
+    font-size: constants.$font-size-xl;
+    font-weight: constants.$font-weight-bold;
+
+    .code-validation__result-card--success & {
+      background: variables.$accent;
+      color: white;
+    }
+
+    .code-validation__result-card--error & {
+      background: variables.$destructive;
+      color: white;
+    }
+  }
+
+  // Element: result-content
+  &__result-content {
+    flex: 1;
+
+    h3 {
+      margin: 0 0 constants.$spacing-sm 0;
+      font-size: constants.$font-size-lg;
+      font-weight: constants.$font-weight-semibold;
+
+      .code-validation__result-card--success & {
+        color: darken(variables.$accent, 20%);
+      }
+
+      .code-validation__result-card--error & {
+        color: variables.$destructive;
+      }
+    }
+
+    // Element: error-message
+    .error-message {
+      color: variables.$destructive;
+      margin: 0;
+      line-height: $line-height-relaxed;
+    }
+  }
+
+  // Element: result-details
+  &__result-details {
+    margin-top: constants.$spacing-lg;
+  }
+
+  // Element: detail-item
+  &__detail-item {
+    margin-bottom: constants.$spacing-xs;
+    font-size: constants.$font-size-sm;
+    color: variables.$foreground;
+
+    strong {
+      color: variables.$foreground;
+      font-weight: constants.$font-weight-semibold;
+    }
+  }
+
+  // Element: result-actions
+  &__result-actions {
+    margin-top: constants.$spacing-lg;
+    text-align: center;
+  }
+
+  // Element: retry-btn
+  &__retry-btn {
+    padding: constants.$spacing-sm constants.$spacing-lg;
+    background: $muted-foreground;
+    color: white;
+    border: none;
+    @include border-radius(constants.$border-radius-md);
+    font-size: constants.$font-size-sm;
+    font-weight: constants.$font-weight-medium;
+    cursor: pointer;
+    @include transition(all $code-validation-transition-duration);
+
+    &:hover {
+      background: darken($muted-foreground, 10%);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  // Element: loading-overlay
+  &__loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    @include flex-center;
+    flex-direction: column;
+    z-index: $code-validation-loading-z-index;
+    backdrop-filter: blur(5px);
+
+    // Element: loading-spinner
+    .loading-spinner {
+      width: 3rem;
+      height: 3rem;
+      border: 4px solid variables.$muted;
+      border-top: 4px solid variables.$primary;
+      @include border-radius(constants.$border-radius-full);
+      animation: spin 1s linear infinite;
+      margin-bottom: constants.$spacing-lg;
+    }
+
+    p {
+      color: white;
+      font-size: constants.$font-size-base;
+      font-weight: constants.$font-weight-medium;
+      margin: 0;
+      text-align: center;
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .code-validation {
+    &__container {
+      background: variables.$card;
+    }
+
+    &__result-card {
+      &--success {
+        background: rgba(variables.$accent, 0.1);
+      }
+
+      &--error {
+        background: rgba(variables.$destructive, 0.1);
+      }
+    }
+  }
+}
+
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .code-validation {
+    &__validate-btn,
+    &__retry-btn,
+    &__code-input {
+      transition: none;
+    }
+
+    &__loading-spinner {
+      animation: none;
+    }
+  }
+}

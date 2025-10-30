@@ -1,0 +1,71 @@
+<div class="employee-dashboard">
+  <app-header></app-header>
+
+  <!-- Offline/Sync Status Bar -->
+  <div class="status-bar" [class.offline]="!isOnline()" [class.sync-error]="syncStatus().lastSyncError">
+    <div class="status-indicators">
+      <!-- Connection Status -->
+      <div class="status-item connection-status">
+        <mat-icon [class]="connectionStatusDisplay().color">{{ isOnline() ? 'wifi' : 'wifi_off' }}</mat-icon>
+        <span class="status-text">{{ connectionStatusDisplay().text }}</span>
+      </div>
+
+      <!-- Sync Status -->
+      <div class="status-item sync-status" *ngIf="syncStatus().pendingOperations > 0 || syncStatus().syncInProgress">
+        <mat-icon [class]="syncStatusDisplay().color">
+          {{ syncStatus().syncInProgress ? 'sync' : 'sync_problem' }}
+        </mat-icon>
+        <span class="status-text">{{ syncStatusDisplay().text }}</span>
+        <button mat-icon-button
+                *ngIf="!syncStatus().syncInProgress"
+                (click)="performManualSync()"
+                [disabled]="loadingStates().sync"
+                matTooltip="Sincronizar ahora">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+
+      <!-- Cache Refresh -->
+      <div class="status-item cache-status">
+        <button mat-icon-button
+                (click)="forceRefreshCache()"
+                [disabled]="!isOnline()"
+                matTooltip="Actualizar caché">
+          <mat-icon>cloud_download</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Last Sync Time -->
+    <div class="last-sync-info" *ngIf="syncStatus().lastSyncTime">
+      <mat-icon>schedule</mat-icon>
+      <span>Última sync: {{ syncStatus().lastSyncTime | date:'short' }}</span>
+    </div>
+  </div>
+
+  <div class="dashboard-content">
+    <mat-tab-group [(selectedIndex)]="activeTabIndex" (selectedTabChange)="onTabChange($event.index)">
+      <mat-tab label="Mis Trabajos">
+        <div class="tab-content">
+          <app-work-order-list></app-work-order-list>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Cola">
+        <app-queue-management [isActive]="isQueueTabActive()"></app-queue-management>
+      </mat-tab>
+
+      <mat-tab label="Tiempo">
+        <app-time-tracking [isActive]="isTimeTabActive()"></app-time-tracking>
+      </mat-tab>
+
+      <mat-tab label="Métricas">
+        <app-metrics [isActive]="isMetricsTabActive()"></app-metrics>
+      </mat-tab>
+
+      <mat-tab label="Notificaciones">
+        <app-employee-notifications [userId]="currentUser()?.id || ''" [isActive]="isNotificationsTabActive()"></app-employee-notifications>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

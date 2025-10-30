@@ -1,0 +1,387 @@
+// Capacity Heatmap Component - BEM Methodology
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/_constants' as constants;
+@use 'mixins' as mixins;
+
+// Capacity Heatmap Component Variables
+$capacity-heatmap-legend-padding: constants.$spacing-lg;
+$capacity-heatmap-legend-bg: #f8fafc;
+$capacity-heatmap-legend-border-radius: constants.$border-radius-md;
+$capacity-heatmap-legend-border: 1px solid #e2e8f0;
+$capacity-heatmap-cell-aspect-ratio: 1;
+$capacity-heatmap-cell-border-radius: constants.$border-radius-sm;
+$capacity-heatmap-cell-border: 1px solid rgba(255, 255, 255, 0.2);
+$capacity-heatmap-cell-transition: all 0.2s ease-in-out;
+$capacity-heatmap-cell-hover-transform: scale(1.05);
+$capacity-heatmap-cell-hover-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+$capacity-heatmap-cell-text-color: white;
+$capacity-heatmap-cell-font-size: constants.$font-size-xs;
+$capacity-heatmap-cell-font-weight: constants.$font-weight-semibold;
+$capacity-heatmap-cell-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+$capacity-heatmap-utilization-font-size: constants.$font-size-sm;
+$capacity-heatmap-utilization-font-weight: constants.$font-weight-bold;
+$capacity-heatmap-utilization-margin: constants.$spacing-xs 0;
+$capacity-heatmap-details-font-size: 0.625rem;
+$capacity-heatmap-details-opacity: 0.9;
+$capacity-heatmap-large-height: 80px;
+$capacity-heatmap-large-font-size: constants.$font-size-sm;
+$capacity-heatmap-large-utilization-font-size: constants.$font-size-base;
+$capacity-heatmap-large-details-font-size: constants.$font-size-xs;
+$capacity-heatmap-grid-cols-24: repeat(24, 1fr);
+$capacity-heatmap-grid-gap: constants.$spacing-xs;
+$capacity-heatmap-hour-labels-cols: repeat(8, 1fr);
+$capacity-heatmap-hour-labels-font-size: constants.$font-size-xs;
+$capacity-heatmap-hour-labels-color: #64748b;
+$capacity-heatmap-hour-labels-font-weight: constants.$font-weight-medium;
+$capacity-heatmap-hour-label-padding: constants.$spacing-xs;
+$capacity-heatmap-daily-cols: repeat(7, 1fr);
+$capacity-heatmap-daily-gap: constants.$spacing-lg;
+$capacity-heatmap-day-name-font-size: constants.$font-size-sm;
+$capacity-heatmap-day-name-color: #374151;
+$capacity-heatmap-day-name-margin: constants.$spacing-sm 0;
+$capacity-heatmap-chip-primary-bg: #dbeafe;
+$capacity-heatmap-chip-primary-text: #1e40af;
+$capacity-heatmap-chip-accent-bg: #fef3c7;
+$capacity-heatmap-chip-accent-text: #92400e;
+$capacity-heatmap-chip-warn-bg: #fee2e2;
+$capacity-heatmap-chip-warn-text: #991b1b;
+$capacity-heatmap-tooltip-font-size: constants.$font-size-sm;
+$capacity-heatmap-tooltip-bg: rgba(0, 0, 0, 0.9);
+
+// BEM Block: capacity-heatmap
+.capacity-heatmap {
+  // Element: header
+  &__header {
+    @include mixins.flex-between;
+    margin-bottom: constants.$spacing-2xl;
+  }
+
+  // Element: title
+  &__title {
+    @include heading(2);
+    margin: 0;
+  }
+
+  // Element: controls
+  &__controls {
+    @include mixins.flex-center;
+    gap: constants.$spacing-sm;
+  }
+
+  // Element: form-field
+  &__form-field {
+    width: 160px;
+  }
+
+  // Element: refresh-button
+  &__refresh-button {
+    @include button-base;
+    @include button-variant(variables.$primary, $primary-foreground);
+  }
+
+  // Element: peak-hours-card
+  &__peak-hours-card {
+    @include mixins.card-base;
+  }
+
+  // Element: peak-hours-content
+  &__peak-hours-content {
+    @include mixins.flex-center;
+    gap: constants.$spacing-sm;
+  }
+
+  // Element: peak-hours-note
+  &__peak-hours-note {
+    font-size: constants.$font-size-sm;
+    color: constants.$muted-foreground;
+    margin-top: constants.$spacing-sm;
+  }
+
+  // Element: heatmap-card
+  &__heatmap-card {
+    @include mixins.card-base;
+  }
+
+  // Element: heatmap-container
+  &__heatmap-container {
+    // Element: legend
+    .legend {
+      padding: $capacity-heatmap-legend-padding;
+      background-color: $capacity-heatmap-legend-bg;
+      border-radius: $capacity-heatmap-legend-border-radius;
+      border: $capacity-heatmap-legend-border;
+    }
+
+    // Element: heatmap-cell
+    .heatmap-cell {
+      aspect-ratio: $capacity-heatmap-cell-aspect-ratio;
+      border-radius: $capacity-heatmap-cell-border-radius;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: $capacity-heatmap-cell-transition;
+      border: $capacity-heatmap-cell-border;
+
+      &:hover {
+        transform: $capacity-heatmap-cell-hover-transform;
+        box-shadow: $capacity-heatmap-cell-hover-shadow;
+      }
+
+      .cell-content {
+        text-align: center;
+        color: $capacity-heatmap-cell-text-color;
+        font-size: $capacity-heatmap-cell-font-size;
+        font-weight: $capacity-heatmap-cell-font-weight;
+        text-shadow: $capacity-heatmap-cell-text-shadow;
+
+        .utilization-text {
+          font-size: $capacity-heatmap-utilization-font-size;
+          font-weight: $capacity-heatmap-utilization-font-weight;
+          margin-bottom: $capacity-heatmap-utilization-margin;
+        }
+
+        .details-text {
+          font-size: $capacity-heatmap-details-font-size;
+          opacity: $capacity-heatmap-details-opacity;
+
+          div {
+            line-height: 1;
+          }
+        }
+      }
+
+      &.large {
+        height: $capacity-heatmap-large-height;
+        aspect-ratio: auto;
+
+        .cell-content {
+          font-size: $capacity-heatmap-large-font-size;
+
+          .utilization-text {
+            font-size: $capacity-heatmap-large-utilization-font-size;
+          }
+
+          .details-text {
+            font-size: $capacity-heatmap-large-details-font-size;
+          }
+        }
+      }
+    }
+
+    // Element: hourly-heatmap
+    .hourly-heatmap {
+      .grid-cols-24 {
+        display: grid;
+        grid-template-columns: $capacity-heatmap-grid-cols-24;
+        gap: $capacity-heatmap-grid-gap;
+      }
+
+      .hour-labels {
+        display: grid;
+        grid-template-columns: $capacity-heatmap-hour-labels-cols;
+        gap: $capacity-heatmap-grid-gap;
+        text-align: center;
+        font-size: $capacity-heatmap-hour-labels-font-size;
+        color: $capacity-heatmap-hour-labels-color;
+        font-weight: $capacity-heatmap-hour-labels-font-weight;
+
+        .hour-label {
+          padding: $capacity-heatmap-hour-label-padding;
+        }
+      }
+    }
+
+    // Element: daily-heatmap
+    .daily-heatmap {
+      .grid-cols-7 {
+        display: grid;
+        grid-template-columns: $capacity-heatmap-daily-cols;
+        gap: $capacity-heatmap-daily-gap;
+      }
+
+      .daily-cell {
+        .day-name {
+          font-size: $capacity-heatmap-day-name-font-size;
+          color: $capacity-heatmap-day-name-color;
+          margin-bottom: $capacity-heatmap-day-name-margin;
+          text-align: center;
+          font-weight: constants.$font-weight-medium;
+        }
+      }
+    }
+  }
+
+  // Element: loading
+  &__loading {
+    text-align: center;
+    padding: constants.$spacing-3xl;
+
+    mat-icon {
+      font-size: constants.$font-size-4xl;
+      width: constants.$font-size-4xl;
+      height: constants.$font-size-4xl;
+      margin-bottom: constants.$spacing-lg;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  // Element: summary-grid
+  &__summary-grid {
+    @include mixins.grid-cols(3);
+    gap: constants.$spacing-lg;
+  }
+
+  // Element: summary-card
+  &__summary-card {
+    @include mixins.card-base;
+    text-align: center;
+  }
+
+  // Element: summary-value
+  &__summary-value {
+    font-size: constants.$font-size-3xl;
+    font-weight: constants.$font-weight-bold;
+    margin-bottom: constants.$spacing-sm;
+
+    &--primary {
+      color: variables.$primary;
+    }
+
+    &--green {
+      color: #16a34a;
+    }
+
+    &--purple {
+      color: #8b5cf6;
+    }
+  }
+
+  // Element: summary-label
+  &__summary-label {
+    font-size: constants.$font-size-sm;
+    color: constants.$muted-foreground;
+  }
+}
+
+// Material component customizations (removed ::ng-deep)
+.mat-mdc-chip {
+  &.mat-primary {
+    --mdc-chip-container-color: $capacity-heatmap-chip-primary-bg;
+    --mdc-chip-label-text-color: $capacity-heatmap-chip-primary-text;
+  }
+
+  &.mat-accent {
+    --mdc-chip-container-color: $capacity-heatmap-chip-accent-bg;
+    --mdc-chip-label-text-color: $capacity-heatmap-chip-accent-text;
+  }
+
+  &.mat-warn {
+    --mdc-chip-container-color: $capacity-heatmap-chip-warn-bg;
+    --mdc-chip-label-text-color: $capacity-heatmap-chip-warn-text;
+  }
+}
+
+.mat-mdc-tooltip {
+  font-size: $capacity-heatmap-tooltip-font-size;
+  background-color: $capacity-heatmap-tooltip-bg;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .capacity-heatmap {
+    .heatmap-container {
+      .hourly-heatmap {
+        .grid-cols-24 {
+          grid-template-columns: repeat(12, 1fr);
+          gap: 0.125rem;
+        }
+
+        .heatmap-cell {
+          .cell-content {
+            font-size: 0.625rem;
+
+            .utilization-text {
+              font-size: 0.75rem;
+            }
+
+            .details-text {
+              display: none; // Hide details on mobile
+            }
+          }
+        }
+
+        .hour-labels {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      .daily-heatmap {
+        .grid-cols-7 {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.5rem;
+        }
+      }
+
+      .legend {
+        .flex {
+          flex-direction: column;
+          gap: 0.5rem;
+
+          > div:last-child {
+            flex-wrap: wrap;
+            justify-content: center;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .capacity-heatmap {
+    .heatmap-container {
+      .hourly-heatmap {
+        .grid-cols-24 {
+          grid-template-columns: repeat(6, 1fr);
+        }
+      }
+
+      .daily-heatmap {
+        .grid-cols-7 {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,319 @@
+// Queue Management Component - BEM Methodology
+@use '../../styles/variables';
+@use '../../styles/mixins';
+// Component-specific variables
+$queue-management-padding: constants.$spacing-lg;
+$queue-management-padding-mobile: constants.$spacing-sm;
+$queue-management-max-width: 1200px;
+$queue-management-stats-gap: constants.$spacing-lg;
+$queue-management-stats-min-width: 200px;
+$queue-management-stats-icon-size: 48px;
+$queue-management-stats-value-size: 24px;
+$queue-management-card-border-width: 4px;
+$queue-management-transition-duration: 0.3s;
+$queue-management-empty-padding: 48px constants.$spacing-lg;
+$queue-management-empty-icon-size: 48px;
+
+// BEM Block: queue-management
+.queue-management {
+  padding: $queue-management-padding;
+  max-width: $queue-management-max-width;
+  margin: 0 auto;
+
+  @include respond-to(md) {
+    padding: $queue-management-padding-mobile;
+  }
+
+  // Element: statistics-panel
+  &__statistics-panel {
+    margin-bottom: constants.$spacing-2xl;
+
+    // Element: stats-card
+    .stats-card {
+      mat-card-content {
+        padding: constants.$spacing-lg !important;
+      }
+    }
+
+    // Element: stats-grid
+    .stats-grid {
+      @include grid-cols(auto-fit, minmax($queue-management-stats-min-width, 1fr));
+      gap: $queue-management-stats-gap;
+
+      // Element: stat-item
+      .stat-item {
+        @include flex-center;
+        gap: constants.$spacing-md;
+
+        // Element: stat-icon
+        .stat-icon {
+          width: $queue-management-stats-icon-size;
+          height: $queue-management-stats-icon-size;
+          @include border-radius(constants.$border-radius-full);
+          background: variables.$muted;
+          @include flex-center;
+
+          mat-icon {
+            color: $muted-foreground;
+          }
+        }
+
+        // Element: stat-info
+        .stat-info {
+          // Element: stat-value
+          .stat-value {
+            display: block;
+            font-size: $queue-management-stats-value-size;
+            font-weight: constants.$font-weight-medium;
+            color: variables.$foreground;
+            line-height: 1;
+          }
+
+          // Element: stat-label
+          .stat-label {
+            font-size: constants.$font-size-xs;
+            color: $muted-foreground;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+        }
+      }
+    }
+  }
+
+  // Element: filters-section
+  &__filters-section {
+    margin-bottom: constants.$spacing-lg;
+
+    mat-chip-set {
+      @include flex-start;
+      flex-wrap: wrap;
+      gap: constants.$spacing-sm;
+
+      mat-chip {
+        cursor: pointer;
+
+        // Modifier: selected
+        &.selected {
+          background-color: variables.$primary;
+          color: $primary-foreground;
+        }
+      }
+    }
+  }
+
+  // Element: search-section
+  &__search-section {
+    margin-bottom: constants.$spacing-2xl;
+
+    // Element: search-field
+    .search-field {
+      width: 100%;
+      max-width: 400px;
+    }
+  }
+
+  // Element: entries-grid
+  &__entries-grid {
+    @include grid-cols(auto-fill, minmax(350px, 1fr));
+    gap: constants.$spacing-lg;
+
+    // Element: entry-card
+    .queue-entry-card {
+      @include transition(all $queue-management-transition-duration);
+
+      // Modifier: entry-card--called
+      &.called {
+        border-left: $queue-management-card-border-width solid variables.$primary;
+        background-color: color-change(variables.$primary, 0.05);
+      }
+
+      // Modifier: entry-card--waiting
+      &.waiting {
+        border-left: $queue-management-card-border-width solid variables.$warning;
+      }
+
+      mat-card-header {
+        padding-bottom: constants.$spacing-sm;
+
+        // Element: entry-header-content
+        .entry-header-content {
+          @include flex-between;
+          align-items: center;
+          width: 100%;
+
+          // Element: entry-position
+          .entry-position {
+            @include flex-column;
+            align-items: flex-start;
+
+            // Element: position-badge
+            .position-badge {
+              background: variables.$primary;
+              color: $primary-foreground;
+              padding: constants.$spacing-xs constants.$spacing-sm;
+              @include border-radius(constants.$border-radius-xl);
+              font-size: constants.$font-size-xs;
+              font-weight: constants.$font-weight-medium;
+            }
+
+            // Element: wait-time
+            .wait-time {
+              font-size: 11px;
+              color: $muted-foreground;
+              margin-top: constants.$spacing-xs;
+            }
+          }
+
+          // Element: status-chip
+          .status-chip {
+            font-size: 11px;
+          }
+        }
+      }
+
+      mat-card-content {
+        padding-top: 0;
+
+        // Elements: client-info, service-info, notes-section, technician-info
+        .client-info,
+        .service-info,
+        .notes-section,
+        .technician-info {
+          @include flex-start;
+          gap: constants.$spacing-sm;
+          margin-bottom: constants.$spacing-sm;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            color: $muted-foreground;
+          }
+
+          // Elements: client-details, service-details
+          .client-details,
+          .service-details {
+            flex: 1;
+
+            // Elements: client-name, service-type
+            .client-name,
+            .service-type {
+              display: block;
+              font-weight: constants.$font-weight-medium;
+              color: variables.$foreground;
+            }
+
+            // Elements: client-email, joined-time
+            .client-email,
+            .joined-time {
+              display: block;
+              font-size: constants.$font-size-xs;
+              color: $muted-foreground;
+            }
+          }
+
+          // Elements: notes-text, technician-name
+          .notes-text,
+          .technician-name {
+            font-size: constants.$font-size-sm;
+            color: variables.$foreground;
+          }
+        }
+      }
+
+      mat-card-actions {
+        padding-top: 0;
+
+        // Element: queue-action-buttons
+        .queue-action-buttons {
+          @include flex-start;
+          gap: constants.$spacing-sm;
+          flex-wrap: wrap;
+
+          button {
+            font-size: constants.$font-size-xs;
+
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Element: empty-queue-state
+  &__empty-queue-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: $queue-management-empty-padding;
+    background: variables.$muted;
+    @include border-radius(constants.$border-radius-lg);
+    border: 2px dashed variables.$border;
+
+    // Element: empty-icon
+    .empty-icon {
+      font-size: $queue-management-empty-icon-size;
+      width: $queue-management-empty-icon-size;
+      height: $queue-management-empty-icon-size;
+      color: $muted-foreground;
+      margin-bottom: constants.$spacing-lg;
+    }
+
+    h3 {
+      color: $muted-foreground;
+      margin-bottom: constants.$spacing-sm;
+    }
+
+    p {
+      color: $muted-foreground;
+      margin: 0;
+    }
+  }
+}
+
+// Responsive design
+@include respond-to(md) {
+  .queue-management {
+    &__entries-grid {
+      @include grid-cols(1);
+
+      .queue-entry-card {
+        mat-card-actions .queue-action-buttons {
+          @include flex-column;
+
+          button {
+            width: 100%;
+            margin-bottom: constants.$spacing-xs;
+          }
+        }
+      }
+    }
+
+    &__statistics-panel .stats-grid {
+      @include grid-cols(1);
+
+      .stat-item {
+        justify-content: center;
+        text-align: center;
+      }
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .queue-management {
+    &__empty-queue-state {
+      background: variables.$muted;
+      border-color: variables.$border;
+    }
+
+    &__statistics-panel .stats-grid .stat-item .stat-icon {
+      background: variables.$muted;
+    }
+  }
+}

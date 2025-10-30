@@ -1,26 +1,46 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
-// Initialize Firebase Admin (should be done in index.ts, but ensuring here)
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
+export const onUserCreated = functions.auth.user().onCreate(async (user) => {
+  try {
+    await admin.firestore().collection('users').doc(user.uid).set({
+      email: user.email,
+      role: 'customer', // Por defecto
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      displayName: user.displayName || '',
+      phoneNumber: user.phoneNumber || '',
+      photoURL: user.photoURL || ''
+    }, { merge: true });
 
-/**
- * Trigger when work order status changes
- * Sends simple notification to customer
- */
+    console.log(`User created: ${user.uid}`);
+  } catch (error) {
+    console.error('Error creating user document:', error);
+  }
+});
+
 export const onWorkOrderUpdate = functions.firestore
   .document('workOrders/{orderId}')
-  .onUpdate(async (change: any, context: any) => {
+  .onUpdate(async (change, context) => {
     const before = change.before.data();
     const after = change.after.data();
 
-    // Only notify if status changed
-    if (before.status !== after.status) {
-      const customerId = after.customerId;
+    // GUARD: Only proceed if status actually changed to prevent loops
+    if (before.status === after.status) {
+      console.log(`Work order ${context.params.orderId} status unchanged (${after.status}), skipping notification`);
+      return;
+    }
 
-      if (customerId) {
+    // GUARD: Only notify for meaningful status changes, not internal updates
+    const meaningfulStatuses = ['pending', 'in_progress', 'completed', 'cancelled', 'on_hold'];
+    if (!meaningfulStatuses.includes(after.status)) {
+      console.log(`Work order ${context.params.orderId} status ${after.status} not meaningful for notification, skipping`);
+      return;
+    }
+
+    const customerId = after.customerId;
+
+    if (customerId) {
+      try {
         const userDoc = await admin.firestore().collection('users').doc(customerId).get();
         const fcmToken = userDoc.data()?.fcmToken;
 
@@ -29,54 +49,35 @@ export const onWorkOrderUpdate = functions.firestore
             token: fcmToken,
             notification: {
               title: 'Actualización de Orden',
-              body: `Tu orden cambió a: ${after.status}`
+              body: `Tu orden cambió a: ${getStatusText(after.status)}`
             },
             data: {
               orderId: context.params.orderId,
-              status: after.status
+              status: after.status,
+              type: 'work_order_update'
             }
           });
+
+          console.log(`Notification sent to ${customerId} for order ${context.params.orderId} status change: ${before.status} -> ${after.status}`);
+        } else {
+          console.log(`No FCM token for customer ${customerId}, skipping notification`);
         }
+      } catch (error) {
+        console.error('Error sending notification:', error);
       }
+    } else {
+      console.log(`No customerId for work order ${context.params.orderId}, skipping notification`);
     }
   });
 
+function getStatusText(status: string): string {
+  const statusMap: { [key: string]: string } = {
+    'pending': 'Pendiente',
+    'in_progress': 'En Progreso',
+    'completed': 'Completada',
+    'cancelled': 'Cancelada',
+    'on_hold': 'En Espera'
+  };
+  return statusMap[status] || status;
+}
 
-
-/**
- * Trigger when user is created
- * Sets up basic user profile
- */
-export const onUserCreated = functions.auth.user().onCreate(async (user: any) => {
-  await admin.firestore().collection('users').doc(user.uid).set({
-    email: user.email,
-    role: 'customer', // Default role
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    displayName: user.displayName || '',
-    phoneNumber: user.phoneNumber || ''
-  }, { merge: true });
-});
-
-/**
- * Cleanup old data to control costs
- */
-export const cleanupOldData = functions.pubsub
-  .schedule('0 2 * * 0') // Sundays 2am
-  .timeZone('America/Bogota')
-  .onRun(async (context: any) => {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    // Delete old notifications
-    const oldNotifications = await admin.firestore()
-      .collection('notifications')
-      .where('createdAt', '<', sixMonthsAgo)
-      .limit(500)
-      .get();
-
-    const batch = admin.firestore().batch();
-    oldNotifications.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-
-    console.log(`Deleted ${oldNotifications.size} old notifications`);
-  });

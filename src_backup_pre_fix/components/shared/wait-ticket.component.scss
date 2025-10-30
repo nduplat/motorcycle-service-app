@@ -1,0 +1,626 @@
+// Wait Ticket Component - BEM Methodology
+@use '../../styles/variables';
+@use '../../styles/mixins';
+@use '../../styles/_constants' as constants;
+@use 'mixins' as mixins;
+
+.wait-ticket {
+  max-width: 600px;
+  margin: 0 auto;
+  background: variables.$card;
+  border-radius: constants.$border-radius-lg;
+  box-shadow: constants.$shadow-xl;
+  overflow: hidden;
+  position: relative;
+
+  &__header {
+    background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+    color: white;
+    padding: constants.$spacing-xl;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .wait-ticket__logo-section {
+      .wait-ticket__title {
+        margin: 0;
+        font-size: constants.$font-size-2xl;
+        font-weight: constants.$font-weight-bold;
+      }
+
+      .wait-ticket__subtitle {
+        margin: 4px 0 0 0;
+        opacity: 0.9;
+        font-size: constants.$font-size-sm;
+      }
+    }
+
+    .wait-ticket__status-badge {
+      padding: constants.$spacing-xs constants.$spacing-md;
+      border-radius: 20px;
+      font-size: constants.$font-size-xs;
+      font-weight: constants.$font-weight-semibold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+
+      &--waiting {
+        background: #fbbf24;
+        color: #92400e;
+      }
+
+      &--called {
+        background: #3b82f6;
+        color: white;
+      }
+
+      &--in-service {
+        background: #10b981;
+        color: white;
+      }
+
+      &--served {
+        background: #6b7280;
+        color: white;
+      }
+
+      &--cancelled {
+        background: #ef4444;
+        color: white;
+      }
+
+      &--no-show {
+        background: #f59e0b;
+        color: #92400e;
+      }
+    }
+  }
+
+  &__content {
+    padding: constants.$spacing-xl;
+  }
+
+  &__loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: color-change(variables.$card, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: constants.$z-index-modal;
+
+    .wait-ticket__spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid variables.$border;
+      border-top: 4px solid variables.$primary;
+      border-radius: constants.$border-radius-full;
+      animation: spin 1s linear infinite;
+      margin-bottom: constants.$spacing-md;
+    }
+
+    .wait-ticket__loading-text {
+      color: constants.$muted-foreground;
+      font-size: constants.$font-size-sm;
+    }
+  }
+
+  &__error-message {
+    position: absolute;
+    top: constants.$spacing-md;
+    left: constants.$spacing-md;
+    right: constants.$spacing-md;
+    background: $destructive-background;
+    border: constants.$border-width-thin solid variables.$destructive;
+    border-radius: constants.$border-radius-md;
+    padding: constants.$spacing-sm constants.$spacing-md;
+    display: flex;
+    align-items: center;
+    gap: constants.$spacing-sm;
+    z-index: constants.$z-index-modal;
+
+    i {
+      color: variables.$destructive;
+      font-size: constants.$font-size-base;
+    }
+
+    color: variables.$destructive;
+    font-size: constants.$font-size-sm;
+    font-weight: constants.$font-weight-medium;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.wait-ticket__queue-info {
+  margin-bottom: constants.$spacing-xl;
+
+  .wait-ticket__info-row {
+    display: flex;
+    gap: constants.$spacing-xl;
+    margin-bottom: constants.$spacing-md;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .wait-ticket__info-item {
+    flex: 1;
+
+    .wait-ticket__info-label {
+      display: block;
+      font-size: constants.$font-size-xs;
+      font-weight: constants.$font-weight-semibold;
+      color: constants.$muted-foreground;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .wait-ticket__position-number {
+      font-size: 32px;
+      font-weight: constants.$font-weight-bold;
+      color: variables.$foreground;
+      display: block;
+    }
+
+    .wait-ticket__wait-time {
+      font-size: constants.$font-size-2xl;
+      font-weight: constants.$font-weight-semibold;
+      color: variables.$accent;
+      display: block;
+    }
+
+    .wait-ticket__verification-code {
+      font-size: constants.$font-size-xl;
+      font-weight: constants.$font-weight-bold;
+      color: variables.$destructive;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+      display: block;
+    }
+
+    .wait-ticket__issue-time {
+      font-size: constants.$font-size-lg;
+      font-weight: constants.$font-weight-semibold;
+      color: variables.$foreground;
+      display: block;
+    }
+  }
+}
+
+.wait-ticket__qr-section {
+  text-align: center;
+  margin-bottom: constants.$spacing-xl;
+  padding: constants.$spacing-xl;
+  background: variables.$muted;
+  border-radius: constants.$border-radius-md;
+
+  .wait-ticket__qr-title {
+    margin: 0 0 constants.$spacing-xs 0;
+    color: variables.$foreground;
+    font-size: constants.$font-size-lg;
+  }
+
+  .wait-ticket__qr-description {
+    margin: 0 0 constants.$spacing-md 0;
+    color: constants.$muted-foreground;
+    font-size: constants.$font-size-sm;
+  }
+
+  .wait-ticket__qr-code-container {
+    position: relative;
+    display: inline-block;
+
+    .wait-ticket__qr-code {
+      width: 200px;
+      height: 200px;
+      border: 2px solid variables.$border;
+      border-radius: constants.$border-radius-md;
+    }
+
+    .wait-ticket__download-qr {
+      position: absolute;
+      top: constants.$spacing-xs;
+      right: constants.$spacing-xs;
+      background: variables.$card;
+      border: constants.$border-width-thin solid variables.$border;
+      border-radius: constants.$border-radius-full;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all constants.$transition-fast;
+
+      &:hover {
+        background: variables.$muted;
+        border-color: variables.$border;
+      }
+
+      i {
+        font-size: constants.$font-size-sm;
+        color: constants.$muted-foreground;
+      }
+    }
+  }
+
+  .wait-ticket__qr-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+
+    .wait-ticket__qr-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid variables.$border;
+      border-top: 4px solid variables.$primary;
+      border-radius: constants.$border-radius-full;
+      animation: spin 1s linear infinite;
+      margin-bottom: constants.$spacing-md;
+    }
+
+    .wait-ticket__qr-loading-text {
+      color: constants.$muted-foreground;
+      font-size: constants.$font-size-sm;
+    }
+  }
+}
+
+.wait-ticket__services-summary {
+  margin-bottom: constants.$spacing-xl;
+
+  .wait-ticket__services-title {
+    margin: 0 0 constants.$spacing-md 0;
+    color: variables.$foreground;
+    font-size: constants.$font-size-lg;
+  }
+
+  .wait-ticket__services-list {
+    background: variables.$muted;
+    border-radius: constants.$border-radius-md;
+    padding: constants.$spacing-md;
+    margin-bottom: constants.$spacing-md;
+
+    .wait-ticket__service-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: constants.$spacing-sm 0;
+      border-bottom: constants.$border-width-thin solid variables.$border;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .wait-ticket__service-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .wait-ticket__service-name {
+          font-weight: constants.$font-weight-semibold;
+          color: variables.$foreground;
+        }
+
+        .wait-ticket__service-price {
+          font-size: constants.$font-size-sm;
+          color: variables.$accent;
+          font-weight: constants.$font-weight-medium;
+        }
+      }
+
+      .wait-ticket__service-duration {
+        font-size: constants.$font-size-xs;
+        color: constants.$muted-foreground;
+        background: variables.$border;
+        padding: 4px constants.$spacing-xs;
+        border-radius: 12px;
+      }
+    }
+  }
+
+  .wait-ticket__total-cost {
+    text-align: center;
+    font-size: constants.$font-size-lg;
+    color: variables.$foreground;
+    padding: constants.$spacing-md;
+    background: rgba(variables.$accent, 0.1);
+    border-radius: constants.$border-radius-md;
+    border: constants.$border-width-thin solid rgba(variables.$accent, 0.2);
+  }
+}
+
+.wait-ticket__technician-assignment {
+  margin-bottom: constants.$spacing-xl;
+  padding: constants.$spacing-md;
+  background: #fef3c7;
+  border-radius: constants.$border-radius-md;
+  border: constants.$border-width-thin solid #fde68a;
+
+  .wait-ticket__technician-title {
+    margin: 0 0 constants.$spacing-sm 0;
+    color: #92400e;
+    font-size: constants.$font-size-base;
+  }
+
+  .wait-ticket__technician-info {
+    display: flex;
+    align-items: center;
+    gap: constants.$spacing-xs;
+    margin-bottom: constants.$spacing-xs;
+
+    i {
+      color: #d97706;
+      font-size: constants.$font-size-lg;
+    }
+
+    span {
+      font-weight: constants.$font-weight-semibold;
+      color: #92400e;
+    }
+  }
+
+  .wait-ticket__assignment-note {
+    margin: 0;
+    font-size: constants.$font-size-sm;
+    color: #92400e;
+  }
+}
+
+.wait-ticket__status-updates {
+  margin-bottom: constants.$spacing-xl;
+
+  .wait-ticket__status-title {
+    margin: 0 0 constants.$spacing-md 0;
+    color: variables.$foreground;
+    font-size: constants.$font-size-lg;
+  }
+
+  .wait-ticket__status-timeline {
+    .wait-ticket__timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: constants.$spacing-sm;
+      margin-bottom: constants.$spacing-md;
+      opacity: 0.5;
+
+      &--active {
+        opacity: 1;
+      }
+
+      .wait-ticket__timeline-marker {
+        width: 12px;
+        height: 12px;
+        border-radius: constants.$border-radius-full;
+        background: variables.$border;
+        margin-top: 6px;
+        flex-shrink: 0;
+
+        .wait-ticket__timeline-item--active & {
+          background: variables.$primary;
+          box-shadow: 0 0 0 3px rgba(variables.$primary, 0.2);
+        }
+      }
+
+      .wait-ticket__timeline-content {
+        .wait-ticket__timeline-step-title {
+          margin: 0 0 4px 0;
+          font-size: constants.$font-size-sm;
+          font-weight: constants.$font-weight-semibold;
+          color: variables.$foreground;
+        }
+
+        .wait-ticket__timeline-step-description {
+          margin: 0;
+          font-size: 13px;
+          color: constants.$muted-foreground;
+        }
+      }
+    }
+  }
+}
+
+.wait-ticket__actions {
+  padding: constants.$spacing-xl;
+  background: variables.$muted;
+  border-top: constants.$border-width-thin solid variables.$border;
+
+  .wait-ticket__action-buttons {
+    display: flex;
+    gap: constants.$spacing-sm;
+    margin-bottom: constants.$spacing-md;
+
+    .wait-ticket__action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: constants.$spacing-xs;
+      padding: constants.$spacing-sm constants.$spacing-md;
+      border-radius: constants.$border-radius-md;
+      font-weight: constants.$font-weight-semibold;
+      transition: all constants.$transition-fast;
+
+      i {
+        font-size: constants.$font-size-base;
+      }
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: constants.$shadow-lg;
+      }
+    }
+  }
+
+  .wait-ticket__navigation-buttons {
+    display: flex;
+    gap: constants.$spacing-sm;
+
+    .wait-ticket__btn-outline {
+      flex: 1;
+      padding: constants.$spacing-sm constants.$spacing-xl;
+      border: 2px solid variables.$border;
+      background: variables.$card;
+      color: constants.$muted-foreground;
+      border-radius: constants.$border-radius-md;
+      font-weight: constants.$font-weight-semibold;
+      transition: all constants.$transition-fast;
+
+      &:hover {
+        border-color: variables.$border;
+        color: variables.$foreground;
+      }
+    }
+
+    .wait-ticket__btn-primary {
+      flex: 1;
+      padding: constants.$spacing-sm constants.$spacing-xl;
+      background: variables.$primary;
+      color: $primary-foreground;
+      border: none;
+      border-radius: constants.$border-radius-md;
+      font-weight: constants.$font-weight-semibold;
+      transition: all constants.$transition-fast;
+
+      &:hover {
+        background: color.adjust(variables.$primary, 10%, $lightness: -variables.$primary, 10);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(variables.$primary, 0.3);
+      }
+    }
+  }
+}
+
+.wait-ticket__footer {
+  text-align: center;
+  padding: constants.$spacing-md constants.$spacing-xl;
+  background: #1a365d;
+  color: white;
+
+  .wait-ticket__footer-text {
+    margin: 0 0 4px 0;
+    font-size: constants.$font-size-sm;
+    font-weight: constants.$font-weight-semibold;
+  }
+
+  .wait-ticket__footer-note {
+    font-size: constants.$font-size-xs;
+    opacity: 0.8;
+  }
+}
+
+// Responsive design
+@include mixins.respond-to(md) {
+  .wait-ticket {
+    margin: constants.$spacing-md;
+    border-radius: constants.$border-radius-sm;
+
+    &__header {
+      padding: constants.$spacing-md;
+      flex-direction: column;
+      gap: constants.$spacing-sm;
+      text-align: center;
+    }
+
+    &__content {
+      padding: constants.$spacing-md;
+    }
+
+    &__queue-info {
+      .wait-ticket__info-row {
+        flex-direction: column;
+        gap: constants.$spacing-sm;
+      }
+    }
+
+    &__qr-code {
+      width: 150px;
+      height: 150px;
+    }
+
+    &__actions {
+      padding: constants.$spacing-md;
+
+      &__action-buttons,
+      &__navigation-buttons {
+        flex-direction: column;
+      }
+    }
+
+    &__footer {
+      padding: constants.$spacing-sm constants.$spacing-md;
+
+      .wait-ticket__footer-text {
+        font-size: 13px;
+      }
+
+      .wait-ticket__footer-note {
+        font-size: 11px;
+      }
+    }
+  }
+}
+
+// Button styles - using existing button classes
+.wait-ticket__btn-secondary {
+  @include button-variant(variables.$secondary, $secondary-foreground);
+}
+
+.wait-ticket__btn-icon {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: constants.$spacing-xs;
+  border-radius: constants.$border-radius-sm;
+  transition: background-color constants.$transition-fast;
+
+  &:hover {
+    background: variables.$muted;
+  }
+}
+
+// Icon placeholders (replace with actual icon font or SVG)
+.icon-wallet::before { content: "💳"; }
+.icon-share::before { content: "📤"; }
+.icon-download::before { content: "⬇️"; }
+.icon-technician::before { content: "👨‍🔧"; }
+.icon-error::before { content: "⚠️"; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

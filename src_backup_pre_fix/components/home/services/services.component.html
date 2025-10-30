@@ -1,0 +1,21 @@
+<div class="bg-background py-16">
+  <div class="container mx-auto px-4">
+     <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold">Nuestros Servicios</h2>
+      <p class="text-muted-foreground max-w-2xl mx-auto mt-2">Ofrecemos un rango completo de servicios de mantenimiento y reparación para asegurar que tu moto esté siempre en las mejores condiciones.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        @for(service of services(); track service.id) {
+            <div class="bg-card rounded-xl border border-border p-6 text-center shadow-sm hover:shadow-lg transition-shadow">
+                <h3 class="text-lg font-semibold">{{ service.title }}</h3>
+                <p class="text-muted-foreground text-sm mt-2 h-16">{{ service.description }}</p>
+                <a [routerLink]="appointmentLink()" class="mt-4 inline-block px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80 text-sm">
+                    Agendar Cita
+                </a>
+            </div>
+        } @empty {
+             <p class="col-span-full text-center text-muted-foreground">No hay servicios disponibles en este momento.</p>
+        }
+    </div>
+  </div>
+</div>

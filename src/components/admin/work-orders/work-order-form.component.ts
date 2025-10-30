@@ -6,7 +6,8 @@ import { ProductService } from '../../../services/product.service';
 import { UserService } from '../../../services/user.service';
 import { MotorcycleService } from '../../../services/motorcycle.service';
 import { ServiceItemService } from '../../../services/service-item.service';
-import { WorkOrder, User, Product, WorkOrderStatus, Vehicle, ServiceItem, WorkOrderPart } from '../../../models';
+import { MotorcycleAssignmentService } from '../../../services/motorcycle-assignment.service';
+import { WorkOrder, User, Product, WorkOrderStatus, MotorcycleAssignment, ServiceItem, WorkOrderPart } from '../../../models';
 import { LoaderComponent } from '../../shared/loader/loader.component';
 import { switchMap, of, tap, debounceTime, distinctUntilChanged } from 'rxjs';
 
@@ -24,6 +25,7 @@ export class WorkOrderFormComponent implements OnInit {
   private workOrderService = inject(WorkOrderService);
   private userService = inject(UserService);
   private motorcycleService = inject(MotorcycleService);
+  private motorcycleAssignmentService = inject(MotorcycleAssignmentService);
   private productService = inject(ProductService);
   private serviceItemService = inject(ServiceItemService);
 
@@ -33,8 +35,9 @@ export class WorkOrderFormComponent implements OnInit {
   
   workOrder = signal<WorkOrder | undefined>(undefined);
   selectedCustomer = signal<User | undefined>(undefined);
-  selectedVehicle = signal<Vehicle | undefined>(undefined);
-  customerVehicles = signal<Vehicle[]>([]);
+  selectedVehicle = signal<MotorcycleAssignment| undefined>(undefined);
+  customerVehicles = signal<MotorcycleAssignment[]>([]);
+  customerMotorcycleAssignments = signal<MotorcycleAssignment[]>([]);
 
   // All data signals
   private allUsers = this.userService.getUsers();
@@ -121,7 +124,7 @@ export class WorkOrderFormComponent implements OnInit {
           this.workOrderForm.patchValue({
             status: wo.status,
             clientId: wo.clientId,
-            vehicleId: wo.vehicleId,
+            vehicleId: wo.plate,
           });
 
           this.items.clear();
@@ -138,11 +141,11 @@ export class WorkOrderFormComponent implements OnInit {
           const customerProfile = this.allUsers().find(u => u.id === wo.clientId);
           this.selectedCustomer.set(customerProfile);
 
-          // Fetch customer vehicles and set selected vehicle
-          this.motorcycleService.getVehiclesForUser(wo.clientId).subscribe(vehicles => {
-            this.customerVehicles.set(vehicles);
-            const vehicle = vehicles.find(v => v.id === wo.vehicleId);
-            this.selectedVehicle.set(vehicle);
+          // Fetch customer motorcycle assignments and set selected vehicle
+          this.motorcycleAssignmentService.getUserAssignments(wo.clientId).then(assignments => {
+            this.customerMotorcycleAssignments.set(assignments);
+            const assignment = assignments.find(a => a.plate === wo.plate);
+            this.selectedVehicle.set(assignment);
           });
         }
         this.isLoading.set(false);
@@ -186,11 +189,11 @@ export class WorkOrderFormComponent implements OnInit {
     this.customerSearchResults.set([]);
     this.customerSearchCtrl.setValue('');
 
-    this.motorcycleService.getVehiclesForUser(user.id).subscribe(vehicles => {
-        this.customerVehicles.set(vehicles);
-        if (vehicles.length > 0) {
-          this.workOrderForm.get('vehicleId')?.setValue(vehicles[0].id);
-          this.selectedVehicle.set(vehicles[0]);
+    this.motorcycleAssignmentService.getUserAssignments(user.id).then(assignments => {
+        this.customerMotorcycleAssignments.set(assignments);
+        if (assignments.length > 0) {
+          this.workOrderForm.get('vehicleId')?.setValue(assignments[0].plate);
+          this.selectedVehicle.set(assignments[0]);
         }
     });
   }
@@ -203,8 +206,8 @@ export class WorkOrderFormComponent implements OnInit {
       const vehicle = this.selectedVehicle();
       this.productSearchResults.set(this.allProducts().filter(p =>
         p.name.toLowerCase().includes(term.toLowerCase()) &&
-        (!vehicle || p.compatibleBrands.length === 0 || p.compatibleBrands.includes(vehicle.brand)) &&
-        (!vehicle || p.compatibleModels.length === 0 || p.compatibleModels.includes(vehicle.model))
+        (!vehicle || p.compatibleBrands.length === 0 || p.compatibleBrands.includes(vehicle.brand || '')) &&
+        (!vehicle || p.compatibleModels.length === 0 || p.compatibleModels.includes(vehicle.model || ''))
       ));
   }
 
@@ -216,8 +219,8 @@ export class WorkOrderFormComponent implements OnInit {
       const vehicle = this.selectedVehicle();
       this.serviceSearchResults.set(this.allServices().filter(s =>
         s.title.toLowerCase().includes(term.toLowerCase()) &&
-        (!vehicle || s.compatibleBrands.length === 0 || s.compatibleBrands.includes(vehicle.brand)) &&
-        (!vehicle || s.compatibleModels.length === 0 || s.compatibleModels.includes(vehicle.model))
+        (!vehicle || s.compatibleBrands.length === 0 || s.compatibleBrands.includes(vehicle.brand || '')) &&
+        (!vehicle || s.compatibleModels.length === 0 || s.compatibleModels.includes(vehicle.model || ''))
       ));
   }
 
@@ -273,7 +276,7 @@ export class WorkOrderFormComponent implements OnInit {
 
     const workOrderData: Omit<WorkOrder, 'id' | 'createdAt'> = {
       clientId: formValue.clientId || '',
-      vehicleId: formValue.vehicleId || '',
+      plate: formValue.vehicleId || '',
       status: formValue.status || 'open',
       services: formItems.filter(i => i.type === 'service').map(i => i.id),
       products: formItems.filter(i => i.type === 'product').map(i => i.id),

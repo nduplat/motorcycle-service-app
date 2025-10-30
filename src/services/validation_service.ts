@@ -5,7 +5,7 @@
  */
 
 import { Injectable } from '@angular/core';
-import { Motorcycle, Service, ServiceItem, UserVehicle } from '../models'; // Adjust path as needed
+import { Motorcycle, Service, ServiceItem, MotorcycleAssignment } from '../models'; // Adjust path as needed
 
 export interface ValidationResult {
   isValid: boolean;
@@ -467,7 +467,7 @@ export class ValidationService {
    * Validates user vehicle data
    * @param vehicle - UserVehicle object
    */
-  validateUserVehicle(vehicle: Partial<UserVehicle>): ValidationResult {
+  validateUserVehicle(vehicle: Partial<MotorcycleAssignment>): ValidationResult {
     const errors: string[] = [];
 
     // Validate required fields
@@ -475,7 +475,7 @@ export class ValidationService {
       errors.push('Usuario requerido');
     }
 
-    if (!vehicle.baseVehicleId) {
+    if (!vehicle.motorcycleId) {
       errors.push('Modelo de motocicleta requerido');
     }
 

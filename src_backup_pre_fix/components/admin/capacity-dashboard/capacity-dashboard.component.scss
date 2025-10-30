@@ -1,0 +1,329 @@
+// Capacity Dashboard Component - BEM Methodology
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/_constants' as constants;
+@use 'mixins' as mixins;
+
+// Capacity Dashboard Component Variables
+$capacity-dashboard-border-width: constants.$border-width-thick;
+$capacity-dashboard-alert-color: #f59e0b;
+$capacity-dashboard-transition-duration: 0.2s;
+$capacity-dashboard-hover-transform: translateX(2px);
+$capacity-dashboard-font-size-details: constants.$font-size-sm;
+$capacity-dashboard-padding-details: constants.$spacing-xs 0;
+$capacity-dashboard-chart-height: 300px;
+$capacity-dashboard-chart-height-mobile: 250px;
+$capacity-dashboard-progress-height: 8px;
+$capacity-dashboard-progress-radius: 4px;
+$capacity-dashboard-color-green: #22c55e;
+$capacity-dashboard-color-orange: #f59e0b;
+$capacity-dashboard-color-red: #ef4444;
+
+// BEM Block: capacity-dashboard
+.capacity-dashboard {
+  // Element: alerts-card
+  &__alerts-card {
+    @include mixins.card-base;
+    border-left: $capacity-dashboard-border-width solid $capacity-dashboard-alert-color;
+  }
+
+  // Element: alert-item
+  &__alert-item {
+    @include mixins.transition(all, $capacity-dashboard-transition-duration);
+
+    &:hover {
+      @include transform($capacity-dashboard-hover-transform);
+    }
+  }
+
+  // Element: capacity-overview
+  &__capacity-overview {
+    .capacity-meter {
+      .capacity-details {
+        font-size: $capacity-dashboard-font-size-details;
+
+        > div {
+          padding: $capacity-dashboard-padding-details;
+        }
+      }
+    }
+  }
+
+  // Element: chart-container
+  &__chart-container {
+    position: relative;
+    width: 100%;
+    height: $capacity-dashboard-chart-height;
+  }
+
+  // Element: grid
+  &__grid {
+    @include mixins.grid-cols(3);
+    gap: constants.$spacing-lg;
+  }
+
+  // Element: header
+  &__header {
+    @include mixins.flex-between;
+    margin-bottom: constants.$spacing-2xl;
+  }
+
+  // Element: title
+  &__title {
+    @include heading(1);
+    margin: 0;
+  }
+
+  // Element: refresh-button
+  &__refresh-button {
+    @include button-base;
+    @include button-variant(variables.$primary, $primary-foreground);
+  }
+
+  // Element: alerts
+  &__alerts {
+    @include mixins.flex-column;
+    gap: constants.$spacing-sm;
+  }
+
+  // Element: alert
+  &__alert {
+    @include mixins.card-base;
+    padding: constants.$spacing-lg;
+    border-left: $capacity-dashboard-border-width solid;
+
+    &--critical {
+      border-left-color: $capacity-dashboard-color-red;
+      background-color: rgba($capacity-dashboard-color-red, 0.1);
+    }
+
+    &--warning {
+      border-left-color: $capacity-dashboard-color-orange;
+      background-color: rgba($capacity-dashboard-color-orange, 0.1);
+    }
+
+    &--info {
+      border-left-color: variables.$primary;
+      background-color: color-change(variables.$primary, 0.1);
+    }
+  }
+
+  // Element: alert-content
+  &__alert-content {
+    @include mixins.flex-between;
+    align-items: flex-start;
+  }
+
+  // Element: alert-icon
+  &__alert-icon {
+    margin-right: constants.$spacing-sm;
+  }
+
+  // Element: alert-message
+  &__alert-message {
+    font-weight: constants.$font-weight-medium;
+    flex: 1;
+  }
+
+  // Element: alert-action
+  &__alert-action {
+    margin-left: constants.$spacing-md;
+  }
+
+  // Element: capacity-card
+  &__capacity-card {
+    @include mixins.card-base;
+  }
+
+  // Element: capacity-meter
+  &__capacity-meter {
+    text-align: center;
+    margin-bottom: constants.$spacing-lg;
+  }
+
+  // Element: utilization-rate
+  &__utilization-rate {
+    font-size: constants.$font-size-4xl;
+    font-weight: constants.$font-weight-bold;
+    margin-bottom: constants.$spacing-sm;
+
+    &--critical {
+      color: $capacity-dashboard-color-red;
+    }
+
+    &--warning {
+      color: $capacity-dashboard-color-orange;
+    }
+
+    &--normal {
+      color: variables.$primary;
+    }
+  }
+
+  // Element: utilization-status
+  &__utilization-status {
+    font-size: constants.$font-size-sm;
+    color: constants.$muted-foreground;
+  }
+
+  // Element: capacity-details
+  &__capacity-details {
+    margin-top: constants.$spacing-lg;
+
+    > div {
+      @include mixins.flex-between;
+      padding: $capacity-dashboard-padding-details;
+
+      &:last-child {
+        color: $capacity-dashboard-color-green;
+        font-weight: constants.$font-weight-medium;
+      }
+    }
+  }
+
+  // Element: metric-card
+  &__metric-card {
+    @include mixins.card-base;
+    text-align: center;
+  }
+
+  // Element: metric-value
+  &__metric-value {
+    font-size: constants.$font-size-3xl;
+    font-weight: constants.$font-weight-bold;
+    margin-bottom: constants.$spacing-sm;
+
+    &--primary {
+      color: variables.$primary;
+    }
+
+    &--green {
+      color: $capacity-dashboard-color-green;
+    }
+
+    &--purple {
+      color: #8b5cf6;
+    }
+  }
+
+  // Element: metric-label
+  &__metric-label {
+    font-size: constants.$font-size-sm;
+    color: constants.$muted-foreground;
+  }
+
+  // Element: chart-card
+  &__chart-card {
+    @include mixins.card-base;
+  }
+
+  // Element: loading
+  &__loading {
+    text-align: center;
+    padding: constants.$spacing-3xl;
+
+    .mat-icon {
+      font-size: constants.$font-size-4xl;
+      width: constants.$font-size-4xl;
+      height: constants.$font-size-4xl;
+      margin-bottom: constants.$spacing-lg;
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+// Material progress bar customization (removed ::ng-deep)
+.mat-mdc-progress-bar {
+  height: $capacity-dashboard-progress-height;
+  border-radius: $capacity-dashboard-progress-radius;
+}
+
+.mat-mdc-progress-bar-primary .mdc-linear-progress__primary-bar {
+  background-color: $capacity-dashboard-color-green;
+}
+
+.mat-mdc-progress-bar-accent .mdc-linear-progress__primary-bar {
+  background-color: $capacity-dashboard-color-orange;
+}
+
+.mat-mdc-progress-bar-warn .mdc-linear-progress__primary-bar {
+  background-color: $capacity-dashboard-color-red;
+}
+
+// Responsive design
+@include mixins.respond-to(md) {
+  .capacity-dashboard {
+    &__grid {
+      @include mixins.grid-cols(1);
+      gap: constants.$spacing-md;
+    }
+
+    &__chart-container {
+      height: $capacity-dashboard-chart-height-mobile;
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .capacity-dashboard {
+    &__alerts-card {
+      border-left-color: lighten($capacity-dashboard-alert-color, 10%);
+    }
+
+    &__alert {
+      &--critical {
+        background-color: rgba($capacity-dashboard-color-red, 0.2);
+      }
+
+      &--warning {
+        background-color: rgba($capacity-dashboard-color-orange, 0.2);
+      }
+
+      &--info {
+        background-color: rgba($primary-dark, 0.2);
+      }
+    }
+
+    &__utilization-status {
+      color: constants.$muted-foreground-dark;
+    }
+
+    &__capacity-details > div:last-child {
+      color: lighten($capacity-dashboard-color-green, 10%);
+    }
+
+    &__metric-label {
+      color: constants.$muted-foreground-dark;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

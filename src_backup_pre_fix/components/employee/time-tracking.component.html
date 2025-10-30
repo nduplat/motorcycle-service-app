@@ -1,0 +1,128 @@
+<div class="time-tracking-section">
+  <!-- Current Timer Section -->
+  <div class="current-timer-section">
+    <div class="current-timer" *ngIf="currentTimeEntry()">
+      <div class="timer-header">
+        <h3>Temporizador Activo</h3>
+        <div class="timer-status" [class.paused]="isTimerPaused()">
+          <mat-icon *ngIf="isTimerPaused()">pause_circle</mat-icon>
+          <mat-icon *ngIf="!isTimerPaused()">play_circle</mat-icon>
+          <span>{{ isTimerPaused() ? 'Pausado' : 'Activo' }}</span>
+        </div>
+      </div>
+      <div class="timer-display">
+        <span class="elapsed-time">{{ elapsedTime() | date:'HH:mm:ss' }}</span>
+        <span class="work-order-ref">{{ getTimeEntryWorkOrderName(currentTimeEntry()!) }}</span>
+      </div>
+      <div class="timer-controls">
+        <button mat-raised-button
+                color="accent"
+                *ngIf="!isTimerPaused()"
+                (click)="pauseWorkTimer()">
+          <mat-icon>pause</mat-icon>
+          Pausar
+        </button>
+        <button mat-raised-button
+                color="primary"
+                *ngIf="isTimerPaused()"
+                (click)="resumeWorkTimer()">
+          <mat-icon>play_arrow</mat-icon>
+          Reanudar
+        </button>
+        <button mat-raised-button
+                color="warn"
+                (click)="stopWorkTimer()">
+          <mat-icon>stop</mat-icon>
+          Detener
+        </button>
+      </div>
+    </div>
+
+    <div class="no-active-timer" *ngIf="!currentTimeEntry()">
+      <mat-icon>timer_off</mat-icon>
+      <h3>Sin temporizador activo</h3>
+      <p>Inicia un trabajo para comenzar a rastrear el tiempo.</p>
+    </div>
+  </div>
+
+  <!-- Today's Summary -->
+  <div class="time-summary-section">
+    <mat-card class="summary-card">
+      <mat-card-header>
+        <mat-card-title>Resumen del Día</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-icon">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="summary-info">
+              <span class="summary-value">{{ formatDuration(todaysTotalTime()) }}</span>
+              <span class="summary-label">Tiempo Total</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-icon">
+              <mat-icon>timer</mat-icon>
+            </div>
+            <div class="summary-info">
+              <span class="summary-value">{{ todaysTimeEntries().length }}</span>
+              <span class="summary-label">Entradas</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-icon">
+              <mat-icon>trending_up</mat-icon>
+            </div>
+            <div class="summary-info">
+              <span class="summary-value">{{ todaysEfficiency() }}%</span>
+              <span class="summary-label">Eficiencia</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Time History -->
+  <div class="time-history-section">
+    <h3>Historial de Hoy</h3>
+    <div class="time-entries-list" *ngIf="todaysTimeEntries().length > 0; else noEntries">
+      <mat-card *ngFor="let entry of todaysTimeEntries(); trackBy: trackByTimeEntryId"
+                class="time-entry-card"
+                [class.active]="entry.id === currentTimeEntry()?.id"
+                [class.paused]="isTimerPaused() && entry.id === currentTimeEntry()?.id">
+
+        <mat-card-content>
+          <div class="entry-header">
+            <div class="work-order-info">
+              <span class="work-order-name">{{ getTimeEntryWorkOrderName(entry) }}</span>
+              <span class="entry-time">{{ entry.startAt.toDate() | date:'HH:mm' }} - {{ entry.endAt ? (entry.endAt.toDate() | date:'HH:mm') : 'En curso' }}</span>
+            </div>
+            <div class="entry-duration">
+              <span class="duration">{{ formatDuration(getTimeEntryDuration(entry)) }}</span>
+            </div>
+          </div>
+
+          <div class="entry-details" *ngIf="entry.pauses && entry.pauses.length > 0">
+            <div class="pause-info">
+              <mat-icon>pause</mat-icon>
+              <span>{{ entry.pauses.length }} pausa(s)</span>
+            </div>
+          </div>
+
+          <div class="progress-bar" *ngIf="entry.id === currentTimeEntry()?.id">
+            <mat-progress-bar mode="indeterminate" class="active-indicator"></mat-progress-bar>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+    <ng-template #noEntries>
+      <div class="no-entries">
+        <mat-icon>history</mat-icon>
+        <p>No hay entradas de tiempo para hoy.</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

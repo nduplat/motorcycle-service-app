@@ -1,0 +1,267 @@
+<div class="queue-join">
+  <!-- Header -->
+  <header class="queue-join__header">
+    <h1 class="queue-join__title">Blue Dragon Motors - Unión a Cola</h1>
+    <div class="queue-join__step-indicator">
+      <span class="queue-join__step" [class.queue-join__step--active]="currentStep() === 'qr-scan'">1</span>
+      <span class="queue-join__step" [class.queue-join__step--active]="currentStep() === 'user-detection'">2</span>
+      <span class="queue-join__step" [class.queue-join__step--active]="currentStep() === 'motorcycle-registration'">3</span>
+      <span class="queue-join__step" [class.queue-join__step--active]="currentStep() === 'phone-verification'">4</span>
+      <span class="queue-join__step" [class.queue-join__step--active]="currentStep() === 'service-selection'">5</span>
+      <span class="queue-join__step" [class.queue-join__step--active]="currentStep() === 'confirmation'">6</span>
+      <span class="queue-join__step" [class.queue-join__step--active]="currentStep() === 'success'">7</span>
+    </div>
+  </header>
+
+  <!-- Error Display -->
+  @if (error()) {
+    <div class="queue-join__error-message">
+      <i class="icon-error"></i>
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Loading Overlay -->
+  @if (isLoading()) {
+    <div class="queue-join__loading-overlay">
+      <div class="queue-join__spinner"></div>
+      <p class="queue-join__loading-text">Procesando...</p>
+    </div>
+  }
+
+  <!-- PASO 1: QR Scan Detection -->
+  @if (currentStep() === 'qr-scan') {
+    <div class="queue-join__step-content queue-join__qr-scan">
+      <h2 class="queue-join__step-title">Escanea el Código QR</h2>
+      <p class="queue-join__step-description">Por favor, escanea el código QR en la entrada principal para continuar.</p>
+
+      <div class="queue-join__qr-placeholder">
+        <div class="queue-join__qr-camera">
+          <i class="queue-join__qr-icon icon-qr"></i>
+          <p class="queue-join__qr-text">Cámara activada</p>
+        </div>
+        <button class="btn btn-primary" (click)="onQRScanned('https://bluedragonmotors.com/queue?source=qr-main-entrance')">
+          Simular Escaneo QR
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- PASO 2: User Detection -->
+  @if (currentStep() === 'user-detection') {
+    <div class="queue-join__step-content">
+      <h2 class="queue-join__step-title">Verificación de Usuario</h2>
+      <p class="queue-join__step-description">Verificando si ya tienes una cuenta con nosotros...</p>
+
+      @if (currentUser()) {
+        <div class="queue-join__user-info">
+          <h3 class="queue-join__user-title">Bienvenido de vuelta, {{ currentUser()!.name }}!</h3>
+          <p class="queue-join__step-description">Usuario existente detectado. Continuando con el registro de motocicleta.</p>
+          <button class="btn btn-primary" (click)="currentStep.set('motorcycle-registration')">
+            Continuar
+          </button>
+        </div>
+      } @else {
+        <div class="queue-join__new-user-info">
+          <h3 class="queue-join__user-title">Usuario Nuevo Detectado</h3>
+          <p class="queue-join__step-description">Para continuar, necesitas iniciar sesión o registrarte.</p>
+          <button class="btn btn-primary" (click)="detectUser()">
+            Iniciar Sesión / Registrarse
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- PASO 3: Motorcycle Registration/Selection -->
+  @if (currentStep() === 'motorcycle-registration') {
+    <div class="queue-join__step-content">
+      <h2 class="queue-join__step-title">Registro de Motocicleta</h2>
+      <p class="queue-join__step-description">Ingresa la placa de tu motocicleta para continuar.</p>
+
+      <form [formGroup]="motorcycleForm" (ngSubmit)="onPlateSubmit()" class="queue-join__motorcycle-form">
+        <div class="queue-join__form-group">
+          <label class="queue-join__form-label" for="plate">Placa de la Motocicleta</label>
+          <input
+            class="queue-join__form-input"
+            id="plate"
+            type="text"
+            formControlName="plate"
+            placeholder="ABC123"
+            maxlength="6"
+            (input)="onPlateInput($event)"
+            [class.queue-join__form-input--error]="motorcycleForm.get('plate')?.invalid && motorcycleForm.get('plate')?.touched"
+          />
+          @if (motorcycleForm.get('plate')?.invalid && motorcycleForm.get('plate')?.touched) {
+            <span class="queue-join__error-text">Placa inválida (formato: ABC123)</span>
+          }
+        </div>
+
+        <div class="queue-join__form-group">
+          <label class="queue-join__form-label" for="mileage">Kilometraje Actual</label>
+          <input
+            class="queue-join__form-input"
+            id="mileage"
+            type="number"
+            formControlName="mileageKm"
+            placeholder="0"
+            min="0"
+            [class.queue-join__form-input--error]="motorcycleForm.get('mileageKm')?.invalid && motorcycleForm.get('mileageKm')?.touched"
+          />
+          @if (motorcycleForm.get('mileageKm')?.invalid && motorcycleForm.get('mileageKm')?.touched) {
+            <span class="queue-join__error-text">Kilometraje requerido</span>
+          }
+        </div>
+
+        <div class="queue-join__form-actions">
+          <button type="button" class="btn btn-secondary" (click)="goBack()">Atrás</button>
+          <button type="submit" class="btn btn-primary" [disabled]="motorcycleForm.invalid">
+            Continuar
+          </button>
+        </div>
+      </form>
+
+      @if (selectedMotorcycle()) {
+        <div class="queue-join__motorcycle-info">
+          <h3 class="queue-join__motorcycle-title">Motocicleta Encontrada</h3>
+          <p class="queue-join__motorcycle-detail"><strong>Placa:</strong> {{ selectedMotorcycle()!.plate }}</p>
+          <p class="queue-join__motorcycle-detail"><strong>Marca:</strong> {{ selectedMotorcycle()!.brand }}</p>
+          <p class="queue-join__motorcycle-detail"><strong>Modelo:</strong> {{ selectedMotorcycle()!.model }}</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- PASO 4: Phone Verification -->
+  @if (currentStep() === 'phone-verification') {
+    <div class="queue-join__step-content">
+      <h2 class="queue-join__step-title">Verificación de Teléfono</h2>
+      <p class="queue-join__step-description">Ingresa tu número de teléfono para recibir un código de verificación.</p>
+
+      <app-phone-verification
+        flow="registration"
+        [initialPhoneNumber]="currentUser()?.phone || ''"
+        (verificationSuccess)="onPhoneVerificationSuccess($event)"
+        (verificationFailure)="onPhoneVerificationFailure($event)">
+      </app-phone-verification>
+
+      <div class="queue-join__form-actions">
+        <button type="button" class="btn btn-secondary" (click)="goBack()">Atrás</button>
+      </div>
+    </div>
+  }
+
+  <!-- PASO 5: Service Selection -->
+  @if (currentStep() === 'service-selection') {
+    <div class="queue-join__step-content">
+      <h2 class="queue-join__step-title">Selección de Servicios</h2>
+      <p class="queue-join__step-description">Selecciona los servicios que necesitas para tu motocicleta.</p>
+
+      <app-service-selection
+        [availableServices]="availableServices"
+        [selectedServiceIds]="selectedServiceIds()"
+        [motorcycleBrand]="selectedMotorcycle()?.brand"
+        [motorcycleModel]="selectedMotorcycle()?.model"
+        (serviceSelectionChange)="onServiceSelectionChange($event)">
+      </app-service-selection>
+
+      <form [formGroup]="serviceForm" class="queue-join__service-form">
+        <div class="queue-join__form-group">
+          <label class="queue-join__form-label" for="notes">Notas Adicionales (Opcional)</label>
+          <textarea
+            class="queue-join__form-textarea"
+            id="notes"
+            formControlName="notes"
+            placeholder="Describe cualquier problema específico o requerimiento especial..."
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="queue-join__form-actions">
+          <button type="button" class="btn btn-secondary" (click)="goBack()">Atrás</button>
+          <button type="button" class="btn btn-primary" (click)="proceedToConfirmation()">
+            Continuar
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- PASO 6: Confirmation -->
+  @if (currentStep() === 'confirmation') {
+    <div class="queue-join__step-content">
+      <h2 class="queue-join__step-title">Confirmación</h2>
+      <p class="queue-join__step-description">Revisa los detalles antes de unirte a la cola.</p>
+
+      <div class="queue-join__confirmation-summary">
+        <div class="queue-join__summary-item">
+          <strong>Cliente:</strong> {{ currentUser()!.name }}
+        </div>
+        <div class="queue-join__summary-item">
+          <strong>Motocicleta:</strong> {{ selectedMotorcycle()!.plate }} - {{ selectedMotorcycle()!.brand }} {{ selectedMotorcycle()!.model }}
+        </div>
+        <div class="queue-join__summary-item">
+          <strong>Servicios Seleccionados:</strong>
+          <ul>
+            @for (service of selectedServicesData()?.selectedServices || []; track service.id) {
+              <li>{{ service.title }} - ${{ service.price?.toLocaleString() || 'Por cotización' }}</li>
+            }
+          </ul>
+        </div>
+        @if (selectedServicesData()?.totalCost && selectedServicesData()!.totalCost > 0) {
+          <div class="queue-join__summary-item">
+            <strong>Costo Total Estimado:</strong> ${{ selectedServicesData()!.totalCost.toLocaleString() }}
+          </div>
+        }
+        @if (selectedServicesData()?.estimatedTime && selectedServicesData()!.estimatedTime > 0) {
+          <div class="queue-join__summary-item">
+            <strong>Tiempo Estimado:</strong> {{ Math.floor(selectedServicesData()!.estimatedTime) }}h {{ Math.round((selectedServicesData()!.estimatedTime % 1) * 60) }}min
+          </div>
+        }
+        @if (serviceForm.value.notes) {
+          <div class="queue-join__summary-item">
+            <strong>Notas:</strong> {{ serviceForm.value.notes }}
+          </div>
+        }
+      </div>
+
+      <div class="queue-join__form-actions">
+        <button type="button" class="btn btn-secondary" (click)="goBack()">Atrás</button>
+        <button type="button" class="btn btn-primary" (click)="joinQueue()">
+          Unirme a la Cola
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- PASO 7: Success Screen with Wait Ticket -->
+  @if (currentStep() === 'success' && waitTicketData()) {
+    <div class="queue-join__step-content queue-join__success-step">
+      <h2 class="queue-join__success-title">¡Registro Exitoso!</h2>
+      <p class="queue-join__step-description">Te has unido exitosamente a la cola de Blue Dragon Motors.</p>
+
+      <!-- Wait Ticket Component -->
+      <app-wait-ticket
+        [ticketData]="waitTicketData()!"
+        [showNavigation]="true"
+        (backToTracking)="onBackToTracking()">
+      </app-wait-ticket>
+
+      <div class="queue-join__form-actions">
+        <button type="button" class="btn btn-secondary" (click)="startOver()">
+          Registrar Otro Servicio
+        </button>
+        <button type="button" class="btn btn-primary" (click)="router.navigate(['/'])">
+          Ir al Inicio
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Navigation -->
+  @if (currentStep() !== 'qr-scan' && currentStep() !== 'success') {
+    <div class="queue-join__navigation">
+      <button type="button" class="btn btn-secondary" (click)="goBack()">Atrás</button>
+    </div>
+  }
+</div>

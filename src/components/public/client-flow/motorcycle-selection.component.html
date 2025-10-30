@@ -12,8 +12,68 @@
 
   <!-- Main Content -->
   <div class="motorcycle-selection-section">
+
+    <!-- PRIMERO: Mostrar motos del usuario -->
+    @if(userMotorcycles().length > 0) {
+      <div class="user-motorcycles-section">
+        <h3>Tus Motocicletas Registradas</h3>
+        <div class="motorcycles-results-grid">
+          @for (moto of userMotorcycles(); track moto.id) {
+            <button
+              type="button"
+              class="motorcycle-result-item"
+              [class.selected]="selectedMotorcycle()?.id === moto.motorcycleId"
+              (click)="selectUserMotorcycle(moto)">
+              <div class="motorcycle-result-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+              </div>
+              <div class="motorcycle-result-info">
+                <h4 class="motorcycle-result-name">{{ moto.brand }} {{ moto.model }}</h4>
+                <p class="motorcycle-result-year">Placa {{ moto.plate }}</p>
+                <span class="registered-badge">
+                  <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                  </svg>
+                  Tuya
+                </span>
+              </div>
+              @if (selectedMotorcycle()?.id === moto.motorcycleId) {
+                <div class="selection-indicator">
+                  <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                  </svg>
+                </div>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- DESPUÉS: Opción de agregar nueva -->
+    <div class="add-new-motorcycle-section">
+      <button
+        type="button"
+        class="btn-add-new-motorcycle"
+        (click)="onAddNewMotorcycle()">
+        <svg class="add-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        Añadir nueva moto
+      </button>
+    </div>
+
+    <!-- Modal con NuevaMotocicletaComponent -->
+    <app-nueva-motocicleta
+      *ngIf="showNewMotorcycleModal()"
+      (motorcycleAssigned)="onMotorcycleAdded($event)"
+      (cancel)="showNewMotorcycleModal.set(false)">
+    </app-nueva-motocicleta>
+
     <!-- Motorcycle Search Interface -->
-    @if (showMotorcycleSearch()) {
+    @if (showMotorcycleSearch() && !showNewMotorcycleModal()) {
       <div class="motorcycle-search-container">
         <!-- Search Input -->
         <div class="search-input-section">
@@ -47,7 +107,7 @@
             <div class="no-results-message">
               <svg class="no-results-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
+            </svg>
               <p class="no-results-text">No se encontraron motocicletas</p>
             </div>
           } @else {
@@ -86,19 +146,6 @@
               }
             </div>
           }
-        </div>
-
-        <!-- Add New Motorcycle Button -->
-        <div class="add-new-motorcycle-section">
-          <button
-            type="button"
-            class="btn-add-new-motorcycle"
-            (click)="onAddNewMotorcycle()">
-            <svg class="add-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-            Agregar motocicleta nueva
-          </button>
         </div>
       </div>
     }
@@ -192,26 +239,6 @@
             }
           </div>
         </form>
-      </div>
-    }
-
-    <!-- New Motorcycle Form (Future Implementation) -->
-    @if (showNewMotorcycleForm()) {
-      <div class="new-motorcycle-card">
-        <div class="card-header">
-          <h3>Agregar nueva motocicleta</h3>
-          <p>Esta función estará disponible próximamente</p>
-        </div>
-        <div class="coming-soon">
-          <span class="coming-soon-icon">🚧</span>
-          <p>Funcionalidad en desarrollo</p>
-          <button
-            type="button"
-            class="btn-secondary"
-            (click)="onCancelNewMotorcycle()">
-            Cancelar
-          </button>
-        </div>
       </div>
     }
 

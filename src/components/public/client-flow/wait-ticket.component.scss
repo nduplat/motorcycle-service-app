@@ -1,71 +1,97 @@
-/* Wait Ticket Component Styles */
+// Wait Ticket Component - BEM Methodology
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/functions';
+@use '../../../styles/_constants' as constants;
 
-.wait-ticket-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-  color: white;
+// Component-specific variables
+$wait-ticket-max-width: 600px;
+$wait-ticket-padding: constants.$spacing-2xl constants.$spacing-lg;
+$wait-ticket-padding-mobile: constants.$spacing-lg constants.$spacing-sm;
+$wait-ticket-min-height: 100vh;
+$wait-ticket-background: linear-gradient(135deg, variables.$accent 0%, color.adjust(variables.$accent, 10%, oklch) 100%);
+$wait-ticket-card-padding: constants.$spacing-2xl;
+$wait-ticket-card-padding-mobile: constants.$spacing-xl;
+$wait-ticket-card-margin-bottom: constants.$spacing-xl;
+$wait-ticket-card-border-radius: constants.$border-radius-2xl;
+$wait-ticket-success-icon-size: 4rem;
+$wait-ticket-success-title-size: 2rem;
+$wait-ticket-success-title-size-mobile: 1.6rem;
+$wait-ticket-success-subtitle-size: 1.1rem;
+$wait-ticket-success-subtitle-size-mobile: 1rem;
 
-  @media (max-width: 768px) {
-    padding: 1rem 0.5rem;
-    min-height: auto;
-  }
-}
-
-/* Success Header */
-.success-header {
-  text-align: center;
-  margin-bottom: 2rem;
-
-  .success-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    display: block;
-    animation: bounce 0.6s ease;
-  }
-
-  .success-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0 0 0.5rem 0;
+// BEM Block: wait-ticket
+.wait-ticket {
+  // Element: container
+  &__container {
+    max-width: $wait-ticket-max-width;
+    margin: 0 auto;
+    padding: $wait-ticket-padding;
+    min-height: $wait-ticket-min-height;
+    @include mixins.flex-column;
+    background: $wait-ticket-background;
     color: white;
 
-    @media (max-width: 768px) {
-      font-size: 1.6rem;
+    @include mixins.respond-to(md) {
+      padding: $wait-ticket-padding-mobile;
+      min-height: auto;
     }
   }
 
-  .success-subtitle {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin: 0;
-    line-height: 1.4;
+  // Element: success-header
+  &__success-header {
+    text-align: center;
+    margin-bottom: constants.$spacing-2xl;
 
-    @media (max-width: 768px) {
-      font-size: 1rem;
+    // Element: success-icon
+    .success-icon {
+      font-size: $wait-ticket-success-icon-size;
+      margin-bottom: constants.$spacing-lg;
+      display: block;
+      animation: bounce 0.6s ease;
+    }
+
+    // Element: success-title
+    .success-title {
+      font-size: $wait-ticket-success-title-size;
+      font-weight: constants.$font-weight-bold;
+      margin: 0 0 constants.$spacing-sm 0;
+      color: white;
+
+      @include mixins.respond-to(md) {
+        font-size: $wait-ticket-success-title-size-mobile;
+      }
+    }
+
+    // Element: success-subtitle
+    .success-subtitle {
+      font-size: $wait-ticket-success-subtitle-size;
+      opacity: 0.9;
+      margin: 0;
+      line-height: constants.$line-height-relaxed;
+
+      @include mixins.respond-to(md) {
+        font-size: $wait-ticket-success-subtitle-size-mobile;
+      }
     }
   }
-}
 
-/* Cards */
-.ticket-card,
-.summary-card,
-.instructions-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  color: #333;
+  // Element: ticket-card, summary-card, instructions-card
+  &__ticket-card,
+  &__summary-card,
+  &__instructions-card {
+    background: color.change(variables.$primary, $alpha: 0.95);
+    @include mixins.border-radius($wait-ticket-card-border-radius);
+    padding: $wait-ticket-card-padding;
+    margin-bottom: $wait-ticket-card-margin-bottom;
+    box-shadow: constants.$shadow-lg;
+    backdrop-filter: blur(10px);
+    color: variables.$foreground;
 
-  @media (max-width: 768px) {
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+    @include mixins.respond-to(md) {
+      padding: $wait-ticket-card-padding-mobile;
+      margin-bottom: constants.$spacing-lg;
+    }
   }
 }
 
@@ -90,7 +116,7 @@
         font-weight: 700;
         margin: 0;
         color: #27ae60;
-        text-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+        text-shadow: 0 2px 4px color.change(#27ae60, 0.3);
       }
 
       .ticket-label {
@@ -113,7 +139,7 @@
       color: white;
       font-weight: 600;
       font-size: 1rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 12px rgba-legacy(0, 0, 0, 0.2);
     }
   }
 
@@ -165,7 +191,7 @@
         width: 150px;
         height: 150px;
         border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 12px color.change(#000000, 0.2);
         background: white;
         padding: 0.5rem;
 
@@ -580,3 +606,36 @@
     font-size: 0.9rem;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

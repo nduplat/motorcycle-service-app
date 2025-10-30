@@ -1,0 +1,376 @@
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-3xl font-bold">Gestión de Notificaciones</h1>
+    <div class="text-sm text-muted-foreground">
+      {{ recentNotifications().length }} notificaciones totales
+    </div>
+  </div>
+
+  <!-- Main Tabs -->
+  <div class="border-b border-border">
+    <nav class="flex -mb-px space-x-8" aria-label="Main Tabs">
+      <button (click)="selectTab('history')"
+              [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'history' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border')">
+        Historial
+      </button>
+      <button (click)="selectTab('send')"
+              [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'send' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border')">
+        Enviar Notificaciones
+      </button>
+      <button (click)="selectTab('templates')"
+              [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'templates' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border')">
+        Plantillas
+      </button>
+    </nav>
+  </div>
+
+  <!-- History Tab -->
+  @if (activeTab() === 'history') {
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Historial de Notificaciones</h2>
+        <div class="text-sm text-muted-foreground">
+          Mostrando las últimas 100 notificaciones
+        </div>
+      </div>
+
+      @for(notification of recentNotifications(); track notification.id) {
+        <div [class]="'bg-card p-4 rounded-lg border flex items-start gap-4 ' + (notification.read ? 'border-border' : 'border-primary/50 shadow-sm')">
+          <div class="flex-shrink-0 mt-1">
+            <div [class]="'h-3 w-3 rounded-full ' + (notification.read ? 'bg-muted-foreground' : 'bg-primary animate-pulse')"></div>
+          </div>
+          <div class="flex-grow">
+            <div class="flex items-start justify-between">
+              <div class="flex-grow">
+                <h3 class="font-semibold text-foreground">{{ notification.title }}</h3>
+                <p class="text-sm text-muted-foreground mt-1">{{ notification.message }}</p>
+                <div class="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                  <span>{{ formatDate(notification.createdAt) }}</span>
+                  <span class="px-2 py-1 bg-muted rounded text-xs">
+                    {{ getNotificationGenerationInfo(notification) }}
+                  </span>
+                  @if (notification.userId) {
+                    <span>Usuario específico</span>
+                  } @else {
+                    <span>Broadcast</span>
+                  }
+                </div>
+              </div>
+              @if (!notification.read) {
+                <button (click)="markAsRead(notification.id)"
+                        class="text-xs font-medium text-primary hover:underline px-2 py-1 rounded hover:bg-primary/10">
+                  Marcar como leído
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="text-center py-12">
+          <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-muted to-muted/50 rounded-full flex items-center justify-center">
+            <svg class="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4.868 12.683A17.925 17.925 0 0112 21c7.962 0 12-1.21 12-2.683m-12 2.683a17.925 17.925 0 01-7.132-8.317M12 21c4.411 0 8-4.03 8-9s-3.589-9-8-9-8 4.03-8 9a9.06 9.06 0 001.832 5.683L4 21l4.868-8.317z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-muted-foreground mb-2">No hay notificaciones</h3>
+          <p class="text-sm text-muted-foreground">Las notificaciones aparecerán aquí cuando se envíen.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Send Tab -->
+  @if (activeTab() === 'send') {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- Manual Notification -->
+      <div class="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <h2 class="text-xl font-semibold mb-4">Notificación Manual</h2>
+        <p class="text-sm text-muted-foreground mb-4">Envía una notificación personalizada.</p>
+
+        <app-loader *ngIf="isSubmitting()" text="Enviando notificación..."></app-loader>
+
+        <form [formGroup]="manualNotificationForm" (ngSubmit)="onSendManualNotification()" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-foreground">Título *</label>
+            <input formControlName="title" placeholder="Ej: Promoción Especial"
+                   class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            @if (manualNotificationForm.get('title')?.invalid && manualNotificationForm.get('title')?.touched) {
+              <p class="mt-1 text-sm text-destructive">El título es requerido</p>
+            }
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-foreground">Mensaje *</label>
+            <textarea formControlName="message" rows="3" placeholder="Describe la notificación..."
+                      class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
+            @if (manualNotificationForm.get('message')?.invalid && manualNotificationForm.get('message')?.touched) {
+              <p class="mt-1 text-sm text-destructive">El mensaje es requerido</p>
+            }
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-foreground">Destinatarios *</label>
+            <select formControlName="targetType"
+                    class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              <option value="broadcast">Todos los usuarios</option>
+              <option value="specific_user">Usuario específico</option>
+              <option value="user_group">Grupo de usuarios</option>
+            </select>
+          </div>
+
+          @if (manualNotificationForm.value.targetType === 'specific_user') {
+            <div>
+              <label class="block text-sm font-medium text-foreground">Seleccionar Usuario</label>
+              <select formControlName="targetUserId"
+                      class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Seleccionar usuario...</option>
+                @for(user of users(); track user.id) {
+                  <option [value]="user.id">{{ user.displayName }} - {{ user.email }} ({{ user.role }})</option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (manualNotificationForm.value.targetType === 'user_group') {
+            <div>
+              <label class="block text-sm font-medium text-foreground">Seleccionar Rol</label>
+              <select formControlName="targetRole"
+                      class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Seleccionar rol...</option>
+                <option value="customer">Clientes</option>
+                <option value="technician">Técnicos</option>
+                <option value="front_desk">Recepcionistas</option>
+                <option value="manager">Gerentes</option>
+                <option value="admin">Administradores</option>
+              </select>
+            </div>
+          }
+
+          <div class="pt-2">
+            <button type="submit" [disabled]="isSubmitting() || manualNotificationForm.invalid"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">
+              @if(isSubmitting()){
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
+              } @else {
+                <span>Enviar Notificación Manual</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Template Notification -->
+      <div class="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <h2 class="text-xl font-semibold mb-4">Notificación con Plantilla</h2>
+        <p class="text-sm text-muted-foreground mb-4">Usa una plantilla predefinida para enviar notificaciones consistentes.</p>
+
+        <app-loader *ngIf="isSubmitting()" text="Enviando notificación..."></app-loader>
+
+        <form [formGroup]="templateNotificationForm" (ngSubmit)="onSendTemplateNotification()" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-foreground">Seleccionar Plantilla *</label>
+            <select formControlName="templateId" (change)="onTemplateChange($event)"
+                    class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              <option value="">Seleccionar plantilla...</option>
+              @for(template of availableTemplates(); track template.id) {
+                <option [value]="template.id">{{ template.name }} ({{ template.type }})</option>
+              }
+            </select>
+          </div>
+
+          @if (selectedTemplate()) {
+            <div class="bg-muted/50 p-3 rounded-md">
+              <h4 class="font-medium text-sm mb-2">Vista previa:</h4>
+              <p class="text-sm font-medium">{{ selectedTemplate()!.titleTemplate }}</p>
+              <p class="text-sm text-muted-foreground">{{ selectedTemplate()!.messageTemplate }}</p>
+            </div>
+
+            <!-- Parameter Fields -->
+            @if (selectedTemplate()!.parameters.length > 0) {
+              <div class="space-y-3">
+                <h4 class="font-medium text-sm">Parámetros:</h4>
+                @for(param of selectedTemplate()!.parameters; track param.key) {
+                  <div>
+                    <label class="block text-sm font-medium text-foreground">
+                      {{ param.label }}
+                      @if (param.required) {
+                        <span class="text-destructive">*</span>
+                      }
+                    </label>
+
+                    @if (param.type === 'text' || param.type === 'date') {
+                      <input [formControl]="getParameterControl(param.key)"
+                             [type]="param.type"
+                             [placeholder]="param.placeholder"
+                             class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    }
+
+                    @if (param.type === 'number') {
+                      <input [formControl]="getParameterControl(param.key)"
+                             type="number"
+                             [placeholder]="param.placeholder"
+                             class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    }
+
+                    @if (param.type === 'select' && param.options) {
+                      <select [formControl]="getParameterControl(param.key)"
+                              class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <option value="">Seleccionar...</option>
+                        @for(option of param.options; track option.value) {
+                          <option [value]="option.value">{{ option.label }}</option>
+                        }
+                      </select>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <div>
+            <label class="block text-sm font-medium text-foreground">Destinatarios *</label>
+            <select formControlName="targetType"
+                    class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              <option value="broadcast">Todos los usuarios</option>
+              <option value="specific_user">Usuario específico</option>
+              <option value="user_group">Grupo de usuarios</option>
+            </select>
+          </div>
+
+          @if (templateNotificationForm.value.targetType === 'specific_user') {
+            <div>
+              <label class="block text-sm font-medium text-foreground">Seleccionar Usuario</label>
+              <select formControlName="targetUserId"
+                      class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Seleccionar usuario...</option>
+                @for(user of users(); track user.id) {
+                  <option [value]="user.id">{{ user.displayName }} - {{ user.email }} ({{ user.role }})</option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (templateNotificationForm.value.targetType === 'user_group') {
+            <div>
+              <label class="block text-sm font-medium text-foreground">Seleccionar Rol</label>
+              <select formControlName="targetRole"
+                      class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Seleccionar rol...</option>
+                <option value="customer">Clientes</option>
+                <option value="technician">Técnicos</option>
+                <option value="front_desk">Recepcionistas</option>
+                <option value="manager">Gerentes</option>
+                <option value="admin">Administradores</option>
+              </select>
+            </div>
+          }
+
+          <div class="pt-2">
+            <button type="submit" [disabled]="isSubmitting() || templateNotificationForm.invalid || parameterForm().invalid || !selectedTemplate()"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">
+              @if(isSubmitting()){
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
+              } @else {
+                <span>Enviar Notificación con Plantilla</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Templates Tab -->
+  @if (activeTab() === 'templates') {
+    <div class="space-y-6">
+
+      <!-- Existing Templates -->
+      <div>
+        <h2 class="text-xl font-semibold mb-4">Plantillas Disponibles</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          @for(template of availableTemplates(); track template.id) {
+            <div class="bg-card p-4 rounded-lg border border-border">
+              <div class="flex items-start justify-between mb-2">
+                <h3 class="font-semibold text-sm">{{ template.name }}</h3>
+                <span class="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                  {{ template.type }}
+                </span>
+              </div>
+              <p class="text-sm text-muted-foreground mb-3">{{ template.description }}</p>
+              <div class="text-xs text-muted-foreground">
+                {{ template.parameters.length }} parámetros
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button class="text-xs px-2 py-1 bg-muted hover:bg-muted/80 rounded text-muted-foreground">
+                  Editar
+                </button>
+                <button (click)="onDeleteTemplate(template.id)"
+                        class="text-xs px-2 py-1 bg-destructive/10 hover:bg-destructive/20 rounded text-destructive">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Create New Template -->
+      <div class="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <h2 class="text-xl font-semibold mb-4">Crear Nueva Plantilla</h2>
+        <p class="text-sm text-muted-foreground mb-4">Define una plantilla reutilizable para notificaciones consistentes.</p>
+
+        <form [formGroup]="templateForm" (ngSubmit)="onCreateTemplate()" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-foreground">Nombre *</label>
+              <input formControlName="name" placeholder="Ej: Promoción de Servicio"
+                     class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-foreground">Tipo *</label>
+              <select formControlName="type"
+                      class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="marketing">Marketing</option>
+                <option value="appointment">Citas</option>
+                <option value="maintenance">Mantenimiento</option>
+                <option value="system">Sistema</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-foreground">Descripción</label>
+            <input formControlName="description" placeholder="Breve descripción de la plantilla"
+                   class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-foreground">Título de la Notificación *</label>
+            <input formControlName="titleTemplate" placeholder="Ej: ¡{{discountPercent}}% de descuento en {{serviceName}}!"
+                   class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            <p class="mt-1 text-xs text-muted-foreground">Usa {{parametro}} para variables dinámicas</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-foreground">Mensaje de la Notificación *</label>
+            <textarea formControlName="messageTemplate" rows="3"
+                      placeholder="Ej: Aprovecha nuestro descuento especial del {{discountPercent}}% en {{serviceName}}. ¡No te lo pierdas!"
+                      class="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
+          </div>
+
+          <div class="pt-2">
+            <button type="submit" [disabled]="templateForm.invalid"
+                    class="flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">
+              <span>Crear Plantilla</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

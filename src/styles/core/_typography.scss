@@ -1,0 +1,126 @@
+// Typography System - Consistent heading sizes and text styles
+
+// Base typography
+html {
+  font-size: 16px;
+  line-height: constants.$line-height-normal;
+}
+
+body {
+  font-family: constants.$font-family-base;
+  font-size: constants.$font-size-base;
+  font-weight: constants.$font-weight-normal;
+  line-height: constants.$line-height-normal;
+  color: variables.$foreground;
+  background-color: variables.$background;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Heading styles using the heading mixin
+h1 {
+  @include heading(1);
+  margin-bottom: constants.$spacing-lg;
+}
+
+h2 {
+  @include heading(2);
+  margin-bottom: constants.$spacing-md;
+}
+
+h3 {
+  @include heading(3);
+  margin-bottom: constants.$spacing-md;
+}
+
+h4 {
+  @include heading(4);
+  margin-bottom: constants.$spacing-sm;
+}
+
+h5 {
+  @include heading(5);
+  margin-bottom: constants.$spacing-sm;
+}
+
+h6 {
+  @include heading(6);
+  margin-bottom: constants.$spacing-sm;
+}
+
+// Text styles
+p {
+  margin-bottom: constants.$spacing-md;
+  line-height: constants.$line-height-relaxed;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Text utility classes
+.text-xs { font-size: constants.$font-size-xs; }
+.text-sm { font-size: constants.$font-size-sm; }
+.text-base { font-size: constants.$font-size-base; }
+.text-lg { font-size: constants.$font-size-lg; }
+.text-xl { font-size: constants.$font-size-xl; }
+.text-2xl { font-size: constants.$font-size-2xl; }
+.text-3xl { font-size: constants.$font-size-3xl; }
+.text-4xl { font-size: constants.$font-size-4xl; }
+.text-5xl { font-size: constants.$font-size-5xl; }
+
+.font-light { font-weight: constants.$font-weight-light; }
+.font-normal { font-weight: constants.$font-weight-normal; }
+.font-medium { font-weight: constants.$font-weight-medium; }
+.font-semibold { font-weight: constants.$font-weight-semibold; }
+.font-bold { font-weight: constants.$font-weight-bold; }
+
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
+
+.leading-tight { line-height: constants.$line-height-tight; }
+.leading-snug { line-height: constants.$line-height-snug; }
+.leading-normal { line-height: constants.$line-height-normal; }
+.leading-relaxed { line-height: constants.$line-height-relaxed; }
+.leading-loose { line-height: constants.$line-height-loose; }
+
+// Color utility classes
+.text-foreground { color: variables.$foreground; }
+.text-muted { color: variables.$muted-foreground; }
+.text-primary { color: variables.$primary; }
+.text-secondary { color: variables.$secondary; }
+.text-accent { color: variables.$accent; }
+.text-destructive { color: variables.$destructive; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

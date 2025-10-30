@@ -1,162 +1,249 @@
+// Admin Layout Component - BEM Methodology
+@use 'src/styles/global-imports' as g;
+
+// Component-specific variables
+$admin-layout-background: g.$muted;
+$admin-layout-hamburger-size: 20px;
+$admin-layout-hamburger-line-height: 2px;
+$admin-layout-hamburger-spacing: 3px;
+$admin-layout-menu-width: 280px;
+$admin-layout-menu-width-mobile: 250px;
+$admin-layout-transition-duration: 0.3s;
+$admin-layout-nav-padding: g.$spacing-lg;
+$admin-layout-nav-icon-size: 1.25rem;
+$admin-layout-nav-icon-width: 1.5rem;
+$admin-layout-nav-font-size: g.$font-size-sm;
+$admin-layout-main-padding: g.$spacing-2xl;
+$admin-layout-main-padding-mobile: g.$spacing-lg;
+$admin-layout-z-index-menu: 1000;
+$admin-layout-z-index-hamburger: 1001;
+
+// BEM Block: admin-layout
 .admin-layout {
   position: relative;
   min-height: 100vh;
-  background-color: #f8fafc;
-}
+  background-color: $admin-layout-background;
 
-.hamburger-btn {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1001;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  cursor: pointer;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  // Element: hamburger-btn
+  &__hamburger-btn {
+    position: fixed;
+    top: g.$spacing-lg;
+    right: g.$spacing-lg;
+    z-index: $admin-layout-z-index-hamburger;
+    @include g.card-base;
+    padding: g.$spacing-sm;
+    cursor: pointer;
+    @include g.transition(all g.$transition-fast);
 
-  &:hover {
-    background-color: #f1f5f9;
+    &:hover {
+      background-color: rgba(g.$card-foreground, 0.05);
+    }
+
+    // Modifier: hamburger-btn--active
+    &--active {
+      background-color: g.color.change(g.$primary, $alpha: 0.1);
+    }
+
+    @include g.respond-to(md) {
+      top: g.$spacing-sm;
+      right: g.$spacing-sm;
+    }
   }
 
-  &.active {
-    background-color: #eff6ff;
+  // Element: hamburger-line
+  &__hamburger-line {
+    display: block;
+    width: $admin-layout-hamburger-size;
+    height: $admin-layout-hamburger-line-height;
+    background-color: g.$muted-foreground;
+    margin: $admin-layout-hamburger-spacing 0;
+    @include g.transition(all $admin-layout-transition-duration);
+
+    .admin-layout__hamburger-btn--active &:nth-child(1) {
+      transform: rotate(-45deg) translate(-5px, 6px);
+    }
+
+    .admin-layout__hamburger-btn--active &:nth-child(2) {
+      opacity: 0;
+    }
+
+    .admin-layout__hamburger-btn--active &:nth-child(3) {
+      transform: rotate(45deg) translate(-5px, -6px);
+    }
+  }
+
+  // Element: collapsible-menu
+  &__collapsible-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: $admin-layout-menu-width;
+    height: 100vh;
+    background: g.$card;
+    border-right: g.$border-width-thin solid g.$border;
+    box-shadow: g.$shadow-lg;
+    transform: translateX(-100%);
+    @include g.transition(transform $admin-layout-transition-duration);
+    z-index: $admin-layout-z-index-menu;
+    padding: 4rem 0 g.$spacing-lg 0;
+
+    // Modifier: collapsible-menu--open
+    &--open {
+      transform: translateX(0);
+    }
+
+    @include g.respond-to(md) {
+      width: $admin-layout-menu-width-mobile;
+    }
+  }
+
+  // Element: nav-list
+  &__nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  // Element: nav-item
+  &__nav-item {
+    margin-bottom: g.$spacing-xs;
+  }
+
+  // Element: nav-link
+  &__nav-link {
+    @include g.flex-center;
+    padding: g.$spacing-md $admin-layout-nav-padding;
+    color: g.$muted-foreground;
+    text-decoration: none;
+    @include g.transition(all g.$transition-fast);
+    border-left: 3px solid transparent;
+    width: 100%;
+    border: none;
+    background: none;
+    cursor: pointer;
+
+    &:hover {
+      background-color: g.color.change(g.$card-foreground, $alpha: 0.05);
+      color: g.$foreground;
+      border-left-color: g.$primary;
+    }
+
+    // Modifier: nav-link--active
+    &--active {
+      background-color: g.color.change(g.$primary, $alpha: 0.1);
+      color: g.$primary;
+      border-left-color: g.$primary;
+      font-weight: g.$font-weight-medium;
+    }
+
+    // Modifier: nav-link--employee
+    &--employee {
+      color: g.$accent;
+
+      &:hover {
+        background-color: g.color.change(g.$primary, $alpha: 0.1);
+        color: g.color.adjust(g.$accent, $lightness: -10%);
+        border-left-color: g.$accent;
+      }
+    }
+
+    // Modifier: nav-link--logout
+    &--logout {
+      color: g.$destructive;
+
+      &:hover {
+        background-color: g.color.change(g.$primary, $alpha: 0.1);
+        color: g.color.adjust(g.$destructive, $lightness: -10%);
+        border-left-color: g.$destructive;
+      }
+    }
+  }
+
+  // Element: nav-icon
+  &__nav-icon {
+    font-size: $admin-layout-nav-icon-size;
+    margin-right: g.$spacing-md;
+    width: $admin-layout-nav-icon-width;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  // Element: nav-label
+  &__nav-label {
+    font-size: $admin-layout-nav-font-size;
+    font-weight: g.$font-weight-medium;
+  }
+
+  // Element: main-content
+  &__main-content {
+    padding: $admin-layout-main-padding;
+    margin-left: 0;
+    overflow-y: auto;
+
+    @include g.respond-to(md) {
+      padding: $admin-layout-main-padding-mobile;
+    }
+  }
+
+  // Element: menu-overlay
+  &__menu-overlay {
+    display: none;
   }
 }
 
-.hamburger-line {
-  display: block;
-  width: 20px;
-  height: 2px;
-  background-color: #64748b;
-  margin: 3px 0;
-  transition: all 0.3s ease;
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .admin-layout {
+    background-color: g.$background;
 
-  .hamburger-btn.active &:nth-child(1) {
-    transform: rotate(-45deg) translate(-5px, 6px);
-  }
+background-color: rgba(g.$card-foreground, 0.1);
+      }
 
-  .hamburger-btn.active &:nth-child(2) {
-    opacity: 0;
-  }
+      &--active {
+        background-color: g.color.change(g.$primary, $alpha: 0.2);
+      }
+    }
 
-  .hamburger-btn.active &:nth-child(3) {
-    transform: rotate(45deg) translate(-5px, -6px);
-  }
-}
+    &__hamburger-line {
+      background-color: g.$muted-foreground;
+    }
 
-.collapsible-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 280px;
-  height: 100vh;
-  background: white;
-  border-right: 1px solid #e2e8f0;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  z-index: 1000;
-  padding: 4rem 0 1rem 0;
+    &__collapsible-menu {
+      background: g.$card;
+      border-right-color: g.$border;
+    }
 
-  &.open {
-    transform: translateX(0);
-  }
-}
+    &__nav-link {
+      &:hover {
+        background-color: rgba(g.$card-foreground, 0.1);
+      }
 
-.nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+      &--active {
+        background-color: g.color.change(g.$primary, $alpha: 0.2);
+      }
 
-.nav-item {
-  margin-bottom: 0.25rem;
-}
+      &--employee {
+        &:hover {
+          background-color: g.color.change(g.$primary, $alpha: 0.2);
+        }
+      }
 
-.nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  color: #64748b;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  border-left: 3px solid transparent;
-  width: 100%;
-  border: none;
-  background: none;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #f1f5f9;
-    color: #0f172a;
-    border-left-color: #3b82f6;
-  }
-
-  &.active {
-    background-color: #eff6ff;
-    color: #1d4ed8;
-    border-left-color: #1d4ed8;
-    font-weight: 500;
+      &--logout {
+        &:hover {
+          background-color: g.color.change(g.$primary, $alpha: 0.2);
+        }
+      }
+    }
   }
 }
 
-.employee-btn {
-  color: #059669;
-
-  &:hover {
-    background-color: #f0fdf4;
-    color: #047857;
-    border-left-color: #059669;
-  }
-}
-
-.logout-btn {
-  color: #dc2626;
-
-  &:hover {
-    background-color: #fef2f2;
-    color: #b91c1c;
-    border-left-color: #dc2626;
-  }
-}
-
-.nav-icon {
-  font-size: 1.25rem;
-  margin-right: 0.75rem;
-  width: 1.5rem;
-  text-align: center;
-}
-
-.nav-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.main-content {
-  padding: 2rem;
-  margin-left: 0;
-  overflow-y: auto;
-}
-
-// Overlay for mobile
-.menu-overlay {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .hamburger-btn {
-    top: 0.5rem;
-    right: 0.5rem;
-  }
-
-  .collapsible-menu {
-    width: 250px;
-  }
-
-  .main-content {
-    padding: 1rem;
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .admin-layout {
+    &__hamburger-line,
+    &__collapsible-menu,
+    &__nav-link {
+      transition: none;
+    }
   }
 }

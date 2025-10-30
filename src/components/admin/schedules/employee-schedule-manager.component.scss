@@ -1,148 +1,202 @@
-.schedule-manager {
-  min-height: 100vh;
-  background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
-  padding: 2rem;
+@use '../../../styles/global-imports' as *;
+@use 'sass:color';
 
-  .header {
-    margin-bottom: 2rem;
+// Component-specific variables
+$schedule-manager-min-height: 100vh;
+$schedule-manager-background: linear-gradient(135deg, $background 0%, $muted 100%);
+$schedule-manager-padding: $spacing-2xl;
+$schedule-manager-padding-mobile: $spacing-lg;
+$schedule-manager-max-width: 1200px;
+$schedule-manager-transition-duration: $transition-fast;
+$schedule-manager-modal-z-index: 1000;
+$schedule-manager-modal-max-width: 800px;
+$schedule-manager-modal-border-radius: $border-radius-xl;
+$schedule-manager-loading-padding: 4rem $spacing-2xl;
+
+// BEM Block: schedule-manager
+.schedule-manager {
+  min-height: $schedule-manager-min-height;
+  background: $schedule-manager-background;
+  padding: $schedule-manager-padding;
+
+  @include respond-to(md) {
+    padding: $schedule-manager-padding-mobile;
   }
 
-  .content {
-    max-width: 1200px;
+  // Element: header
+  &__header {
+    margin-bottom: $spacing-2xl;
+  }
+
+  // Element: content
+  &__content {
+    max-width: $schedule-manager-max-width;
     margin: 0 auto;
   }
 
-  .schedules-grid {
+  // Element: schedules-grid
+  &__schedules-grid {
+    // Element: loading-state
     .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
+      @include flex-column;
+      @include flex-center;
+      padding: $schedule-manager-loading-padding;
       text-align: center;
 
+      // Element: animate-spin
       .animate-spin {
         animation: spin 1s linear infinite;
       }
 
       p {
-        margin-top: 1rem;
+        margin-top: $spacing-lg;
       }
     }
 
+    // Element: empty-state
     .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
+      @include flex-column;
+      @include flex-center;
+      padding: $schedule-manager-loading-padding;
       text-align: center;
 
       svg {
-        margin-bottom: 1rem;
+        margin-bottom: $spacing-lg;
       }
 
       h3 {
-        margin-bottom: 0.5rem;
+        margin-bottom: $spacing-sm;
       }
     }
 
+    // Element: schedule-card
     .schedule-card {
-      transition: all 0.2s ease-in-out;
+      @include transition(all $schedule-manager-transition-duration);
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        box-shadow: $shadow-xl;
+      }
+    }
+
+    // Element: grid
+    .grid {
+      @include respond-to(md) {
+        @include grid-cols(1);
       }
     }
   }
 
-  .modal-overlay {
+  // Element: modal-overlay
+  &__modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 2rem;
+    @include flex-center;
+    z-index: $schedule-manager-modal-z-index;
+    padding: $spacing-2xl;
+
+    @include respond-to(md) {
+      padding: $spacing-lg;
+    }
   }
 
-  .modal-content {
-    background: hsl(var(--background));
-    border-radius: 1rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    max-width: 800px;
+  // Element: modal-content
+  &__modal-content {
+    background: $card;
+    @include border-radius($schedule-manager-modal-border-radius);
+    box-shadow: $shadow-2xl;
+    max-width: $schedule-manager-modal-max-width;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
 
+    @include respond-to(md) {
+      max-width: 100%;
+      margin: 0;
+    }
+
+    // Element: modal-header
     .modal-header {
-      display: flex;
-      justify-content: space-between;
+      @include flex-between;
       align-items: center;
-      padding: 1.5rem 2rem;
-      border-bottom: 1px solid hsl(var(--border));
+      padding: $spacing-xl $spacing-2xl;
+      border-bottom: $border-width-thin solid $border;
 
       h2 {
         margin: 0;
       }
 
       button {
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        transition: background-color 0.2s;
+        padding: $spacing-sm;
+        @include border-radius($border-radius-md);
+        @include transition(background-color $transition-fast);
+      }
+
+      @include respond-to(md) {
+        padding: $spacing-lg;
       }
     }
 
+    // Element: modal-body
     .modal-body {
-      padding: 2rem;
+      padding: $spacing-2xl;
+
+      @include respond-to(md) {
+        padding: $spacing-lg;
+      }
     }
 
+    // Element: modal-footer
     .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      padding: 1.5rem 2rem;
-      border-top: 1px solid hsl(var(--border));
+      @include flex-end;
+      gap: $spacing-lg;
+      padding: $spacing-xl $spacing-2xl;
+      border-top: $border-width-thin solid $border;
 
       button {
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 500;
-        transition: all 0.2s;
+        padding: $spacing-md $spacing-xl;
+        @include border-radius($border-radius-lg);
+        font-weight: $font-weight-medium;
+        @include transition(all $transition-fast);
 
         &:first-child {
           background: transparent;
-          border: 1px solid hsl(var(--border));
-          color: hsl(var(--foreground));
+          border: $border-width-thin solid $border;
+          color: $foreground;
 
           &:hover {
-            background: hsl(var(--muted));
+            background: $muted;
           }
         }
 
         &:last-child {
-          background: hsl(var(--primary));
-          color: hsl(var(--primary-foreground));
+          background: $primary;
+          color: $primary-foreground;
 
-          &:hover {
-            background: hsl(var(--primary) / 0.9);
+          &:hover:not(:disabled) {
+            background: color.adjust($primary, $lightness: -10%);
           }
 
+          // Modifier: disabled
           &:disabled {
             opacity: 0.5;
             cursor: not-allowed;
           }
         }
       }
+
+      @include respond-to(md) {
+        padding: $spacing-lg;
+      }
     }
   }
 }
 
+// Keyframes
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -152,28 +206,49 @@
   }
 }
 
-// Responsive design
-@media (max-width: 768px) {
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
   .schedule-manager {
-    padding: 1rem;
+    &__schedules-grid .schedule-card {
+      transition: none;
 
-    .modal-overlay {
-      padding: 1rem;
-    }
-
-    .modal-content {
-      max-width: 100%;
-      margin: 0;
-
-      .modal-header,
-      .modal-body,
-      .modal-footer {
-        padding: 1rem;
+      &:hover {
+        transform: none;
       }
     }
 
-    .schedules-grid .grid {
-      grid-template-columns: 1fr;
+    &__modal-content .modal-footer button {
+      transition: none;
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,374 @@
+// Animation utilities
+
+// Keyframe definitions
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutToTop {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutToBottom {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceOut {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes rotateIn {
+  from {
+    transform: rotate(-180deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes rotateOut {
+  from {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(180deg);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-10px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(10px);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+
+// Animation classes
+.animate-fade-in {
+  animation: fadeIn constants.$transition-normal;
+}
+
+.animate-fade-out {
+  animation: fadeOut constants.$transition-normal;
+}
+
+.animate-slide-in-left {
+  animation: slideInFromLeft constants.$transition-normal;
+}
+
+.animate-slide-in-right {
+  animation: slideInFromRight constants.$transition-normal;
+}
+
+.animate-slide-in-top {
+  animation: slideInFromTop constants.$transition-normal;
+}
+
+.animate-slide-in-bottom {
+  animation: slideInFromBottom constants.$transition-normal;
+}
+
+.animate-slide-out-left {
+  animation: slideOutToLeft constants.$transition-normal;
+}
+
+.animate-slide-out-right {
+  animation: slideOutToRight constants.$transition-normal;
+}
+
+.animate-slide-out-top {
+  animation: slideOutToTop constants.$transition-normal;
+}
+
+.animate-slide-out-bottom {
+  animation: slideOutToBottom constants.$transition-normal;
+}
+
+.animate-scale-in {
+  animation: scaleIn constants.$transition-normal;
+}
+
+.animate-scale-out {
+  animation: scaleOut constants.$transition-normal;
+}
+
+.animate-bounce-in {
+  animation: bounceIn constants.$transition-normal;
+}
+
+.animate-bounce-out {
+  animation: bounceOut constants.$transition-normal;
+}
+
+.animate-rotate-in {
+  animation: rotateIn constants.$transition-normal;
+}
+
+.animate-rotate-out {
+  animation: rotateOut constants.$transition-normal;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-wiggle {
+  animation: wiggle 1s ease-in-out infinite;
+}
+
+// Animation duration utilities
+.animate-duration-fast {
+  animation-duration: constants.$transition-fast;
+}
+
+.animate-duration-normal {
+  animation-duration: constants.$transition-normal;
+}
+
+.animate-duration-slow {
+  animation-duration: constants.$transition-slow;
+}
+
+// Animation timing utilities
+.animate-timing-linear {
+  animation-timing-function: linear;
+}
+
+.animate-timing-ease {
+  animation-timing-function: ease;
+}
+
+.animate-timing-ease-in {
+  animation-timing-function: ease-in;
+}
+
+.animate-timing-ease-out {
+  animation-timing-function: ease-out;
+}
+
+.animate-timing-ease-in-out {
+  animation-timing-function: ease-in-out;
+}
+
+// Animation iteration utilities
+.animate-infinite {
+  animation-iteration-count: infinite;
+}
+
+.animate-once {
+  animation-iteration-count: 1;
+}
+
+// Animation fill mode utilities
+.animate-fill-none {
+  animation-fill-mode: none;
+}
+
+.animate-fill-forwards {
+  animation-fill-mode: forwards;
+}
+
+.animate-fill-backwards {
+  animation-fill-mode: backwards;
+}
+
+.animate-fill-both {
+  animation-fill-mode: both;
+}
+
+// Transition utilities
+.transition-all {
+  transition: all constants.$transition-normal;
+}
+
+.transition-colors {
+  transition: color constants.$transition-normal, background-color constants.$transition-normal, border-color constants.$transition-normal;
+}
+
+.transition-opacity {
+  transition: opacity constants.$transition-normal;
+}
+
+.transition-transform {
+  transition: transform constants.$transition-normal;
+}
+
+.transition-none {
+  transition: none;
+}

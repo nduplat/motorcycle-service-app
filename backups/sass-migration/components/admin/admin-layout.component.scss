@@ -1,0 +1,251 @@
+// Admin Layout Component - BEM Methodology
+@use '../../styles/variables';
+@use '../../styles/mixins';
+// Component-specific variables
+$admin-layout-background: variables.$muted;
+$admin-layout-hamburger-size: 20px;
+$admin-layout-hamburger-line-height: 2px;
+$admin-layout-hamburger-spacing: 3px;
+$admin-layout-menu-width: 280px;
+$admin-layout-menu-width-mobile: 250px;
+$admin-layout-transition-duration: 0.3s;
+$admin-layout-nav-padding: constants.$spacing-lg;
+$admin-layout-nav-icon-size: 1.25rem;
+$admin-layout-nav-icon-width: 1.5rem;
+$admin-layout-nav-font-size: constants.$font-size-sm;
+$admin-layout-main-padding: constants.$spacing-2xl;
+$admin-layout-main-padding-mobile: constants.$spacing-lg;
+$admin-layout-z-index-menu: 1000;
+$admin-layout-z-index-hamburger: 1001;
+
+// BEM Block: admin-layout
+.admin-layout {
+  position: relative;
+  min-height: 100vh;
+  background-color: $admin-layout-background;
+
+  // Element: hamburger-btn
+  &__hamburger-btn {
+    position: fixed;
+    top: constants.$spacing-lg;
+    right: constants.$spacing-lg;
+    z-index: $admin-layout-z-index-hamburger;
+    @include card-base;
+    padding: constants.$spacing-sm;
+    cursor: pointer;
+    @include transition(all constants.$transition-fast);
+
+    &:hover {
+      background-color: rgba($card-foreground, 0.05);
+    }
+
+    // Modifier: hamburger-btn--active
+    &--active {
+      background-color: rgba(variables.$primary, 0.1);
+    }
+
+    @include respond-to(md) {
+      top: constants.$spacing-sm;
+      right: constants.$spacing-sm;
+    }
+  }
+
+  // Element: hamburger-line
+  &__hamburger-line {
+    display: block;
+    width: $admin-layout-hamburger-size;
+    height: $admin-layout-hamburger-line-height;
+    background-color: $muted-foreground;
+    margin: $admin-layout-hamburger-spacing 0;
+    @include transition(all $admin-layout-transition-duration);
+
+    .admin-layout__hamburger-btn--active &:nth-child(1) {
+      transform: rotate(-45deg) translate(-5px, 6px);
+    }
+
+    .admin-layout__hamburger-btn--active &:nth-child(2) {
+      opacity: 0;
+    }
+
+    .admin-layout__hamburger-btn--active &:nth-child(3) {
+      transform: rotate(45deg) translate(-5px, -6px);
+    }
+  }
+
+  // Element: collapsible-menu
+  &__collapsible-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: $admin-layout-menu-width;
+    height: 100vh;
+    background: variables.$card;
+    border-right: constants.$border-width-thin solid variables.$border;
+    box-shadow: constants.$shadow-lg;
+    transform: translateX(-100%);
+    @include transition(transform $admin-layout-transition-duration);
+    z-index: $admin-layout-z-index-menu;
+    padding: 4rem 0 constants.$spacing-lg 0;
+
+    // Modifier: collapsible-menu--open
+    &--open {
+      transform: translateX(0);
+    }
+
+    @include respond-to(md) {
+      width: $admin-layout-menu-width-mobile;
+    }
+  }
+
+  // Element: nav-list
+  &__nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  // Element: nav-item
+  &__nav-item {
+    margin-bottom: constants.$spacing-xs;
+  }
+
+  // Element: nav-link
+  &__nav-link {
+    @include flex-center;
+    padding: constants.$spacing-md $admin-layout-nav-padding;
+    color: $muted-foreground;
+    text-decoration: none;
+    @include transition(all constants.$transition-fast);
+    border-left: 3px solid transparent;
+    width: 100%;
+    border: none;
+    background: none;
+    cursor: pointer;
+
+    &:hover {
+      background-color: color-change($card-foreground, 0.05);
+      color: variables.$foreground;
+      border-left-color: variables.$primary;
+    }
+
+    // Modifier: nav-link--active
+    &--active {
+      background-color: rgba(variables.$primary, 0.1);
+      color: variables.$primary;
+      border-left-color: variables.$primary;
+      font-weight: constants.$font-weight-medium;
+    }
+
+    // Modifier: nav-link--employee
+    &--employee {
+      color: variables.$accent;
+
+      &:hover {
+        background-color: rgba(variables.$accent, 0.1);
+        color: darken(variables.$accent, 10%);
+        border-left-color: variables.$accent;
+      }
+    }
+
+    // Modifier: nav-link--logout
+    &--logout {
+      color: variables.$destructive;
+
+      &:hover {
+        background-color: rgba(variables.$destructive, 0.1);
+        color: darken(variables.$destructive, 10%);
+        border-left-color: variables.$destructive;
+      }
+    }
+  }
+
+  // Element: nav-icon
+  &__nav-icon {
+    font-size: $admin-layout-nav-icon-size;
+    margin-right: constants.$spacing-md;
+    width: $admin-layout-nav-icon-width;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  // Element: nav-label
+  &__nav-label {
+    font-size: $admin-layout-nav-font-size;
+    font-weight: constants.$font-weight-medium;
+  }
+
+  // Element: main-content
+  &__main-content {
+    padding: $admin-layout-main-padding;
+    margin-left: 0;
+    overflow-y: auto;
+
+    @include respond-to(md) {
+      padding: $admin-layout-main-padding-mobile;
+    }
+  }
+
+  // Element: menu-overlay
+  &__menu-overlay {
+    display: none;
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .admin-layout {
+    background-color: variables.$background;
+
+    &__hamburger-btn {
+      &:hover {
+        background-color: rgba($card-foreground, 0.1);
+      }
+
+      &--active {
+        background-color: rgba(variables.$primary, 0.2);
+      }
+    }
+
+    &__hamburger-line {
+      background-color: $muted-foreground;
+    }
+
+    &__collapsible-menu {
+      background: variables.$card;
+      border-right-color: variables.$border;
+    }
+
+    &__nav-link {
+      &:hover {
+        background-color: rgba($card-foreground, 0.1);
+      }
+
+      &--active {
+        background-color: rgba(variables.$primary, 0.2);
+      }
+
+      &--employee {
+        &:hover {
+          background-color: rgba(variables.$accent, 0.2);
+        }
+      }
+
+      &--logout {
+        &:hover {
+          background-color: rgba(variables.$destructive, 0.2);
+        }
+      }
+    }
+  }
+}
+
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .admin-layout {
+    &__hamburger-line,
+    &__collapsible-menu,
+    &__nav-link {
+      transition: none;
+    }
+  }
+}

@@ -157,24 +157,44 @@ enum QueueStatus {
 - **Technician/Employee**: Perfil propio + usuarios relacionados
 - **Customer**: Perfil propio únicamente
 
-## 5. Servicios de Productos e Inventario
+## 5. Servicios de Productos, Inventario y Asignaciones de Motocicletas
 
 ### ProductService (CRÍTICO)
 **Ubicación**: `src/services/product.service.ts`
-**Responsabilidad**: Gestión de catálogo de productos y stock
+**Responsabilidad**: Gestión del catálogo de productos (piezas, repuestos) y stock general.
 
 #### Funcionalidades
-- **CRUD de Productos**: Crear, leer, actualizar, eliminar
-- **Gestión de Stock**: Movimientos, alertas de stock bajo
-- **Búsqueda Avanzada**: Filtros por categoría, marca, compatibilidad
-- **Precios y Descuentos**: Gestión de pricing dinámico
+- **CRUD de Productos**: Crear, leer, actualizar, eliminar productos del catálogo.
+- **Gestión de Stock**: Movimientos, alertas de stock bajo para productos del catálogo.
+- **Búsqueda Avanzada**: Filtros por categoría, marca, compatibilidad.
+- **Precios y Descuentos**: Gestión de pricing dinámico.
 
 #### Problemas Identificados
-- **Faltan validaciones de permisos** en algunos métodos
+- **Faltan validaciones de permisos** en algunos métodos.
+
+### MotorcycleService (CRÍTICO)
+**Ubicación**: `src/services/motorcycle.service.ts`
+**Responsabilidad**: Gestión del catálogo de modelos de motocicletas (no las asignaciones de usuarios).
+
+#### Funcionalidades
+- **CRUD de Modelos**: Crear, leer, actualizar, eliminar modelos de motocicletas del catálogo.
+- **Búsqueda y Filtrado**: Por marca, modelo, año, cilindrada, etc.
+- **Categorización**: Asignación automática de categorías y tipos.
+
+### MotorcycleAssignmentService (CRÍTICO)
+**Ubicación**: `src/services/motorcycle-assignment.service.ts`
+**Responsabilidad**: Gestión de las asignaciones de motocicletas a usuarios, utilizando la placa como ID principal.
+
+#### Funcionalidades
+- **Creación de Asignaciones**: Asigna una motocicleta (del catálogo) a un usuario con una placa específica.
+- **Actualización de Asignaciones**: Modifica datos como kilometraje, estado (activo/inactivo) de una asignación.
+- **Consulta por Usuario/Placa**: Recupera asignaciones de un usuario o una asignación específica por placa.
+- **Verificación de Unicidad de Placa**: Asegura que cada placa sea única para una asignación activa.
+- **Integración con Flujos**: Utilizado en el flujo de cola y registro rápido de motocicletas.
 
 ### StockMovementService (IMPORTANTE)
 **Ubicación**: `src/services/stock-movement.service.ts`
-**Responsabilidad**: Auditoría de movimientos de inventario
+**Responsabilidad**: Auditoría de movimientos de inventario.
 
 #### Tipos de Movimiento
 ```typescript

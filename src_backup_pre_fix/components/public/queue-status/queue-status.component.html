@@ -1,0 +1,283 @@
+<div class="queue-status-container">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo-section">
+      <img src="assets/images/logo.PNG" alt="Blue Dragon Motors" class="logo">
+      <h1>Estado de Cola</h1>
+    </div>
+    <button class="back-btn" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i>
+      Volver
+    </button>
+  </header>
+
+  <!-- Search Section -->
+  <section class="search-section">
+    <div class="search-card">
+      <h2>Buscar tu turno</h2>
+      <p>Ingresa tu número de turno, código de verificación o placa</p>
+
+      <div class="search-form">
+        <div class="input-group">
+          <input
+            type="text"
+            [(ngModel)]="searchInput"
+            (keyup.enter)="searchQueueEntry()"
+            placeholder="Ej: Q001, 1234, ABC123"
+            class="search-input"
+            [disabled]="isSearching">
+          <button
+            class="search-btn"
+            (click)="searchQueueEntry()"
+            [disabled]="isSearching || !searchInput().trim()">
+            <i class="fas fa-search"></i>
+            Buscar
+          </button>
+        </div>
+
+        @if (isSearching()) {
+          <div class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i>
+            Buscando...
+          </div>
+        }
+
+        @if (searchError()) {
+          <div class="error-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ searchError() }}
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Queue Status Display -->
+  @if (currentEntry(); as entry) {
+    <section class="status-section">
+      <!-- Active Entry -->
+      @if (hasActiveEntry()) {
+        <div class="status-card active">
+          <div class="status-header">
+            <div class="status-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="status-info">
+              <h3>Tu turno está activo</h3>
+              <p class="queue-number">Número: <strong>Q{{ queuePosition().toString().padStart(3, '0') }}</strong></p>
+            </div>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="label">Estado:</span>
+              <span class="value status-badge" [class]="'status-' + entry.status">
+                {{ getStatusText(entry.status) }}
+              </span>
+            </div>
+
+            @if (estimatedWaitTime(); as waitTime) {
+              <div class="detail-row">
+                <span class="label">Tiempo estimado:</span>
+                <span class="value">{{ formatWaitTime(waitTime) }}</span>
+              </div>
+            }
+
+            @if (technicianName()) {
+              <div class="detail-row">
+                <span class="label">Técnico asignado:</span>
+                <span class="value">{{ technicianName() }}</span>
+              </div>
+            }
+
+            <div class="detail-row">
+              <span class="label">Código de verificación:</span>
+              <span class="value verification-code">{{ entry.verificationCode }}</span>
+            </div>
+          </div>
+
+          <!-- QR Code Section -->
+          @if (entry.qrCodeDataUrl) {
+            <div class="qr-section">
+              <h4>Código QR</h4>
+              <div class="qr-container">
+                <img [src]="entry.qrCodeDataUrl" alt="QR Code" class="qr-code">
+                <div class="qr-actions">
+                  <button class="btn-secondary" (click)="downloadQRCode()">
+                    <i class="fas fa-download"></i>
+                    Descargar
+                  </button>
+                  <button class="btn-secondary" (click)="regenerateQRCode()" [disabled]="isRegeneratingQR">
+                    <i class="fas fa-sync-alt" [class.fa-spin]="isRegeneratingQR"></i>
+                    Regenerar
+                  </button>
+                  <button class="btn-secondary" (click)="shareQueueLink()">
+                    <i class="fas fa-share-alt"></i>
+                    Compartir
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Completed Entry -->
+      @if (hasCompletedEntry()) {
+        <div class="status-card completed">
+          <div class="status-header">
+            <div class="status-icon">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="status-info">
+              <h3>Servicio completado</h3>
+              <p>Tu servicio ha sido {{ entry.status === 'served' ? 'completado' : 'cancelado' }}</p>
+            </div>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="label">Estado final:</span>
+              <span class="value status-badge" [class]="'status-' + entry.status">
+                {{ getStatusText(entry.status) }}
+              </span>
+            </div>
+
+            @if (entry.updatedAt) {
+              <div class="detail-row">
+                <span class="label">Completado:</span>
+                <span class="value">{{ formatDate(entry.updatedAt) }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Feedback Section -->
+          @if (canLeaveFeedback()) {
+            <div class="feedback-section">
+              <h4>¿Cómo fue tu experiencia?</h4>
+              <p>Tu opinión nos ayuda a mejorar nuestros servicios</p>
+
+              @if (!showFeedbackForm()) {
+                <button class="btn-primary" (click)="openFeedbackForm()">
+                  <i class="fas fa-star"></i>
+                  Dejar calificación
+                </button>
+              } @else {
+                <div class="feedback-form">
+                  <div class="rating-stars">
+                    <span
+                      *ngFor="let star of [1,2,3,4,5]"
+                      class="star"
+                      [class.selected]="feedbackData().rating >= star"
+                      (click)="setRating(star)">
+                      <i class="fas fa-star"></i>
+                    </span>
+                  </div>
+
+                  <textarea
+                    [(ngModel)]="feedbackData().comment"
+                    placeholder="Cuéntanos tu experiencia (opcional)"
+                    class="feedback-comment"
+                    rows="3">
+                  </textarea>
+
+                  <div class="feedback-actions">
+                    <button class="btn-secondary" (click)="closeFeedbackForm()">
+                      Cancelar
+                    </button>
+                    <button
+                      class="btn-primary"
+                      (click)="submitFeedback()"
+                      [disabled]="!feedbackData().rating || isSubmittingFeedback">
+                      <i class="fas fa-paper-plane"></i>
+                      Enviar
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (hasFeedback()) {
+              <div class="feedback-thanks">
+                <i class="fas fa-heart"></i>
+                ¡Gracias por tu feedback!
+              </div>
+            }
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Service History -->
+    @if (serviceHistory().length > 0) {
+      <section class="history-section">
+        <h3>Historial de servicios</h3>
+        <div class="history-list">
+          @for (service of serviceHistory(); track service.id) {
+            <div class="history-item" [class]="'status-' + service.status">
+              <div class="history-icon">
+                <i class="fas" [class]="getHistoryIcon(service.status)"></i>
+              </div>
+              <div class="history-content">
+                <div class="history-header">
+                  <span class="service-type">{{ service.serviceType }}</span>
+                  <span class="history-status" [class]="'status-' + service.status">
+                    {{ getStatusText(service.status) }}
+                  </span>
+                </div>
+                <div class="history-details">
+                  <span class="history-date">{{ formatDate(service.createdAt) }}</span>
+                  @if (service.rating) {
+                    <span class="history-rating">
+                      <i class="fas fa-star"></i>
+                      {{ service.rating }}/5
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  }
+
+  <!-- Instructions -->
+  @if (!currentEntry()) {
+    <section class="instructions-section">
+      <div class="instructions-card">
+        <h3>¿Cómo usar este servicio?</h3>
+        <div class="instruction-steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h4>Busca tu turno</h4>
+              <p>Ingresa tu número de turno (Q001), código de verificación (4 dígitos) o placa de tu motocicleta</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h4>Revisa el estado</h4>
+              <p>Ve tu posición en la cola, tiempo estimado de espera y estado actual</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h4>Espera tu turno</h4>
+              <p>Recibe notificaciones cuando tu turno esté próximo o cuando seas llamado</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <h4>Califica el servicio</h4>
+              <p>Después de completado el servicio, puedes dejar tu feedback y calificación</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+</div>

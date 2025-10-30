@@ -1,0 +1,121 @@
+// Card component styles
+
+// Base card class
+.card {
+  @include mixins.card-base;
+}
+
+// Card variants
+.card-elevated {
+  @include mixins.card-base;
+  box-shadow: constants.$shadow-lg;
+}
+
+.card-outlined {
+  @include mixins.card-base;
+  border: constants.$border-width-medium solid variables.$border;
+  box-shadow: none;
+}
+
+.card-filled {
+  @include mixins.card-base;
+  background-color: variables.$muted;
+  border: none;
+}
+
+// Card sections
+.card-header {
+  @include card-header;
+}
+
+.card-body {
+  @include card-body;
+}
+
+.card-footer {
+  @include card-footer;
+}
+
+// Card sizes
+.card-sm {
+  .card-header,
+  .card-body,
+  .card-footer {
+    padding: constants.$spacing-sm;
+  }
+}
+
+.card-lg {
+  .card-header,
+  .card-body,
+  .card-footer {
+    padding: constants.$spacing-xl;
+  }
+}
+
+// Interactive cards
+.card-interactive {
+  @include mixins.card-base;
+  cursor: pointer;
+  transition: all constants.$transition-normal;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: constants.$shadow-lg;
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: constants.$shadow-md;
+  }
+}
+
+// Dark theme overrides
+@media (prefers-color-scheme: dark) {
+  .card {
+    background-color: $card-dark;
+    border-color: $border-dark;
+  }
+
+  .card-filled {
+    background-color: $muted-dark;
+  }
+
+  .card-header,
+  .card-footer {
+    border-color: $border-dark;
+  }
+
+  .card-footer {
+    background-color: $muted-dark;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,78 @@
+
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-3xl font-bold">Órdenes de Trabajo</h1>
+  </div>
+
+  <!-- Filter section -->
+  <div class="bg-card rounded-xl border border-border p-4 flex flex-col sm:flex-row gap-4 items-center">
+    <div class="flex-grow w-full">
+      <label for="search" class="sr-only">Buscar por cliente o número de orden</label>
+      <input 
+        id="search"
+        type="text"
+        placeholder="Buscar por cliente o número de orden..."
+        [value]="searchTerm()"
+        (input)="updateSearchTerm($event)"
+        class="w-full px-3 py-2 bg-input border border-border rounded-md text-sm"
+      >
+    </div>
+    <div class="w-full sm:w-64">
+      <label for="status" class="sr-only">Filtrar por estado</label>
+      <select 
+        id="status"
+        [value]="selectedStatus()"
+        (change)="updateStatus($event)"
+        class="w-full px-3 py-2 bg-input border border-border rounded-md text-sm"
+      >
+        <option value="">Todos los estados</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="bg-card rounded-xl border border-border shadow-sm">
+     <div class="border-t border-border overflow-x-auto">
+        <table class="w-full text-sm text-left text-foreground">
+          <thead class="bg-secondary/50">
+            <tr>
+              <th class="px-6 py-3 font-medium"># Orden</th>
+              <th class="px-6 py-3 font-medium">Cliente</th>
+              <th class="px-6 py-3 font-medium">Vehículo</th>
+              <th class="px-6 py-3 font-medium">Fecha</th>
+              <th class="px-6 py-3 font-medium text-center">Estado</th>
+              <th class="px-6 py-3 font-medium text-right">Total</th>
+              <th class="px-6 py-3 font-medium text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(wo of workOrdersWithComputedValues(); track wo.id) {
+              <tr class="border-b border-border hover:bg-secondary/50">
+                <td class="px-6 py-4 font-mono text-xs">{{ wo.number }}</td>
+                <td class="px-6 py-4 font-medium">{{ wo.customerName }}</td>
+                <td class="px-6 py-4">{{ wo.vehicleId }}</td>
+                <td class="px-6 py-4">{{ wo.formattedDate }}</td>
+                <td class="px-6 py-4 text-center">
+                  <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + wo.statusClass">
+                    {{ wo.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-right font-medium">{{ wo.formattedTotal }}</td>
+                <td class="px-6 py-4 text-right">
+                    <a [routerLink]="['/admin/work-orders', wo.id]" class="p-1 text-primary hover:underline text-sm">
+                      Ver Detalles
+                    </a>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center py-16 text-muted-foreground">No se encontraron órdenes de trabajo que coincidan con los filtros.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+  </div>
+</div>

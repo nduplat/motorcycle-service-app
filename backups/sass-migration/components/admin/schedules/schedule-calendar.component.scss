@@ -1,0 +1,492 @@
+// Schedule Calendar Component - BEM Methodology
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+// Component-specific variables
+$schedule-calendar-min-height: 100vh;
+$schedule-calendar-background: linear-gradient(135deg, variables.$background 0%, variables.$muted 100%);
+$schedule-calendar-padding: constants.$spacing-2xl;
+$schedule-calendar-padding-mobile: constants.$spacing-lg;
+$schedule-calendar-employee-column-width: 200px;
+$schedule-calendar-day-min-height: 120px;
+$schedule-calendar-shift-font-size: constants.$font-size-xs;
+$schedule-calendar-transition-duration: constants.$transition-fast;
+$schedule-calendar-loading-padding: 4rem constants.$spacing-2xl;
+$schedule-calendar-avatar-size: 2.5rem;
+$schedule-calendar-day-number-size: 1.25rem;
+
+// BEM Block: schedule-calendar
+.schedule-calendar {
+  min-height: $schedule-calendar-min-height;
+  background: $schedule-calendar-background;
+  padding: $schedule-calendar-padding;
+
+  @include respond-to(lg) {
+    padding: $schedule-calendar-padding-mobile;
+  }
+
+  // Element: header
+  &__header {
+    margin-bottom: $schedule-calendar-padding-mobile;
+  }
+
+  // Element: calendar-nav
+  &__calendar-nav {
+    background: variables.$card;
+    border: constants.$border-width-thin solid variables.$border;
+    @include border-radius(constants.$border-radius-xl);
+    padding: constants.$spacing-lg constants.$spacing-xl;
+    box-shadow: constants.$shadow-sm;
+  }
+
+  // Element: calendar-container
+  &__calendar-container {
+    background: variables.$card;
+    border: constants.$border-width-thin solid variables.$border;
+    @include border-radius(constants.$border-radius-xl);
+    overflow: hidden;
+    box-shadow: constants.$shadow-md;
+
+    // Element: loading-state
+    .loading-state {
+      @include flex-column;
+      @include flex-center;
+      padding: $schedule-calendar-loading-padding;
+      text-align: center;
+
+      // Element: animate-spin
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+
+      p {
+        margin-top: constants.$spacing-lg;
+      }
+    }
+  }
+
+  // Element: calendar-grid
+  &__calendar-grid {
+    @include grid-cols($schedule-calendar-employee-column-width, 1fr);
+
+    @include respond-to(lg) {
+      @include grid-cols(1);
+    }
+
+    // Element: calendar-header
+    .calendar-header {
+      @include grid-cols($schedule-calendar-employee-column-width, repeat(7, 1fr));
+      background: variables.$muted;
+
+      @include respond-to(lg) {
+        display: none; // Hide header on mobile
+      }
+
+      // Element: employee-column
+      .employee-column {
+        padding: constants.$spacing-lg;
+        border-right: constants.$border-width-thin solid variables.$border;
+        font-weight: constants.$font-weight-semibold;
+        color: $muted-foreground;
+      }
+
+      // Element: day-column
+      .day-column {
+        padding: constants.$spacing-sm;
+        text-align: center;
+        border-right: constants.$border-width-thin solid variables.$border;
+
+        // Modifier: day-column--other-month
+        &.other-month {
+          background: color-change(variables.$muted, 0.5, oklch);
+        }
+
+        // Modifier: day-column--today
+        &.today {
+          background: rgba(variables.$primary, 0.1);
+          border: 2px solid variables.$primary;
+        }
+
+        // Element: day-header
+        .day-header {
+          // Element: day-name
+          .day-name {
+            display: block;
+            font-size: constants.$font-size-xs;
+            font-weight: constants.$font-weight-medium;
+            color: $muted-foreground;
+            margin-bottom: constants.$spacing-xs;
+          }
+
+          // Element: day-number
+          .day-number {
+            font-size: $schedule-calendar-day-number-size;
+            font-weight: constants.$font-weight-semibold;
+            color: variables.$foreground;
+          }
+        }
+      }
+    }
+
+    // Element: employee-row
+    .employee-row {
+      @include grid-cols($schedule-calendar-employee-column-width, repeat(7, 1fr));
+      border-bottom: constants.$border-width-thin solid variables.$border;
+
+      @include respond-to(lg) {
+        @include grid-cols(1);
+        border: constants.$border-width-thin solid variables.$border;
+        @include border-radius(constants.$border-radius-md);
+        margin-bottom: constants.$spacing-lg;
+      }
+
+      &:hover {
+        background: rgba(variables.$muted, 0.3);
+      }
+
+      // Element: employee-column
+      .employee-column {
+        padding: constants.$spacing-lg;
+        border-right: constants.$border-width-thin solid variables.$border;
+        background: rgba(variables.$muted, 0.5);
+
+        @include respond-to(lg) {
+          border-right: none;
+          border-bottom: constants.$border-width-thin solid variables.$border;
+          background: variables.$card;
+        }
+
+        // Element: employee-info
+        .employee-info {
+          @include flex-center;
+          gap: constants.$spacing-md;
+
+          // Element: avatar
+          .avatar {
+            width: $schedule-calendar-avatar-size;
+            height: $schedule-calendar-avatar-size;
+            @include border-radius(constants.$border-radius-full);
+            overflow: hidden;
+            flex-shrink: 0;
+
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+
+            // Element: avatar-placeholder
+            .avatar-placeholder {
+              width: 100%;
+              height: 100%;
+              background: variables.$primary;
+              color: $primary-foreground;
+              @include flex-center;
+              font-weight: constants.$font-weight-semibold;
+              font-size: constants.$font-size-sm;
+            }
+          }
+
+          // Element: employee-details
+          .employee-details {
+            // Element: employee-name
+            .employee-name {
+              display: block;
+              font-weight: constants.$font-weight-medium;
+              color: variables.$foreground;
+              margin-bottom: constants.$spacing-xs;
+            }
+
+            // Element: employee-role
+            .employee-role {
+              color: $muted-foreground;
+            }
+          }
+        }
+      }
+
+      // Element: day-column
+      .day-column {
+        min-height: $schedule-calendar-day-min-height;
+        padding: constants.$spacing-sm;
+        border-right: constants.$border-width-thin solid variables.$border;
+        position: relative;
+
+        // Modifier: day-column--other-month
+        &.other-month {
+          background: rgba(variables.$muted, 0.2);
+        }
+
+        // Modifier: day-column--today
+        &.today {
+          background: rgba(variables.$primary, 0.05);
+          border: 2px solid variables.$primary;
+        }
+
+        // Modifier: day-column--available
+        &.available {
+          &:hover {
+            background: color-change(variables.$primary, 0.1);
+            cursor: pointer;
+          }
+        }
+
+        @include respond-to(lg) {
+          @include grid-cols(repeat(7, 1fr));
+          border: none;
+
+          &:not(:last-child) {
+            border-bottom: constants.$border-width-thin solid variables.$border;
+          }
+        }
+
+        @include respond-to(md) {
+          @include grid-cols(repeat(4, 1fr)); // 4 days per row on small screens
+        }
+
+        // Element: day-content
+        .day-content {
+          height: 100%;
+          @include flex-column;
+          gap: constants.$spacing-xs;
+
+          // Element: shift-item
+          .shift-item {
+            padding: constants.$spacing-xs constants.$spacing-sm;
+            @include border-radius(constants.$border-radius-sm);
+            font-size: $schedule-calendar-shift-font-size;
+            cursor: move;
+            @include transition(all $schedule-calendar-transition-duration);
+            @include flex-between;
+            align-items: center;
+            border: constants.$border-width-thin solid transparent;
+
+            &:hover {
+              transform: translateY(-1px);
+              box-shadow: constants.$shadow-sm;
+              border-color: variables.$border;
+            }
+
+            &:active {
+              transform: translateY(0);
+            }
+
+            // Element: shift-info
+            .shift-info {
+              flex: 1;
+
+              // Element: shift-name
+              .shift-name {
+                display: block;
+                font-weight: constants.$font-weight-medium;
+                margin-bottom: constants.$spacing-xs;
+              }
+
+              // Element: shift-time
+              .shift-time {
+                font-size: 0.6875rem;
+                opacity: 0.8;
+              }
+            }
+
+            // Element: drag-handle
+            .drag-handle {
+              opacity: 0.5;
+              margin-left: constants.$spacing-sm;
+
+              &:hover {
+                opacity: 1;
+              }
+            }
+          }
+
+          // Element: break-item
+          .break-item {
+            padding: constants.$spacing-xs constants.$spacing-sm;
+            @include border-radius($border-radius-xs);
+            font-size: 0.6875rem;
+
+            // Element: break-info
+            .break-info {
+              // Element: break-name
+              .break-name {
+                display: block;
+                font-weight: constants.$font-weight-medium;
+                margin-bottom: constants.$spacing-xs;
+              }
+
+              // Element: break-time
+              .break-time {
+                opacity: 0.8;
+              }
+            }
+          }
+
+          // Element: empty-day
+          .empty-day {
+            flex: 1;
+            @include flex-center;
+            color: $muted-foreground;
+          }
+        }
+      }
+    }
+  }
+
+  // Element: legend
+  &__legend {
+    background: variables.$card;
+    border: constants.$border-width-thin solid variables.$border;
+    @include border-radius(constants.$border-radius-xl);
+    padding: constants.$spacing-xl;
+
+    // Element: legend-items
+    .legend-items {
+      // Element: legend-item
+      .legend-item {
+        @include flex-center;
+        gap: constants.$spacing-sm;
+      }
+
+      @include respond-to(lg) {
+        @include flex-column;
+        gap: constants.$spacing-sm;
+      }
+    }
+  }
+
+  // Element: instructions
+  &__instructions {
+    background: variables.$card;
+    border: constants.$border-width-thin solid variables.$border;
+    @include border-radius(constants.$border-radius-xl);
+    padding: constants.$spacing-xl;
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      li {
+        position: relative;
+        padding-left: constants.$spacing-lg;
+
+        &:before {
+          content: '•';
+          position: absolute;
+          left: 0;
+          color: variables.$primary;
+        }
+      }
+    }
+  }
+}
+
+// Keyframes
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Drag and drop styles
+.schedule-calendar {
+  // Element: day-column
+  .day-column {
+    // Modifier: day-column--drag-over
+    &.drag-over {
+      background: rgba(variables.$primary, 0.2) !important;
+      border: 2px dashed variables.$primary !important;
+    }
+  }
+
+  // Element: shift-item
+  .shift-item {
+    // Modifier: shift-item--dragging
+    &.dragging {
+      opacity: 0.5;
+      transform: rotate(5deg);
+    }
+  }
+}
+
+// Responsive design
+@include respond-to(lg) {
+  .schedule-calendar {
+    &__calendar-nav {
+      @include flex-column;
+      gap: constants.$spacing-lg;
+      text-align: center;
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .schedule-calendar {
+    background: linear-gradient(135deg, variables.$background 0%, variables.$muted 100%);
+
+    &__calendar-nav,
+    &__calendar-container,
+    &__legend,
+    &__instructions {
+      background: variables.$card;
+      border-color: variables.$border;
+    }
+
+    &__calendar-grid .calendar-header {
+      background: variables.$muted;
+    }
+
+    &__calendar-grid .employee-row {
+      &:hover {
+        background: rgba(variables.$muted, 0.3);
+      }
+
+      .employee-column {
+        background: rgba(variables.$muted, 0.5);
+
+        @include respond-to(lg) {
+          background: variables.$card;
+        }
+      }
+
+      .day-column {
+        &.other-month {
+          background: rgba(variables.$muted, 0.2);
+        }
+
+        &.today {
+          background: rgba(variables.$primary, 0.05);
+        }
+
+        &.available:hover {
+          background: rgba(variables.$primary, 0.1);
+        }
+      }
+    }
+  }
+}
+
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .schedule-calendar {
+    &__calendar-grid .employee-row:hover {
+      background: none;
+    }
+
+    .shift-item {
+      transition: none;
+
+      &:hover {
+        transform: none;
+      }
+
+      &:active {
+        transform: none;
+      }
+    }
+  }
+}

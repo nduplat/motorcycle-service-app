@@ -28,7 +28,7 @@
  */
 
 import { Injectable, signal, OnDestroy, inject } from '@angular/core';
-import { Notification as NotificationModel, MaintenanceReminder, NotificationPreferences, UserVehicle, Appointment, NotificationTemplate, WorkOrder, QueueEntry, UserProfile } from '../models';
+import { Notification as NotificationModel, MaintenanceReminder, NotificationPreferences, MotorcycleAssignment, Appointment, NotificationTemplate, WorkOrder, QueueEntry, UserProfile } from '../models';
 import { Timestamp } from 'firebase/firestore';
 import { of, delay, Observable, from, combineLatest } from 'rxjs';
 import { db } from '../firebase.config';
@@ -41,6 +41,8 @@ import { AppointmentService } from './appointment.service';
 import { QueueService } from './queue.service';
 import { EventBusService, NotificationEvent, MaintenanceReminderEvent } from './event-bus.service';
 import { QrCodeService } from './qr-code.service';
+import { JobQueueService } from './job-queue.service';
+import { JobType, JobPriority } from '../models';
 
 export type NotificationCategory =
   | 'inventory'           // Stock alerts, low stock, out of stock / Alertas de stock, stock bajo, agotado
@@ -98,6 +100,7 @@ export class NotificationService implements OnDestroy {
   private queueService = inject(QueueService);
   private eventBus = inject(EventBusService);
   private qrCodeService = inject(QrCodeService);
+  private jobQueueService = inject(JobQueueService);
 
 
   private setupRealtimeListeners() {
@@ -1030,6 +1033,53 @@ export class NotificationService implements OnDestroy {
   ): Observable<NotificationModel[]> {
     return from(new Promise<NotificationModel[]>(async (resolve, reject) => {
       try {
+        // For large bulk operations, use background processing
+        if (userIds.length > 10) {
+          console.log('🔄 Large bulk notification detected, using background processing');
+
+          // Queue background job
+          const job = await this.jobQueueService.enqueueJob(
+            JobType.SEND_NOTIFICATION,
+            {
+              notificationData: {
+                title: `Bulk notification via template ${templateId}`,
+                message: 'Bulk notification processing in background',
+                userId: undefined, // Will be handled by bulk processing
+                templateId,
+                parameters,
+                channels: ['push', 'email']
+              },
+              bulkData: {
+                operation: 'bulk_notification',
+                items: userIds.map(userId => ({ userId, templateId, parameters })),
+                options: { templateId, parameters }
+              }
+            },
+            {
+              priority: JobPriority.MEDIUM,
+              createdBy: 'system'
+            }
+          );
+
+          // Return placeholder notifications
+          const notifications: NotificationModel[] = userIds.map(userId => ({
+            id: `pending_${job.id}_${userId}`,
+            title: 'Notificación en proceso',
+            message: 'Tu notificación está siendo procesada en segundo plano',
+            userId,
+            read: false,
+            createdAt: toTimestamp(new Date()),
+            meta: {
+              templateId,
+              generatedBy: 'bulk_template_background',
+              jobId: job.id
+            }
+          }));
+
+          resolve(notifications);
+          return;
+        }
+
         // Get template first
         const template = this.templates().find(t => t.id === templateId);
         if (!template) {
@@ -1208,7 +1258,7 @@ export class NotificationService implements OnDestroy {
     }
   }
 
-  async sendServiceReminder(vehicleId: string, lastServiceDate: Date): Promise<void> {
+  async sendServiceReminder(plate: string, lastServiceDate: Date): Promise<void> {
     try {
       const now = new Date();
       const sixMonthsAgo = new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000); // approx 6 months
@@ -1216,9 +1266,9 @@ export class NotificationService implements OnDestroy {
       if (lastServiceDate < sixMonthsAgo) {
         // Find user via UserVehicle
         try {
-          const userVehicleDoc = await getDoc(doc(db, "userVehicles", vehicleId));
+          const userVehicleDoc = await getDoc(doc(db, "userVehicles", plate));
           if (userVehicleDoc.exists()) {
-            const userVehicle = fromFirestore<UserVehicle>(userVehicleDoc);
+            const userVehicle = fromFirestore<MotorcycleAssignment >(userVehicleDoc);
             const user = this.userService.getUsers()().find(u => u.id === userVehicle.userId);
             if (user) {
               const shouldSend = await this.shouldSendNotification(user.id, 'maintenanceReminders');
@@ -1371,10 +1421,10 @@ export class NotificationService implements OnDestroy {
       // Group by vehicleId and find last service
       const vehicleLastService = new Map<string, Date>();
       for (const wo of workOrders) {
-        const lastDate = vehicleLastService.get(wo.vehicleId);
+        const lastDate = vehicleLastService.get(wo.plate);
         const woDate = wo.createdAt.toDate();
         if (!lastDate || woDate > lastDate) {
-          vehicleLastService.set(wo.vehicleId, woDate);
+          vehicleLastService.set(wo.plate, woDate);
         }
       }
 
@@ -1656,11 +1706,11 @@ export class NotificationService implements OnDestroy {
         switch (reminder.dueType) {
           case 'overdue':
             title = '🚨 Servicio de Mantenimiento Vencido';
-            message = `El servicio "${reminder.serviceName}" para tu ${reminder.vehicleId} está vencido. Te recomendamos programarlo lo antes posible.`;
+            message = `El servicio "${reminder.serviceName}" para tu motocicleta con placa ${reminder.plate} está vencido. Te recomendamos programarlo lo antes posible.`;
             break;
           case 'due_soon':
             title = '⚠️ Servicio de Mantenimiento Próximo';
-            message = `El servicio "${reminder.serviceName}" para tu ${reminder.vehicleId} vencerá pronto. Considera programarlo.`;
+            message = `El servicio "${reminder.serviceName}" para tu motocicleta con placa ${reminder.plate} vencerá pronto. Considera programarlo.`;
             break;
           case 'upcoming':
             title = '📅 Recordatorio de Mantenimiento';
@@ -1674,7 +1724,7 @@ export class NotificationService implements OnDestroy {
           message,
           meta: {
             serviceId: reminder.serviceId,
-            vehicleId: reminder.vehicleId,
+            plate: reminder.plate,
             dueDate: reminder.dueDate,
             priority: reminder.priority
           }
@@ -1735,7 +1785,7 @@ export class NotificationService implements OnDestroy {
           const userVehicleDoc = await this.userVehicleService.getVehiclesForUser(workOrder.clientId).toPromise();
           if (userVehicleDoc) {
             for (const vehicle of userVehicleDoc) {
-              if (vehicle.id === workOrder.vehicleId) {
+              if (vehicle.id === workOrder.plate) {
                 const user = this.userService.getUserById(vehicle.userId);
                 if (user) {
                   messages.push({

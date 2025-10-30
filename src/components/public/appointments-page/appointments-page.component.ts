@@ -5,7 +5,7 @@ import { AppointmentService } from '../../../services/appointment.service';
 import { UserService } from '../../../services/user.service';
 import { UserVehicleService } from '../../../services/user-vehicle.service';
 import { MotorcycleService } from '../../../services/motorcycle.service';
-import { ServiceItem, UserVehicle, Motorcycle, AppointmentStatus } from '../../../models';
+import { ServiceItem, MotorcycleAssignment, Motorcycle, AppointmentStatus } from '../../../models';
 import { AuthService } from '../../../services/auth.service';
 import { Timestamp } from 'firebase/firestore';
 import { WeeklyAvailabilityComponent } from './weekly-availability.component';
@@ -30,7 +30,7 @@ export class AppointmentsPageComponent {
 
   step = signal<Step>('selectService');
   isLoading = signal(false);
-  userVehicles = signal<UserVehicle[]>([]);
+  userVehicles = signal<MotorcycleAssignment[]>([]);
 
   services = this.serviceItemService.getServices();
   allMotorcycles = this.motorcycleService.getMotorcycles();
@@ -50,7 +50,7 @@ export class AppointmentsPageComponent {
     const motorcycles = this.allMotorcycles();
 
     return vehicles.map(vehicle => {
-      const motorcycle = motorcycles.find(m => m.id === vehicle.baseVehicleId);
+      const motorcycle = motorcycles.find(m => m.id === vehicle.motorcycleId);
       return {
         id: vehicle.id,
         label: motorcycle ? `${motorcycle.brand} ${motorcycle.model} ${motorcycle.year || ''}`.trim() : 'Vehículo desconocido',
@@ -120,7 +120,7 @@ export class AppointmentsPageComponent {
 
     this.appointmentService.createAppointment({
       clientId: currentUser.id,
-      vehicleId: formValue.vehicle!,
+      plate: formValue.vehicle!,
       scheduledAt: Timestamp.fromDate(scheduledAtDate),
       estimatedDuration: (service.estimatedHours ?? 1) * 60,
       status: AppointmentStatus.PENDING_APPROVAL,

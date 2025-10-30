@@ -19,7 +19,7 @@ import { ToastService } from '../../services/toast.service';
 import { ModalService } from '../../services/modal.service';
 import { MotorcycleService } from '../../services/motorcycle.service';
 import { Motorcycle, MotorcycleAssignment } from '../../models';
-import { MotorcycleRegistrationComponent } from '../shared/motorcycle-registration.component';
+import { NuevaMotocicletaComponent } from '../shared/nueva-motocicleta.component';
 import { QueueService } from '../../services/queue.service';
 
 
@@ -27,7 +27,7 @@ import { QueueService } from '../../services/queue.service';
   selector: 'app-account',
   templateUrl: './account.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MotorcycleRegistrationComponent],
+  imports: [ReactiveFormsModule, NuevaMotocicletaComponent],
 })
 export class AccountComponent implements OnInit, OnDestroy {
   authService = inject(AuthService);
@@ -382,14 +382,14 @@ export class AccountComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Motorcycle registration event handlers
-  onMotorcycleRegistered(motorcycle: Motorcycle): void {
-    this.toastService.success(`Motocicleta ${motorcycle.plate} registrada exitosamente`);
+  // Motorcycle assignment event handlers
+  onMotorcycleAssigned(): void {
+    this.toastService.success('Motocicleta asignada exitosamente');
     // Reload user's motorcycles to update the list
     this.loadUserMotorcycles();
   }
 
-  onRegistrationCancelled(): void {
+  onAssignmentCancelled(): void {
     // Handle cancellation if needed
   }
 

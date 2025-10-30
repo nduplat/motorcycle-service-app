@@ -52,7 +52,7 @@ export class ScheduleComponent {
         title: title,
         meta: {
           client: client?.name || 'N/A',
-          vehicle: appointment.vehicleId, // You might want to fetch vehicle details too
+          vehicle: appointment.plate, // You might want to fetch vehicle details too
           service: service?.title || 'N/A',
           time: appointment.scheduledAt.toDate().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
         },
@@ -184,7 +184,7 @@ export class ScheduleComponent {
       const appointment = {
         clientId,
         serviceId,
-        vehicleId,
+        plate: vehicleId, // Use plate instead of vehicleId
         scheduledAt: FirestoreTimestamp.fromDate(scheduledTime),
         assignedTo: assignedTechnician || undefined,
         status: AppointmentStatus.SCHEDULED,

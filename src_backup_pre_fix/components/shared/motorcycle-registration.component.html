@@ -1,0 +1,263 @@
+<div class="motorcycle-registration">
+  <!-- Header -->
+  <header class="motorcycle-registration__header">
+    <h2 class="motorcycle-registration__title">Registro de Motocicleta</h2>
+    <p class="motorcycle-registration__description">Ingresa la placa de tu motocicleta para registrarla o reclamar propiedad.</p>
+  </header>
+
+  <!-- Error Display -->
+  @if (error()) {
+    <div class="motorcycle-registration__error-message">
+      <i class="icon-error"></i>
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Success Message -->
+  @if (successMessage()) {
+    <div class="motorcycle-registration__success-message">
+      <i class="icon-success"></i>
+      {{ successMessage() }}
+    </div>
+  }
+
+  <!-- Loading Overlay -->
+  @if (isLoading()) {
+    <div class="motorcycle-registration__loading-overlay">
+      <div class="motorcycle-registration__spinner"></div>
+      <p class="motorcycle-registration__loading-text">Procesando...</p>
+    </div>
+  }
+
+  <!-- STATE: Plate Input -->
+  @if (currentState() === 'input') {
+    <div class="motorcycle-registration__step-content">
+      <form [formGroup]="plateForm" (ngSubmit)="onPlateSubmit()" class="motorcycle-registration__plate-form">
+        <div class="motorcycle-registration__form-group">
+          <label class="motorcycle-registration__form-label" for="plate">Placa de la Motocicleta</label>
+          <input
+            class="motorcycle-registration__form-input"
+            id="plate"
+            type="text"
+            formControlName="plate"
+            placeholder="ABC123"
+            maxlength="6"
+            (input)="onPlateInput($event)"
+            [class.motorcycle-registration__form-input--error]="plateForm.get('plate')?.invalid && plateForm.get('plate')?.touched"
+          />
+          @if (plateForm.get('plate')?.invalid && plateForm.get('plate')?.touched) {
+            <span class="motorcycle-registration__error-text">Placa inválida (formato: ABC123)</span>
+          }
+          <small class="motorcycle-registration__help-text">Ingresa la placa en formato ABC123 (3 letras mayúsculas + 3 números)</small>
+        </div>
+
+        <div class="motorcycle-registration__form-actions">
+          <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="plateForm.invalid">
+            Verificar Placa
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- STATE: Existing Motorcycle Found -->
+  @if (currentState() === 'existing-found') {
+    <div class="motorcycle-registration__step-content">
+      <div class="motorcycle-registration__motorcycle-info-card">
+        <h3 class="motorcycle-registration__card-title">¡Motocicleta Encontrada!</h3>
+        <p class="motorcycle-registration__card-description">Esta motocicleta ya está registrada en el sistema.</p>
+
+        <div class="motorcycle-registration__motorcycle-details">
+          <div class="motorcycle-registration__detail-row">
+            <strong>Placa:</strong> {{ foundMotorcycle()!.plate }}
+          </div>
+          <div class="motorcycle-registration__detail-row">
+            <strong>Marca:</strong> {{ foundMotorcycle()!.brand }}
+          </div>
+          <div class="motorcycle-registration__detail-row">
+            <strong>Modelo:</strong> {{ foundMotorcycle()!.model }}
+          </div>
+          <div class="motorcycle-registration__detail-row">
+            <strong>Año:</strong> {{ foundMotorcycle()!.year }}
+          </div>
+        </div>
+
+        <div class="motorcycle-registration__form-actions">
+          <button type="button" class="btn btn-secondary" (click)="goBack()">Cambiar Placa</button>
+          <button type="button" class="btn btn-primary" (click)="motorcycleRegistered.emit(foundMotorcycle()!)">
+            Continuar con esta Motocicleta
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- STATE: Claim Ownership -->
+  @if (currentState() === 'claiming-ownership') {
+    <div class="motorcycle-registration__step-content">
+      <div class="motorcycle-registration__motorcycle-info-card">
+        <h3 class="motorcycle-registration__card-title">Motocicleta Registrada por Otro Usuario</h3>
+        <p class="motorcycle-registration__card-description">Esta motocicleta ya está registrada en el sistema, pero no está asignada a tu cuenta.</p>
+
+        <div class="motorcycle-registration__motorcycle-details">
+          <div class="motorcycle-registration__detail-row">
+            <strong>Placa:</strong> {{ foundMotorcycle()!.plate }}
+          </div>
+          <div class="motorcycle-registration__detail-row">
+            <strong>Marca:</strong> {{ foundMotorcycle()!.brand }}
+          </div>
+          <div class="motorcycle-registration__detail-row">
+            <strong>Modelo:</strong> {{ foundMotorcycle()!.model }}
+          </div>
+        </div>
+
+        <div class="motorcycle-registration__ownership-notice">
+          <p class="motorcycle-registration__notice-text"><strong>Nota:</strong> Si eres el propietario de esta motocicleta, puedes reclamar la propiedad contactando al administrador del taller.</p>
+        </div>
+
+        <div class="motorcycle-registration__form-actions">
+          <button type="button" class="btn btn-secondary" (click)="goBack()">Cambiar Placa</button>
+          <button type="button" class="motorcycle-registration__btn-outline" (click)="claimOwnership()">
+            Solicitar Reclamo de Propiedad
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- STATE: Create New Motorcycle -->
+  @if (currentState() === 'creating-new') {
+    <div class="motorcycle-registration__step-content">
+      <h3 class="motorcycle-registration__card-title">Registrar Nueva Motocicleta</h3>
+      <p class="motorcycle-registration__card-description">Esta placa no está registrada en el sistema. Completa la información para crear un nuevo registro.</p>
+
+      <form [formGroup]="newMotorcycleForm" (ngSubmit)="createNewMotorcycle()" class="motorcycle-registration__new-motorcycle-form">
+        <div class="motorcycle-registration__form-row">
+          <div class="motorcycle-registration__form-group">
+            <label class="motorcycle-registration__form-label" for="brand">Marca</label>
+            <input
+              class="motorcycle-registration__form-input"
+              id="brand"
+              type="text"
+              formControlName="brand"
+              placeholder="Honda, Yamaha, etc."
+              [class.motorcycle-registration__form-input--error]="newMotorcycleForm.get('brand')?.invalid && newMotorcycleForm.get('brand')?.touched"
+            />
+            @if (newMotorcycleForm.get('brand')?.invalid && newMotorcycleForm.get('brand')?.touched) {
+              <span class="motorcycle-registration__error-text">Marca requerida</span>
+            }
+          </div>
+
+          <div class="motorcycle-registration__form-group">
+            <label class="motorcycle-registration__form-label" for="model">Modelo</label>
+            <input
+              class="motorcycle-registration__form-input"
+              id="model"
+              type="text"
+              formControlName="model"
+              placeholder="CB190R, MT-03, etc."
+              [class.motorcycle-registration__form-input--error]="newMotorcycleForm.get('model')?.invalid && newMotorcycleForm.get('model')?.touched"
+            />
+            @if (newMotorcycleForm.get('model')?.invalid && newMotorcycleForm.get('model')?.touched) {
+              <span class="motorcycle-registration__error-text">Modelo requerido</span>
+            }
+          </div>
+        </div>
+
+        <div class="motorcycle-registration__form-row">
+          <div class="motorcycle-registration__form-group">
+            <label class="motorcycle-registration__form-label" for="year">Año</label>
+            <input
+              class="motorcycle-registration__form-input"
+              id="year"
+              type="number"
+              formControlName="year"
+              min="1900"
+              max="2025"
+              [class.motorcycle-registration__form-input--error]="newMotorcycleForm.get('year')?.invalid && newMotorcycleForm.get('year')?.touched"
+            />
+            @if (newMotorcycleForm.get('year')?.invalid && newMotorcycleForm.get('year')?.touched) {
+              <span class="motorcycle-registration__error-text">Año válido requerido</span>
+            }
+          </div>
+
+          <div class="motorcycle-registration__form-group">
+            <label class="motorcycle-registration__form-label" for="mileage">Kilometraje Actual</label>
+            <input
+              class="motorcycle-registration__form-input"
+              id="mileage"
+              type="number"
+              formControlName="mileageKm"
+              placeholder="0"
+              min="0"
+              [class.motorcycle-registration__form-input--error]="newMotorcycleForm.get('mileageKm')?.invalid && newMotorcycleForm.get('mileageKm')?.touched"
+            />
+            @if (newMotorcycleForm.get('mileageKm')?.invalid && newMotorcycleForm.get('mileageKm')?.touched) {
+              <span class="motorcycle-registration__error-text">Kilometraje válido requerido</span>
+            }
+          </div>
+        </div>
+
+        <div class="motorcycle-registration__form-actions">
+          <button type="button" class="btn btn-secondary" (click)="goBack()">Cambiar Placa</button>
+          <button type="submit" class="btn btn-primary" [disabled]="newMotorcycleForm.invalid">
+            Registrar Motocicleta
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- STATE: Success -->
+  @if (currentState() === 'success') {
+    <div class="motorcycle-registration__step-content">
+      <div class="motorcycle-registration__success-card">
+        <div class="motorcycle-registration__success-icon">
+          <i class="icon-check"></i>
+        </div>
+        <h3 class="motorcycle-registration__card-title">¡Registro Exitoso!</h3>
+        <p class="motorcycle-registration__card-description">La motocicleta ha sido registrada correctamente.</p>
+
+        @if (registeredMotorcycle()) {
+          <div class="motorcycle-registration__registered-motorcycle-info">
+            <div class="motorcycle-registration__detail-row">
+              <strong>Placa:</strong> {{ registeredMotorcycle()!.plate }}
+            </div>
+            <div class="motorcycle-registration__detail-row">
+              <strong>Marca:</strong> {{ registeredMotorcycle()!.brand }}
+            </div>
+            <div class="motorcycle-registration__detail-row">
+              <strong>Modelo:</strong> {{ registeredMotorcycle()!.model }}
+            </div>
+          </div>
+        }
+
+        <div class="motorcycle-registration__form-actions">
+          <button type="button" class="btn btn-secondary" (click)="reset()">Registrar Otra</button>
+          <button type="button" class="btn btn-primary" (click)="motorcycleRegistered.emit(registeredMotorcycle()!)">
+            Continuar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- STATE: Error -->
+  @if (currentState() === 'error') {
+    <div class="motorcycle-registration__step-content">
+      <div class="motorcycle-registration__error-card">
+        <div class="motorcycle-registration__error-icon">
+          <i class="icon-error"></i>
+        </div>
+        <h3 class="motorcycle-registration__card-title">Error en el Registro</h3>
+        <p class="motorcycle-registration__card-description">{{ error() }}</p>
+
+        <div class="motorcycle-registration__form-actions">
+          <button type="button" class="btn btn-secondary" (click)="goBack()">Intentar de Nuevo</button>
+          <button type="button" class="motorcycle-registration__btn-outline" (click)="cancel()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

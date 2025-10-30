@@ -43,35 +43,6 @@ export class AuthService {
   constructor() {
     console.log('🔐 AuthService: Initializing authentication service');
 
-    // Check for existing localStorage data on init
-    const storedUser = localStorage.getItem('currentUser');
-    console.log('🔐 AuthService: Checking localStorage on init', { hasStoredUser: !!storedUser });
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        console.log('🔐 AuthService: Parsed user from localStorage', { uid: parsedUser.uid, email: parsedUser.email, role: parsedUser.role });
-        // Convert timestamps back to Timestamp-like objects
-        const userProfile: UserProfile = {
-          ...parsedUser,
-          createdAt: { toDate: () => new Date(parsedUser.createdAt) },
-          updatedAt: { toDate: () => new Date(parsedUser.updatedAt) },
-          technicianProfile: parsedUser.technicianProfile ? {
-            ...parsedUser.technicianProfile,
-            employmentStartAt: parsedUser.technicianProfile.employmentStartAt
-              ? { toDate: () => new Date(parsedUser.technicianProfile.employmentStartAt) }
-              : undefined
-          } : null
-        };
-        // Set currentUser immediately from localStorage to prevent brief unavailability
-        this.currentUser.set(userProfile);
-        this.authState.set(true);
-        console.log('🔐 AuthService: User profile restored from localStorage');
-      } catch (error) {
-        console.error('🔐 AuthService: Error parsing localStorage user data', error);
-        localStorage.removeItem('currentUser');
-      }
-    }
-
     // Listen to Firebase auth state changes
     onAuthStateChanged(auth, async (firebaseUser) => {
       console.log('🔐 AuthService: onAuthStateChanged fired', { hasUser: !!firebaseUser, uid: firebaseUser?.uid });
@@ -89,8 +60,6 @@ export class AuthService {
         console.log('🔐 AuthService: No Firebase user, clearing auth state');
         this.isHandlingAuth = false;
         this.currentUser.set(null);
-        console.log('🔐 AuthService: Removing currentUser from localStorage');
-        localStorage.removeItem('currentUser');
         this.authState.set(false);
       }
       this.authDetermined.set(true);
@@ -98,66 +67,7 @@ export class AuthService {
 
   }
 
-  async login(email: string, password: string): Promise<boolean> {
-    try {
-      console.log('🔐 AuthService: Attempting email/password login for:', email);
 
-      // Validate inputs
-      if (!email || !password) {
-        console.warn('🔐 AuthService: Email and password are required');
-        return false;
-      }
-
-      // Basic email validation
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(email)) {
-        console.warn('🔐 AuthService: Invalid email format');
-        return false;
-      }
-
-      // Use Firebase Authentication for secure login
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log('🔐 AuthService: Email/password login successful for:', email);
-      return true;
-
-    } catch (error: any) {
-      const errorContext = {
-        email: email,
-        timestamp: new Date().toISOString(),
-        errorCode: error.code,
-        errorMessage: error.message,
-        userAgent: navigator.userAgent,
-        url: window.location.href
-      };
-
-      console.error("🔐 AuthService: AUTH_LOGIN_FAILED - Error during email/password login:", errorContext);
-
-      // Handle specific Firebase auth errors with detailed codes and messages
-      switch (error.code) {
-        case 'auth/user-not-found':
-          console.warn('🔐 AuthService: AUTH_USER_NOT_FOUND - User account does not exist', { email, timestamp: errorContext.timestamp });
-          break;
-        case 'auth/wrong-password':
-          console.warn('🔐 AuthService: AUTH_INVALID_PASSWORD - Incorrect password provided', { email, timestamp: errorContext.timestamp });
-          break;
-        case 'auth/invalid-credential':
-          console.warn('🔐 AuthService: AUTH_INVALID_CREDENTIALS - Invalid login credentials', { email, timestamp: errorContext.timestamp });
-          break;
-        case 'auth/too-many-requests':
-          console.warn('🔐 AuthService: AUTH_TOO_MANY_REQUESTS - Account temporarily disabled due to many failed login attempts', { email, timestamp: errorContext.timestamp });
-          break;
-        case 'auth/user-disabled':
-          console.warn('🔐 AuthService: AUTH_USER_DISABLED - User account has been disabled', { email, timestamp: errorContext.timestamp });
-          break;
-        case 'auth/invalid-email':
-          console.warn('🔐 AuthService: AUTH_INVALID_EMAIL - Invalid email format', { email, timestamp: errorContext.timestamp });
-          break;
-        default:
-          console.warn('🔐 AuthService: AUTH_LOGIN_UNKNOWN_ERROR - Login failed with unknown error', errorContext);
-      }
-      return false;
-    }
-  }
 
   async logout() {
     try {
@@ -290,6 +200,9 @@ export class AuthService {
           technicianProfile: null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
+          isQrUser: true,  // ← AGREGAR: marca si entró por QR
+          phoneVerifiedAt: null, // ← AGREGAR: timestamp de verificación
+          enteredViaQr: true // ← AGREGAR: para analytics
         };
 
         if (assignableRoles.includes(defaultRole)) {
@@ -384,33 +297,6 @@ export class AuthService {
 
       this.currentUser.set(userProfile);
 
-      // Store in localStorage
-      const userForStorage = {
-        ...userProfile,
-        createdAt: userProfile.createdAt.toDate().getTime(),
-        updatedAt: userProfile.updatedAt.toDate().getTime(),
-        technicianProfile: userProfile.technicianProfile
-          ? {
-              ...userProfile.technicianProfile,
-              employmentStartAt: userProfile.technicianProfile.employmentStartAt
-                ? userProfile.technicianProfile.employmentStartAt.toDate().getTime()
-                : undefined,
-            }
-          : null,
-      };
-
-      console.log('🔐 AuthService: Preparing user data for localStorage storage', { uid: userForStorage.uid, email: userForStorage.email });
-      try {
-        const serializedData = JSON.stringify(userForStorage);
-        console.log('🔐 AuthService: Serialized user data length:', serializedData.length);
-        localStorage.setItem('currentUser', serializedData);
-        console.log('🔐 AuthService: User profile stored successfully in localStorage');
-        // Verify storage
-        const verifyStored = localStorage.getItem('currentUser');
-        console.log('🔐 AuthService: Verification - data stored in localStorage:', !!verifyStored);
-      } catch (error) {
-        console.error('🔐 AuthService: Error storing user in localStorage:', error);
-      }
 
     } catch (error: any) {
       const errorContext = {

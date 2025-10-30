@@ -1,10 +1,11 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
-import { Motorcycle, MotorcycleCategory, MotorcycleType, Vehicle, MotorcycleAssignment } from '../models';
+import { Motorcycle, MotorcycleCategory, MotorcycleType } from '../models';
 import { of, delay, Observable, from } from 'rxjs';
 import { db } from '../firebase.config';
 import { collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, DocumentData, DocumentSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { MotorcycleCategorizationService } from './motorcycle-categorization.service';
 import { AuthService } from './auth.service';
+import { CacheService } from './cache.service'; // Import CacheService
 
 const fromFirestore = <T>(snapshot: DocumentSnapshot<DocumentData, DocumentData>): T => {
     const data = snapshot.data() as any;
@@ -18,26 +19,38 @@ export class MotorcycleService {
   private motorcycles = signal<Motorcycle[]>([]);
   categorizationService = inject(MotorcycleCategorizationService);
   private authService = inject(AuthService);
+  private cacheService = inject(CacheService); // Inject CacheService
+
+  private readonly CATALOG_CACHE_KEY = 'motorcycle_catalog';
+  private readonly CATALOG_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours for static catalog data
 
   constructor() {
     // Subscribe to auth state changes for reactive loading
     effect(() => {
       const user = this.authService.currentUser();
       if (user) {
-        console.log('MotorcycleService: User authenticated, loading motorcycles');
+        console.log('MotorcycleService: User authenticated, loading motorcycles catalog');
         this.loadMotorcycles();
       } else {
-        console.log('MotorcycleService: User not authenticated, clearing motorcycles');
+        console.log('MotorcycleService: User not authenticated, clearing motorcycles catalog');
         this.motorcycles.set([]);
       }
     });
   }
 
   private async loadMotorcycles() {
+    // Check cache first
+    const cachedCatalog = await this.cacheService.get<Motorcycle[]>(this.CATALOG_CACHE_KEY);
+    if (cachedCatalog) {
+      console.log('MotorcycleService: Loading motorcycles catalog from cache');
+      this.motorcycles.set(cachedCatalog);
+      return;
+    }
+
     // Get current user from AuthService
     const currentUser = this.authService.currentUser();
 
-    console.log("MotorcycleService: Loading motorcycles - Auth check:", {
+    console.log("MotorcycleService: Loading motorcycles catalog - Auth check:", {
       isAuthenticated: !!currentUser,
       userId: currentUser?.id,
       userEmail: currentUser?.email,
@@ -45,18 +58,22 @@ export class MotorcycleService {
     });
 
     if (!currentUser) {
-      console.warn("MotorcycleService: No authenticated user - cannot load motorcycles");
+      console.warn("MotorcycleService: No authenticated user - cannot load motorcycles catalog");
       return;
     }
 
     try {
-      console.log("MotorcycleService: Attempting to load motorcycles collection");
+      console.log("MotorcycleService: Attempting to load motorcycles catalog collection");
       const querySnapshot = await getDocs(collection(db, "motorcycles"));
       const motorcyclesData = querySnapshot.docs.map(doc => fromFirestore<Motorcycle>(doc));
-      console.log(`MotorcycleService: Successfully loaded ${motorcyclesData.length} motorcycles`);
+      console.log(`MotorcycleService: Successfully loaded ${motorcyclesData.length} motorcycles catalog`);
       this.motorcycles.set(motorcyclesData);
+
+      // Store in cache
+      this.cacheService.set(this.CATALOG_CACHE_KEY, motorcyclesData, this.CATALOG_CACHE_TTL, 'catalog', undefined, undefined, undefined, 'low');
+
     } catch (error: any) {
-      console.error("MotorcycleService: Error fetching motorcycles:", {
+      console.error("MotorcycleService: Error fetching motorcycles catalog:", {
         message: error.message,
         code: error.code,
         userRole: currentUser?.role,
@@ -70,7 +87,7 @@ export class MotorcycleService {
       // Handle specific Firebase errors
       switch (error.code) {
         case 'permission-denied':
-          console.warn('MotorcycleService: PERMISSION_DENIED - User lacks permission to read motorcycles');
+          console.warn('MotorcycleService: PERMISSION_DENIED - User lacks permission to read motorcycles catalog');
           break;
         case 'unavailable':
           console.warn('MotorcycleService: SERVICE_UNAVAILABLE - Firestore service temporarily unavailable');
@@ -85,7 +102,7 @@ export class MotorcycleService {
           console.warn('MotorcycleService: RESOURCE_EXHAUSTED - Quota exceeded or rate limited');
           break;
         default:
-          console.warn('MotorcycleService: UNKNOWN_ERROR - Unknown error fetching motorcycles');
+          console.warn('MotorcycleService: UNKNOWN_ERROR - Unknown error fetching motorcycles catalog');
       }
     }
   }
@@ -93,28 +110,18 @@ export class MotorcycleService {
   getMotorcycles() {
     return this.motorcycles.asReadonly();
   }
-  
-  getVehiclesForUser(userId: string): Observable<Vehicle[]> {
-    return from(new Promise<Vehicle[]>(async (resolve, reject) => {
-        try {
-            const q = query(collection(db, "vehicles"), where("ownerId", "==", userId));
-            const querySnapshot = await getDocs(q);
-            resolve(querySnapshot.docs.map(doc => fromFirestore<Vehicle>(doc)));
-        } catch(e) { reject(e); }
-    }));
-  }
 
+  // CRUD operations for the motorcycle catalog (if needed, otherwise remove)
+  // For now, assuming these are for managing the catalog itself
   addMotorcycle(motorcycle: Omit<Motorcycle, 'id'>): Observable<Motorcycle> {
     return from(new Promise<Motorcycle>(async (resolve, reject) => {
       try {
-        // Check authentication
         const currentUser = this.authService.currentUser();
         if (!currentUser) {
           reject(new Error('User not authenticated'));
           return;
         }
 
-        // Auto-complete and validate motorcycle data
         const completedMotorcycle = this.categorizationService.autoComplete(motorcycle);
         const validation = this.categorizationService.validateMotorcycle(completedMotorcycle);
 
@@ -123,7 +130,6 @@ export class MotorcycleService {
           return;
         }
 
-        // Add timestamps using serverTimestamp for Firestore
         const motorcycleWithTimestamps = {
           ...completedMotorcycle,
           createdAt: serverTimestamp(),
@@ -138,9 +144,11 @@ export class MotorcycleService {
           updatedAt: { toDate: () => new Date() }
         } as Motorcycle;
         this.motorcycles.update(motos => [...motos, newMotorcycle]);
+        // Invalidate catalog cache on add
+        this.cacheService.invalidateByEntity('catalog', this.CATALOG_CACHE_KEY);
         resolve(newMotorcycle);
       } catch (e: any) {
-        console.error('MotorcycleService: Error adding motorcycle:', {
+        console.error('MotorcycleService: Error adding motorcycle to catalog:', {
           message: e.message,
           code: e.code,
           networkOnline: navigator.onLine,
@@ -148,33 +156,7 @@ export class MotorcycleService {
           userAgent: navigator.userAgent,
           url: window.location.href
         });
-
-        // Handle specific Firebase errors
-        switch (e.code) {
-          case 'permission-denied':
-            console.warn('MotorcycleService: PERMISSION_DENIED - User lacks permission to add motorcycles');
-            reject(new Error('No tienes permisos para agregar motocicletas'));
-            break;
-          case 'unavailable':
-            console.warn('MotorcycleService: SERVICE_UNAVAILABLE - Firestore service temporarily unavailable');
-            reject(new Error('Servicio temporalmente no disponible'));
-            break;
-          case 'internal':
-            console.error('MotorcycleService: FIREBASE_INTERNAL_ERROR - Firebase internal error occurred');
-            reject(new Error('Error interno del servicio'));
-            break;
-          case 'deadline-exceeded':
-            console.warn('MotorcycleService: DEADLINE_EXCEEDED - Request timed out');
-            reject(new Error('La solicitud ha expirado'));
-            break;
-          case 'resource-exhausted':
-            console.warn('MotorcycleService: RESOURCE_EXHAUSTED - Quota exceeded or rate limited');
-            reject(new Error('Límite de recursos excedido'));
-            break;
-          default:
-            console.warn('MotorcycleService: UNKNOWN_ERROR - Unknown error adding motorcycle');
-            reject(new Error(e.message || 'Error desconocido al agregar motocicleta'));
-        }
+        reject(new Error(e.message || 'Error desconocido al agregar motocicleta al catálogo'));
       }
     }));
   }
@@ -182,7 +164,6 @@ export class MotorcycleService {
   updateMotorcycle(updatedMotorcycle: Motorcycle): Observable<Motorcycle> {
     return from(new Promise<Motorcycle>(async (resolve, reject) => {
       try {
-        // Check authentication
         const currentUser = this.authService.currentUser();
         if (!currentUser) {
           reject(new Error('User not authenticated'));
@@ -195,6 +176,8 @@ export class MotorcycleService {
         this.motorcycles.update(motos =>
           motos.map(moto => moto.id === updatedMotorcycle.id ? updatedMotorcycle : moto)
         );
+        // Invalidate catalog cache on update
+        this.cacheService.invalidateByEntity('catalog', this.CATALOG_CACHE_KEY);
         resolve(updatedMotorcycle);
       } catch(e) {
         reject(e);
@@ -205,7 +188,6 @@ export class MotorcycleService {
   deleteMotorcycle(id: string): Observable<boolean> {
       return from(new Promise<boolean>(async (resolve, reject) => {
         try {
-          // Check authentication
           const currentUser = this.authService.currentUser();
           if (!currentUser) {
             reject(new Error('User not authenticated'));
@@ -214,6 +196,8 @@ export class MotorcycleService {
 
          await deleteDoc(doc(db, "motorcycles", id));
          this.motorcycles.update(motos => motos.filter(moto => moto.id !== id));
+         // Invalidate catalog cache on delete
+         this.cacheService.invalidateByEntity('catalog', this.CATALOG_CACHE_KEY);
          resolve(true);
         } catch(e) {
           reject(e);
@@ -298,264 +282,48 @@ export class MotorcycleService {
     return this.categorizationService.autoComplete(motorcycle);
   }
 
-  // ========== PLATE-BASED OPERATIONS ==========
-
-  /**
-   * Find motorcycle by license plate
-   */
-  findMotorcycleByPlate(plate: string): Observable<Motorcycle | null> {
-    return from(new Promise<Motorcycle | null>(async (resolve, reject) => {
-      try {
-        // Check authentication
-        const currentUser = this.authService.currentUser();
-        if (!currentUser) {
-          reject(new Error('User not authenticated'));
-          return;
-        }
-
-        // Query motorcycles by plate
-        const q = query(collection(db, "motorcycles"), where("plate", "==", plate));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-          resolve(null);
-          return;
-        }
-
-        const motorcycle = fromFirestore<Motorcycle>(querySnapshot.docs[0]);
-
-        // Check if user has access to this motorcycle
-        if (!await this.checkUserHasAccessToMotorcycle(currentUser.id, motorcycle.id)) {
-          reject(new Error('No tienes acceso a esta motocicleta'));
-          return;
-        }
-
-        resolve(motorcycle);
-      } catch (error) {
-        console.error('Error finding motorcycle by plate:', error);
-        reject(error);
-      }
-    }));
-  }
-
-  /**
-   * Create motorcycle catalog entry from plate data
-   */
-  createMotorcycleFromPlate(plate: string, userData: any): Observable<Motorcycle> {
-    return from(new Promise<Motorcycle>(async (resolve, reject) => {
-      try {
-        // Check authentication
-        const currentUser = this.authService.currentUser();
-        if (!currentUser) {
-          reject(new Error('User not authenticated'));
-          return;
-        }
-
-        // Check if plate already exists
-        const existingMotorcycle = await this.findMotorcycleByPlate(plate).toPromise();
-        if (existingMotorcycle) {
-          reject(new Error('Ya existe una motocicleta registrada con esta placa'));
-          return;
-        }
-
-        // Create motorcycle with plate
-        const motorcycleData: Omit<Motorcycle, 'id' | 'createdAt' | 'updatedAt'> = {
-          brand: userData.brand || 'Desconocida',
-          model: userData.model || 'Desconocido',
-          year: userData.year || new Date().getFullYear(),
-          plate: plate,
-          isActive: true
-        };
-
-        // Auto-complete and validate
-        const completedMotorcycle = this.categorizationService.autoComplete(motorcycleData);
-        const validation = this.categorizationService.validateMotorcycle(completedMotorcycle);
-
-        if (!validation.isValid) {
-          reject(new Error(`Validation failed: ${validation.errors.join(', ')}`));
-          return;
-        }
-
-        // Add to Firestore
-        const docRef = await addDoc(collection(db, "motorcycles"), {
-          ...completedMotorcycle,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-
-        const newMotorcycle = {
-          ...completedMotorcycle,
-          id: docRef.id,
-          createdAt: { toDate: () => new Date() },
-          updatedAt: { toDate: () => new Date() }
-        } as Motorcycle;
-
-        // Update local state
-        this.motorcycles.update(motos => [...motos, newMotorcycle]);
-
-        // Create assignment for the user
-        await this.createMotorcycleAssignment({
-          userId: currentUser.id,
-          motorcycleId: newMotorcycle.id,
-          plate: plate,
-          assignedBy: currentUser.id,
-          status: 'active',
-          mileageKm: userData.mileageKm,
-          notes: `Asignación creada al registrar motocicleta con placa ${plate}`
-        });
-
-        resolve(newMotorcycle);
-      } catch (error) {
-        console.error('Error creating motorcycle from plate:', error);
-        reject(error);
-      }
-    }));
-  }
-
-  /**
-   * Get or create motorcycle by plate (combined lookup/create method)
-   */
-  getOrCreateMotorcycleByPlate(plate: string, userData: any): Observable<Motorcycle> {
-    return from(new Promise<Motorcycle>(async (resolve, reject) => {
-      try {
-        // Check authentication
-        const currentUser = this.authService.currentUser();
-        if (!currentUser) {
-          reject(new Error('User not authenticated'));
-          return;
-        }
-
-        // First try to find existing motorcycle
-        const existingMotorcycle = await this.findMotorcycleByPlate(plate).toPromise();
-
-        if (existingMotorcycle) {
-          resolve(existingMotorcycle);
-          return;
-        }
-
-        // If not found, create new one
-        const newMotorcycle = await this.createMotorcycleFromPlate(plate, userData).toPromise();
-        if (newMotorcycle) {
-          resolve(newMotorcycle);
-        } else {
-          reject(new Error('Failed to create motorcycle'));
-        }
-
-      } catch (error) {
-        console.error('Error in getOrCreateMotorcycleByPlate:', error);
-        reject(error);
-      }
-    }));
-  }
-
-  // ========== ASSIGNMENT CHECKING METHODS ==========
-
-  /**
-   * Check if user has access to a specific motorcycle
-   */
-  private async checkUserHasAccessToMotorcycle(userId: string, motorcycleId: string): Promise<boolean> {
-    try {
-      // Query motorcycle assignments
-      const q = query(
-        collection(db, 'motorcycleAssignments'),
-        where('userId', '==', userId),
-        where('motorcycleId', '==', motorcycleId),
-        where('status', '==', 'active')
-      );
-
-      const querySnapshot = await getDocs(q);
-      return !querySnapshot.empty;
-    } catch (error) {
-      console.error('Error checking user motorcycle access:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Create motorcycle assignment
-   */
-  private async createMotorcycleAssignment(assignment: Omit<MotorcycleAssignment, 'id' | 'assignedAt' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    try {
-      const assignmentData = {
-        ...assignment,
-        assignedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      const docRef = await addDoc(collection(db, "motorcycleAssignments"), assignmentData);
-      return docRef.id;
-    } catch (error) {
-      console.error('Error creating motorcycle assignment:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get user's assigned motorcycles
-   */
-  getUserAssignedMotorcycles(userId?: string): Observable<Motorcycle[]> {
+  getUserAssignedMotorcycles(userId: string): Observable<Motorcycle[]> {
     return from(new Promise<Motorcycle[]>(async (resolve, reject) => {
       try {
-        const currentUser = this.authService.currentUser();
-        const targetUserId = userId || currentUser?.id;
-
-        if (!targetUserId) {
-          reject(new Error('User not authenticated'));
-          return;
-        }
-
-        // Get user's assignments
+        // Query motorcycleAssignments collection for active assignments of this user
         const assignmentsQuery = query(
           collection(db, 'motorcycleAssignments'),
-          where('userId', '==', targetUserId),
+          where('userId', '==', userId),
           where('status', '==', 'active')
         );
-
         const assignmentsSnapshot = await getDocs(assignmentsQuery);
-        const motorcycleIds = assignmentsSnapshot.docs.map(doc => doc.data()['motorcycleId'] as string);
+
+        const motorcycleIds: string[] = [];
+        assignmentsSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.motorcycleId) {
+            motorcycleIds.push(data.motorcycleId);
+          }
+        });
 
         if (motorcycleIds.length === 0) {
           resolve([]);
           return;
         }
 
-        // Get motorcycles by IDs
+        // Get the motorcycles from the catalog
         const motorcycles: Motorcycle[] = [];
         for (const motorcycleId of motorcycleIds) {
-          const motorcycleDoc = await getDoc(doc(db, 'motorcycles', motorcycleId));
-          if (motorcycleDoc.exists()) {
-            motorcycles.push(fromFirestore<Motorcycle>(motorcycleDoc));
+          try {
+            const motorcycleDoc = await getDoc(doc(db, 'motorcycles', motorcycleId));
+            if (motorcycleDoc.exists()) {
+              const motorcycle = fromFirestore<Motorcycle>(motorcycleDoc);
+              motorcycles.push(motorcycle);
+            }
+          } catch (error) {
+            console.error(`Error fetching motorcycle ${motorcycleId}:`, error);
           }
         }
 
         resolve(motorcycles);
-      } catch (error) {
-        console.error('Error getting user assigned motorcycles:', error);
-        reject(error);
-      }
-    }));
-  }
-
-  /**
-   * Check if user can access motorcycle by plate
-   */
-  canUserAccessMotorcycleByPlate(userId: string, plate: string): Observable<boolean> {
-    return from(new Promise<boolean>(async (resolve, reject) => {
-      try {
-        // Find motorcycle by plate
-        const motorcycle = await this.findMotorcycleByPlate(plate).toPromise();
-        if (!motorcycle) {
-          resolve(false);
-          return;
-        }
-
-        // Check access
-        const hasAccess = await this.checkUserHasAccessToMotorcycle(userId, motorcycle.id);
-        resolve(hasAccess);
-      } catch (error) {
-        console.error('Error checking user access by plate:', error);
-        reject(error);
+      } catch (error: any) {
+        console.error('Error fetching user assigned motorcycles:', error);
+        reject(new Error(error.message || 'Error fetching assigned motorcycles'));
       }
     }));
   }

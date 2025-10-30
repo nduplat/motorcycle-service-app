@@ -51,7 +51,7 @@ export class InventoryReportsComponent implements OnInit {
   vehicleWorkOrders = computed(() => {
     const vehicleId = this.selectedVehicleId();
     if (!vehicleId) return [];
-    return this.workOrders().filter(wo => wo.vehicleId === vehicleId);
+    return this.workOrders().filter(wo => wo.plate === vehicleId);
   });
 
   productUsages = computed(() => {

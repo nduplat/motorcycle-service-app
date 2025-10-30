@@ -39,4 +39,8 @@ export class AuditService {
   async logStockMovement(productId: string, action: string, quantity: number, performedBy?: string): Promise<void> {
     await this.logChange('stockMovements', productId, action, { quantity }, performedBy);
   }
+
+  async logMotorcycleAssignmentChange(assignmentId: string, action: string, changes?: Record<string, any>, performedBy?: string): Promise<void> {
+    await this.logChange('motorcycleAssignments', assignmentId, action, changes, performedBy);
+  }
 }

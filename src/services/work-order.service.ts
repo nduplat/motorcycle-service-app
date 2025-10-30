@@ -1,7 +1,7 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
 import { WorkOrder, Appointment, ServiceItem, Timestamp, QueueEntry, WorkOrderFilter, WorkOrderStats, TimeEntryMetrics, AppointmentStatus } from '../models';
-import { Observable, from, BehaviorSubject, combineLatest } from 'rxjs';
-import { map, switchMap, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Observable, from, BehaviorSubject, combineLatest, of } from 'rxjs';
+import { map, switchMap, debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 import { db } from '../firebase.config';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, serverTimestamp, DocumentData, DocumentSnapshot, query, where, orderBy, limit, startAfter, Timestamp as FirebaseTimestamp, onSnapshot, QueryConstraint } from 'firebase/firestore';
 import { AppointmentService } from './appointment.service';
@@ -9,10 +9,14 @@ import { ServiceItemService } from './service-item.service';
 import { StockMovementService } from './stock-movement.service';
 import { AuthService } from './auth.service';
 import { QrCodeService } from './qr-code.service';
-import { EventBusService } from './event-bus.service';
+import { EventBusService, NotificationEvent } from './event-bus.service';
 import { OfflineDetectionService } from './offline-detection.service';
 import { LocalStorageService } from './local-storage.service';
 import { SyncMediatorService } from './sync-mediator.service';
+import { JobQueueService } from './job-queue.service';
+import { CacheService } from './cache.service';
+import { ApiService } from './api.service';
+import { JobType, JobPriority } from '../models';
 
 const fromFirestore = <T>(snapshot: DocumentSnapshot<DocumentData, DocumentData>): T => {
     const data = snapshot.data() as any;
@@ -41,6 +45,9 @@ export class WorkOrderService {
   private offlineDetectionService = inject(OfflineDetectionService);
   private localStorageService = inject(LocalStorageService);
   private syncMediator = inject(SyncMediatorService);
+  private jobQueueService = inject(JobQueueService);
+  private cacheService = inject(CacheService);
+  private apiService = inject(ApiService);
 
   // Real-time subscription
   private realtimeSubscription: any = null;
@@ -89,6 +96,18 @@ export class WorkOrderService {
         this.stopRealtimeUpdates();
       }
     }, { allowSignalWrites: true });
+
+    // Listen for appointment status changes to create work orders
+    this.eventBus.events$.pipe(
+      filter((event): event is Extract<NotificationEvent, { type: 'appointment.status_changed' }> => 
+        event.type === 'appointment.status_changed' && 
+        event.newStatus === AppointmentStatus.IN_PROGRESS &&
+        !event.entity.workOrderId
+      )
+    ).subscribe(event => {
+      console.log('WorkOrderService: Received appointment.status_changed to IN_PROGRESS, creating work order.', event.entity);
+      this.createWorkOrderFromAppointment(event.entity).subscribe();
+    });
 
     // Setup search and filter observables
     this.setupSearchAndFilter();
@@ -235,7 +254,7 @@ export class WorkOrderService {
       filtered = filtered.filter(wo =>
         wo.id.toLowerCase().includes(term) ||
         wo.clientId.toLowerCase().includes(term) ||
-        wo.vehicleId.toLowerCase().includes(term) ||
+        wo.plate.toLowerCase().includes(term) ||
         (wo.notes && wo.notes.toLowerCase().includes(term))
       );
     }
@@ -253,8 +272,8 @@ export class WorkOrderService {
       filtered = filtered.filter(wo => wo.clientId === filter.clientId);
     }
 
-    if (filter.vehicleId) {
-      filtered = filtered.filter(wo => wo.vehicleId === filter.vehicleId);
+    if (filter.plate) {
+      filtered = filtered.filter(wo => wo.plate === filter.plate);
     }
 
     if (filter.dateRange) {
@@ -380,208 +399,163 @@ export class WorkOrderService {
   }
   
   createWorkOrder(workOrder: Omit<WorkOrder, 'id' | 'createdAt'>): Observable<WorkOrder> {
-    return from(new Promise<WorkOrder>(async (resolve, reject) => {
-        try {
-            // Check authentication
-            const currentUser = this.authService.currentUser();
-            if (!currentUser) {
-                reject(new Error('User not authenticated'));
-                return;
-            }
+    const currentUser = this.authService.currentUser();
+    if (!currentUser) {
+      return new Observable(observer => observer.error(new Error('User not authenticated')));
+    }
 
-            const workOrderWithTimestamp = {
-                ...workOrder,
-                createdAt: serverTimestamp(),
-            };
-            const docRef = await addDoc(collection(db, "workOrders"), workOrderWithTimestamp);
-            const newWorkOrder = {
-                ...workOrder,
-                id: docRef.id,
-                createdAt: { toDate: () => new Date() }
-            } as WorkOrder;
-            this.workOrders.update(wos => [...wos, newWorkOrder]);
+    // For heavy operations, use background processing via JobQueueService
+    if (workOrder.services && workOrder.services.length > 2) {
+      console.log('🔄 Heavy work order creation detected, using background processing');
+      return from(this.jobQueueService.enqueueJob(
+        JobType.CREATE_WORK_ORDER,
+        { workOrderData: workOrder },
+        { priority: workOrder.priority === 'urgent' ? JobPriority.URGENT : JobPriority.HIGH, createdBy: currentUser.id }
+      )).pipe(
+        map(job => {
+          const placeholderWorkOrder = {
+            ...workOrder,
+            id: `pending_${job.id}`,
+            status: 'open' as const,
+            createdAt: FirebaseTimestamp.now(),
+            totalPrice: 0
+          } as WorkOrder;
+          return placeholderWorkOrder;
+        })
+      );
+    }
 
-            this.invalidateCache();
-
-            resolve(newWorkOrder);
-        } catch(e) {
-            reject(e);
-        }
-    }));
+    // For simple work orders, call the backend function directly
+    return this.apiService.callFunction<{ id: string, success: boolean }>('createWorkOrder', workOrder)
+      .pipe(
+        map(result => {
+          const newWorkOrder = {
+            ...workOrder,
+            id: result.id,
+            createdAt: { toDate: () => new Date() } // Mock timestamp for immediate UI update
+          } as WorkOrder;
+          this.workOrders.update(wos => [...wos, newWorkOrder]);
+          this.invalidateCache();
+          return newWorkOrder;
+        })
+      );
   }
 
   createWorkOrderFromAppointment(appointment: Appointment): Observable<WorkOrder> {
-    return from(new Promise<WorkOrder>(async (resolve, reject) => {
-      try {
-        console.log('🔍 WorkOrderService: Creating work order from appointment', {
-          appointmentId: appointment.id,
-          appointmentStatus: appointment.status,
-          clientId: appointment.clientId,
-          vehicleId: appointment.vehicleId,
-          serviceId: appointment.serviceId,
-          assignedTo: appointment.assignedTo
-        });
+    console.log('🔍 WorkOrderService: Creating work order from appointment', { appointmentId: appointment.id });
 
-        const serviceDetails = this.serviceItemService.getServices()().find(s => s.id === appointment.serviceId);
-        console.log('🔍 WorkOrderService: Service details lookup', {
-          serviceId: appointment.serviceId,
-          serviceFound: !!serviceDetails,
-          servicePrice: serviceDetails?.price
-        });
+    const serviceDetails = this.serviceItemService.getServices()().find(s => s.id === appointment.serviceId);
 
-        const newWorkOrderData = {
-          clientId: appointment.clientId,
-          vehicleId: appointment.vehicleId,
-          status: 'in_progress' as const,
-          assignedTo: appointment.assignedTo,
-          services: serviceDetails ? [serviceDetails.id] : [],
-          products: [],
-          totalPrice: serviceDetails?.price || 0,
-          createdAt: serverTimestamp(),
-        };
+    const newWorkOrderData = {
+      clientId: appointment.clientId,
+      plate: appointment.plate,
+      status: 'in_progress' as const,
+      assignedTo: appointment.assignedTo,
+      services: serviceDetails ? [serviceDetails.id] : [],
+      products: [],
+      totalPrice: serviceDetails?.price || 0,
+      notes: `Creada desde la cita #${appointment.number}. ${appointment.notes || ''}`,
+      appointmentId: appointment.id
+    };
 
-        console.log('🔍 WorkOrderService: Work order data prepared', newWorkOrderData);
-
-        const docRef = await addDoc(collection(db, "workOrders"), newWorkOrderData);
-        console.log('🔍 WorkOrderService: Work order created in Firestore', { workOrderId: docRef.id });
-
+    return this.apiService.callFunction<{ id: string, success: boolean }>('createWorkOrder', newWorkOrderData).pipe(
+      switchMap(result => {
         const newWorkOrder = {
-            ...newWorkOrderData,
-            id: docRef.id,
-            createdAt: { toDate: () => new Date() }
-        } as unknown as WorkOrder;
+          ...newWorkOrderData,
+          id: result.id,
+          createdAt: FirebaseTimestamp.now(),
+          updatedAt: FirebaseTimestamp.now(),
+        } as WorkOrder;
 
         this.workOrders.update(wos => [...wos, newWorkOrder]);
         this.invalidateCache();
 
-        console.log('🔍 WorkOrderService: Updating appointment status to IN_PROGRESS', {
-          appointmentId: appointment.id,
-          workOrderId: docRef.id
-        });
-
-        this.appointmentService.updateAppointmentStatus(appointment.id, AppointmentStatus.IN_PROGRESS, docRef.id).subscribe({
-          next: (updatedAppointment) => {
-            console.log('🔍 WorkOrderService: Appointment status updated successfully', {
-              appointmentId: appointment.id,
-              newStatus: updatedAppointment?.status,
-              workOrderId: updatedAppointment?.workOrderId
-            });
-          },
-          error: (error) => {
-            console.error('🔍 WorkOrderService: Failed to update appointment status', {
-              appointmentId: appointment.id,
-              error: error instanceof Error ? error.message : String(error),
-              workOrderId: docRef.id
-            });
-          }
-        });
-
-        console.log('🔍 WorkOrderService: Work order creation completed', { workOrderId: docRef.id });
-        resolve(newWorkOrder);
-      } catch (e) {
-        console.error('🔍 WorkOrderService: Error creating work order from appointment', {
-          appointmentId: appointment.id,
-          error: e instanceof Error ? e.message : String(e),
-          stack: e instanceof Error ? e.stack : undefined
-        });
-        reject(e);
-      }
-    }));
+        // After creating the work order, update the appointment status
+        return this.appointmentService.updateAppointmentStatus(appointment.id, AppointmentStatus.IN_PROGRESS, newWorkOrder.id).pipe(
+          map(() => newWorkOrder) // Return the new work order
+        );
+      })
+    );
   }
 
   updateWorkOrder(updatedWO: WorkOrder): Observable<WorkOrder> {
-    return from(new Promise<WorkOrder>(async (resolve, reject) => {
-      try {
-        // Check authentication
-        const currentUser = this.authService.currentUser();
-        if (!currentUser) {
-          reject(new Error('User not authenticated'));
-          return;
-        }
+    const originalWO = this.workOrders().find(wo => wo.id === updatedWO.id);
 
-        const originalWO = this.workOrders().find(wo => wo.id === updatedWO.id);
+    // Offline handling remains the same
+    if (!this.offlineDetectionService.isOnline()) {
+      this.syncMediator.notifyOfflineOperationQueued('work_order', updatedWO);
+      this.workOrders.update(wos =>
+        wos.map(wo => wo.id === updatedWO.id ? updatedWO : wo)
+      );
+      const cachedWorkOrders = this.localStorageService.getCachedWorkOrders();
+      const updatedCache = cachedWorkOrders.map(wo => wo.id === updatedWO.id ? updatedWO : wo);
+      if (!updatedCache.find(wo => wo.id === updatedWO.id)) {
+        updatedCache.push(updatedWO);
+      }
+      this.localStorageService.cacheWorkOrders(updatedCache);
+      return of(updatedWO);
+    }
 
-        // Check if offline - queue operation for later sync
-        if (!this.offlineDetectionService.isOnline()) {
-          this.syncMediator.notifyOfflineOperationQueued('work_order', updatedWO);
+    // Online: use ApiService to call the backend function
+    const payload = {
+      orderId: updatedWO.id,
+      newStatus: updatedWO.status,
+      notes: updatedWO.notes
+    };
 
-          // Update local state immediately
-          this.workOrders.update(wos =>
-            wos.map(wo => wo.id === updatedWO.id ? updatedWO : wo)
-          );
-
-          // Cache the updated work order
-          const cachedWorkOrders = this.localStorageService.getCachedWorkOrders();
-          const updatedCache = cachedWorkOrders.map(wo => wo.id === updatedWO.id ? updatedWO : wo);
-          if (!updatedCache.find(wo => wo.id === updatedWO.id)) {
-            updatedCache.push(updatedWO);
-          }
-          this.localStorageService.cacheWorkOrders(updatedCache);
-
-          resolve(updatedWO);
-          return;
-        }
-
-        // Online - update immediately
-        const docRef = doc(db, "workOrders", updatedWO.id);
-        const { id, ...dataToUpdate } = updatedWO;
-        await updateDoc(docRef, { ...dataToUpdate, updatedAt: serverTimestamp() });
+    return this.apiService.callFunction('updateWorkOrderStatus', payload).pipe(
+      map(result => {
+        // Update local state after successful backend call
         this.workOrders.update(wos =>
           wos.map(wo => wo.id === updatedWO.id ? updatedWO : wo)
         );
-
         this.invalidateCache();
 
+        // Invalidate specific cache
+        this.cacheService.invalidateByEntity('work-order', updatedWO.id).catch(err =>
+          console.error('Work order update cache invalidation error:', err)
+        );
+
         if (originalWO && originalWO.status !== updatedWO.status) {
-            this.eventBus.emit({
-              type: 'work_order.status_changed',
-              entity: updatedWO,
-              previousStatus: originalWO.status
-            });
+          this.eventBus.emit({
+            type: 'work_order.status_changed',
+            entity: updatedWO,
+            previousStatus: originalWO.status
+          });
         }
 
-        resolve(updatedWO);
-      } catch (e) {
-        reject(e);
-      }
-    }));
+        return updatedWO;
+      })
+    );
   }
   
   completeWorkOrder(wo: WorkOrder): Observable<WorkOrder> {
-    return from(new Promise<WorkOrder>(async (resolve, reject) => {
-      try {
-        const currentUser = this.authService.currentUser();
-        if (!currentUser) throw new Error("User not authenticated");
+    // Delegate the entire completion logic to a single, atomic backend function
+    return this.apiService.callFunction<{ success: boolean, workOrder: WorkOrder }>('completeWorkOrder', { workOrderId: wo.id })
+      .pipe(
+        map(result => {
+          const updatedWO = { ...wo, status: 'ready_for_pickup' as const };
 
-        await this.stockMovementService.createMovementsForWorkOrder(wo, currentUser.id).toPromise();
+          // Update local state after successful backend call
+          this.workOrders.update(wos =>
+            wos.map(w => w.id === updatedWO.id ? updatedWO : w)
+          );
+          this.invalidateCache();
 
-        const updatedWO = { ...wo, status: 'ready_for_pickup' as const };
-        await this.updateWorkOrder(updatedWO).toPromise();
+          // Emit event for other parts of the UI to react
+          this.eventBus.emit({ type: 'work_order.completed', entity: updatedWO });
 
-        // Send service reminder for the vehicle
-        const workOrders = this.workOrders().filter(wo2 => wo2.vehicleId === wo.vehicleId && (wo2.status === 'ready_for_pickup' || wo2.status === 'delivered'));
-        let lastServiceDate: Date | undefined;
-        if (workOrders.length > 0) {
-          const lastService = workOrders.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime())[0];
-          lastServiceDate = lastService.createdAt.toDate();
-        }
-        this.eventBus.emit({ type: 'work_order.completed', entity: wo, lastServiceDate });
-
-        const appointment = this.appointmentService.getAppointments()().find(a => a.workOrderId === wo.id);
-        if (appointment) {
-          await this.appointmentService.updateAppointmentStatus(appointment.id, AppointmentStatus.COMPLETED).toPromise();
-        }
-
-        resolve(updatedWO);
-
-      } catch(e) {
-        reject(e);
-      }
-    }));
+          return updatedWO;
+        })
+      );
   }
 
   private invalidateCache(): void {
     this.cache = null;
+    // Trigger cross-service invalidation
+    this.cacheService.invalidateByEntity('work-order', 'data').catch(err =>
+      console.error('Work order cache invalidation error:', err)
+    );
   }
 
   // Offline functionality
@@ -769,44 +743,37 @@ export class WorkOrderService {
   }
 
   createWorkOrderFromQueueEntry(entry: QueueEntry, createdBy: string): Observable<WorkOrder> {
-    return from(new Promise<WorkOrder>(async (resolve, reject) => {
-      try {
-        // The vehicle ID is not directly on the QueueEntry model.
-        // We cast to `any` to check for a potential motorcycleId property passed from the client flow.
-        const vehicleId = (entry as any).motorcycleId || 'TBD';
+    const plate = entry.plate || 'TBD';
 
-        const newWorkOrderData = {
-          clientId: entry.customerId,
-          vehicleId: vehicleId,
-          status: 'open' as const,
-          assignedTo: entry.assignedTo,
-          services: [],
-          products: [],
-          totalPrice: 0,
-          notes: `Creada desde la entrada de cola #${entry.position}. ${entry.notes || ''}`,
-          createdBy: createdBy,
-          queueEntryId: entry.id,
-          createdAt: serverTimestamp(),
-        };
+    const newWorkOrderData = {
+      clientId: entry.customerId,
+      plate: plate,
+      status: 'open' as const,
+      assignedTo: entry.assignedTo,
+      services: [],
+      products: [],
+      totalPrice: 0,
+      notes: `Creada desde la entrada de cola #${entry.position}. ${entry.notes || ''}`,
+      createdBy: createdBy,
+      queueEntryId: entry.id
+    };
 
-        const docRef = await addDoc(collection(db, "workOrders"), newWorkOrderData);
-        
+    return this.apiService.callFunction<{ id: string, success: boolean }>('createWorkOrder', newWorkOrderData).pipe(
+      map(result => {
         const newWorkOrder: WorkOrder = {
           ...(newWorkOrderData as any),
-          id: docRef.id,
-          createdAt: FirebaseTimestamp.now(), // Use a real Timestamp
+          id: result.id,
+          createdAt: FirebaseTimestamp.now(),
           updatedAt: FirebaseTimestamp.now(),
         };
-        
+
         this.workOrders.update(wos => [...wos, newWorkOrder]);
         this.invalidateCache();
 
         this.eventBus.emit({ type: 'work_order.created', entity: newWorkOrder });
 
-        resolve(newWorkOrder);
-      } catch (e) {
-        reject(e);
-      }
-    }));
+        return newWorkOrder;
+      })
+    );
   }
 }

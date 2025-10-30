@@ -1,0 +1,390 @@
+// Service Selection Component - BEM Methodology
+@use '../../styles/variables';
+@use '../../styles/mixins';
+@use '../../styles/_constants' as constants;
+@use 'mixins' as mixins;
+
+.service-selection {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: constants.$spacing-lg;
+  font-family: constants.$font-family-base;
+
+  &__header {
+    margin-bottom: constants.$spacing-xl;
+
+    .service-selection__title {
+      margin: 0 0 constants.$spacing-md 0;
+      color: variables.$foreground;
+      font-size: constants.$font-size-2xl;
+      font-weight: constants.$font-weight-semibold;
+    }
+  }
+
+  &__search-container {
+    position: relative;
+    margin-bottom: constants.$spacing-md;
+
+    .service-selection__search-input {
+      width: 100%;
+      padding: constants.$spacing-sm constants.$spacing-2xl constants.$spacing-sm constants.$spacing-md;
+      border: 2px solid variables.$border;
+      border-radius: constants.$border-radius-md;
+      font-size: constants.$font-size-base;
+      transition: border-color constants.$transition-fast;
+
+      &:focus {
+        outline: none;
+        border-color: variables.$primary;
+        box-shadow: 0 0 0 3px color-change(variables.$primary, 0.1);
+      }
+
+      &::placeholder {
+        color: constants.$muted-foreground;
+      }
+    }
+
+    .service-selection__search-icon {
+      position: absolute;
+      right: constants.$spacing-sm;
+      top: 50%;
+      transform: translateY(-50%);
+      color: constants.$muted-foreground;
+      font-size: constants.$font-size-lg;
+    }
+  }
+
+  &__category-filters {
+    display: flex;
+    gap: constants.$spacing-xs;
+    flex-wrap: wrap;
+
+    .service-selection__category-button {
+      padding: constants.$spacing-xs constants.$spacing-md;
+      border: 2px solid variables.$border;
+      background: variables.$card;
+      border-radius: 20px;
+      font-size: constants.$font-size-sm;
+      font-weight: constants.$font-weight-medium;
+      color: variables.$foreground;
+      cursor: pointer;
+      transition: all constants.$transition-fast;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      &:hover {
+        border-color: variables.$primary;
+        background: variables.$muted;
+      }
+
+      &--active {
+        border-color: variables.$primary;
+        background: variables.$primary;
+        color: $primary-foreground;
+      }
+    }
+  }
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.service-card {
+  border: 2px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+
+  &:hover {
+    border-color: #3498db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &.selected {
+    border-color: #27ae60;
+    background: #f8fff9;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+  }
+}
+
+.service-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.service-checkbox {
+  flex-shrink: 0;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #27ae60;
+  }
+}
+
+.service-info {
+  flex: 1;
+
+  .service-title {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .service-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+  }
+
+  .service-price {
+    font-weight: 600;
+    color: #27ae60;
+  }
+
+  .service-duration {
+    color: #7f8c8d;
+  }
+}
+
+.service-description {
+  color: #5d6d7e;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.service-selection__service-dependencies,
+.service-selection__service-recommendations {
+  margin-top: constants.$spacing-xs;
+  padding-top: constants.$spacing-xs;
+  border-top: constants.$border-width-thin solid variables.$border;
+
+  .service-selection__dependency-label,
+  .service-selection__recommendation-label {
+    color: variables.$destructive;
+    font-size: constants.$font-size-xs;
+    font-weight: constants.$font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .service-selection__recommendation-label {
+    color: #f39c12;
+  }
+}
+
+.service-selection__dependency-list,
+.service-selection__recommendation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.service-selection__dependency-item {
+  background: rgba(variables.$destructive, 0.1);
+  color: variables.$destructive;
+  padding: 2px constants.$spacing-xs;
+  border-radius: 12px;
+  font-size: constants.$font-size-xs;
+  font-weight: constants.$font-weight-medium;
+}
+
+.service-selection__recommendation-item {
+  background: #fff3cd;
+  color: #f39c12;
+  border: constants.$border-width-thin solid #f39c12;
+  padding: 2px constants.$spacing-xs;
+  border-radius: 12px;
+  font-size: constants.$font-size-xs;
+  font-weight: constants.$font-weight-medium;
+  cursor: pointer;
+  transition: all constants.$transition-fast;
+
+  &:hover {
+    background: #f39c12;
+    color: white;
+  }
+}
+
+.service-selection__no-services {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px constants.$spacing-lg;
+  color: constants.$muted-foreground;
+
+  p {
+    margin: 0;
+    font-size: constants.$font-size-base;
+  }
+}
+
+.service-selection__selection-summary {
+  border: 2px solid variables.$border;
+  border-radius: constants.$border-radius-lg;
+  padding: constants.$spacing-lg;
+  background: variables.$muted;
+
+  .service-selection__summary-header {
+    margin-bottom: constants.$spacing-md;
+
+    .service-selection__summary-title {
+      margin: 0;
+      color: variables.$foreground;
+      font-size: constants.$font-size-lg;
+      font-weight: constants.$font-weight-semibold;
+    }
+  }
+}
+
+.service-selection__selected-services-list {
+  margin-bottom: constants.$spacing-md;
+}
+
+.service-selection__selected-service-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: constants.$spacing-xs 0;
+  border-bottom: constants.$border-width-thin solid variables.$border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .service-selection__service-name {
+    flex: 1;
+    font-weight: constants.$font-weight-medium;
+    color: variables.$foreground;
+  }
+
+  .service-selection__service-price {
+    font-weight: constants.$font-weight-semibold;
+    color: variables.$accent;
+    margin-right: constants.$spacing-sm;
+  }
+
+  .service-selection__remove-service {
+    background: variables.$destructive;
+    color: white;
+    border: none;
+    border-radius: constants.$border-radius-full;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: constants.$font-size-base;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color constants.$transition-fast;
+
+    &:hover {
+      background: color.adjust(variables.$destructive, 10%, $lightness: -variables.$destructive, 10);
+    }
+  }
+}
+
+.service-selection__summary-totals {
+  border-top: 2px solid variables.$border;
+  padding-top: constants.$spacing-md;
+}
+
+.service-selection__total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: constants.$spacing-xs;
+  font-size: constants.$font-size-base;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .service-selection__total-label {
+    font-weight: constants.$font-weight-medium;
+    color: variables.$foreground;
+  }
+
+  .service-selection__total-value {
+    font-weight: constants.$font-weight-semibold;
+  }
+
+  &--total-cost {
+    font-size: constants.$font-size-lg;
+    margin-top: constants.$spacing-xs;
+    padding-top: constants.$spacing-xs;
+    border-top: constants.$border-width-thin solid variables.$border;
+
+    .service-selection__total-value {
+      color: variables.$accent;
+    }
+  }
+}
+
+// Responsive design
+@include mixins.respond-to(md) {
+  .service-selection {
+    padding: constants.$spacing-md;
+
+    &__services-grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__category-filters {
+      justify-content: center;
+    }
+
+    &__service-header {
+      flex-direction: column;
+      gap: constants.$spacing-xs;
+    }
+
+    &__service-meta {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

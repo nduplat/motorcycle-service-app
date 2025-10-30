@@ -37,7 +37,7 @@ interface ProductResult {
 @Component({
   selector: 'app-chatbot',
   templateUrl: './chatbot.component.html',
-  styleUrls: ['./chatbot.component.scss'],
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, CommonModule],
 })

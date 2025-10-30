@@ -5,14 +5,14 @@ import { QueueService } from '../../services/queue.service';
 import { UserService } from '../../services/user.service';
 import { UserVehicleService } from '../../services/user-vehicle.service';
 import { WorkOrderService } from '../../services/work-order.service';
-import { QueueEntry, User, UserVehicle, WorkOrder } from '../../models';
+import { QueueEntry, User, MotorcycleAssignment, WorkOrder } from '../../models';
 import { BarcodeFormat, BrowserMultiFormatReader } from '@zxing/browser';
 
 interface ValidationResult {
   isValid: boolean;
   entry: QueueEntry | null;
   customer: User | null;
-  motorcycle: UserVehicle | null;
+  motorcycle: MotorcycleAssignment | null;
   error: string | null;
 }
 
@@ -136,7 +136,7 @@ export class CodeValidationComponent {
       const existingWorkOrders = this.workOrderService.getWorkOrders()();
       const existingWorkOrder = existingWorkOrders?.find(wo =>
         wo.clientId === entry.customerId &&
-        wo.vehicleId === motorcycle.id &&
+        wo.plate === motorcycle.id &&
         (wo.status === 'in_progress' || wo.status === 'open')
       );
 
@@ -152,7 +152,7 @@ export class CodeValidationComponent {
 
         const workOrderData: Omit<WorkOrder, 'id' | 'createdAt'> = {
           clientId: entry.customerId,
-          vehicleId: motorcycle.id,
+          plate: motorcycle.id,
           status: 'in_progress',
           services: [], // Will be populated during work order management
           products: [], // Will be populated during work order management

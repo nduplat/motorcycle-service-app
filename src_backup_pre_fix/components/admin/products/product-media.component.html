@@ -1,0 +1,122 @@
+<div class="bg-card/80 backdrop-blur-sm p-8 rounded-2xl border border-border/50 shadow-lg space-y-6">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="p-3 bg-orange-100 rounded-xl">
+      <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+    </div>
+    <div>
+      <h2 class="text-2xl font-semibold">Multimedia y Especificaciones</h2>
+      <p class="text-muted-foreground">Imágenes, dimensiones y características técnicas</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Left Column - Images and Status -->
+    <div class="space-y-6">
+      <!-- Image Upload Section -->
+      <div class="space-y-4">
+        <label class="block text-sm font-semibold text-foreground">Imágenes del Producto</label>
+        <div class="border-2 border-dashed border-border/50 rounded-xl p-6 bg-secondary/20 hover:bg-secondary/30 transition-all duration-200">
+          <div class="text-center space-y-4">
+            <div class="p-4 bg-primary/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+              <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-foreground">Arrastra imágenes aquí o haz clic para seleccionar</p>
+              <p class="text-xs text-muted-foreground">PNG, JPG, GIF hasta 10MB cada una</p>
+            </div>
+            <input type="file" multiple accept="image/*" (change)="onImageSelected($event)"
+              class="hidden" id="image-upload">
+            <label for="image-upload"
+              class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 cursor-pointer">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+              Seleccionar Archivos
+            </label>
+          </div>
+        </div>
+
+        <!-- Uploaded Images Display -->
+        @if (images().length > 0) {
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            @for (image of images(); track image.id) {
+              <div class="relative group">
+                <img [appLazyImage]="image.url" alt="Product image"
+                  class="w-full h-24 object-cover rounded-lg border border-border">
+                <button type="button" (click)="removeImage(image)"
+                  class="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Image URLs Textarea -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-foreground">URLs de Imágenes (una por línea)</label>
+          <textarea formControlName="images" rows="4"
+            placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.jpg"
+            class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none">
+          </textarea>
+          <p class="text-xs text-muted-foreground">URLs válidas de imágenes (opcional, adicional a las subidas)</p>
+        </div>
+      </div>
+
+      <!-- Product Status -->
+      <div class="space-y-4">
+        <label class="block text-sm font-semibold text-foreground">Estado del Producto</label>
+        <div class="flex items-center space-x-3">
+          <input formControlName="isActive" type="checkbox" id="isActive"
+            class="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2">
+          <label for="isActive" class="text-sm font-medium text-foreground cursor-pointer">
+            Producto Activo
+          </label>
+        </div>
+        <p class="text-xs text-muted-foreground">Los productos inactivos no se mostrarán en el catálogo público</p>
+      </div>
+    </div>
+
+    <!-- Right Column - Specifications -->
+    <div class="space-y-6">
+      <!-- Physical Specifications -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-foreground">Especificaciones Físicas</h3>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-foreground">Peso (Kg)</label>
+          <input formControlName="weightKg" type="number" min="0" step="0.01"
+            [class]="'w-full px-4 py-3 bg-background/50 border rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary ' +
+              (isFieldInvalid('weightKg') ? 'border-red-500 bg-red-50/50' : 'border-border hover:border-border/80')">
+          @if (isFieldInvalid('weightKg')) {
+            <p class="text-red-500 text-xs mt-1">{{ getFieldError('weightKg') }}</p>
+          }
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-foreground">Ancho (cm)</label>
+            <input formControlName="dimensionsW" type="number" min="0" step="0.1"
+              class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          </div>
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-foreground">Alto (cm)</label>
+            <input formControlName="dimensionsH" type="number" min="0" step="0.1"
+              class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          </div>
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-foreground">Profundidad (cm)</label>
+            <input formControlName="dimensionsD" type="number" min="0" step="0.1"
+              class="w-full px-4 py-3 bg-background/50 border border-border hover:border-border/80 rounded-xl text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

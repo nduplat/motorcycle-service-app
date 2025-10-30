@@ -18,6 +18,7 @@ import { AdvancedServiceService } from './advanced-service.service';
 import { NotificationService } from './notification.service';
 import { ValidationService } from './validation_service';
 import { FormCacheService } from './form_cache_service';
+import { CacheService } from './cache.service';
 import { QueueJoinData, QueueEntry, Motorcycle, ServiceItem, User } from '../models';
 
 export type ClientFlowStep = 'phone' | 'motorcycle' | 'service' | 'ticket';
@@ -36,7 +37,7 @@ export interface ClientFlowState {
   mileageValidated: boolean;
   selectedService: ServiceItem | null;
   serviceValidated: boolean;
-  queueEntry: QueueEntry | null;
+  currentQueueEntryId: string | null;
   isLoading: boolean;
   error: string | null;
   progress: number;
@@ -62,7 +63,8 @@ export class ClientFlowService {
   private serviceService = inject(AdvancedServiceService);
   private notificationService = inject(NotificationService);
   private validationService = inject(ValidationService);
-  private cacheService = inject(FormCacheService);
+  private formCacheService = inject(FormCacheService);
+  private cacheService = inject(CacheService);
 
   // Flow state signals
   private currentStep = signal<ClientFlowStep>('phone');
@@ -76,7 +78,7 @@ export class ClientFlowService {
   private mileageValidated = signal<boolean>(false);
   private selectedService = signal<ServiceItem | null>(null);
   private serviceValidated = signal<boolean>(false);
-  private queueEntry = signal<QueueEntry | null>(null);
+  private currentQueueEntryId = signal<string | null>(null);
   private isLoading = signal<boolean>(false);
   private error = signal<string | null>(null);
   // Entrance QR tracking
@@ -98,7 +100,7 @@ export class ClientFlowService {
     mileageValidated: this.mileageValidated(),
     selectedService: this.selectedService(),
     serviceValidated: this.serviceValidated(),
-    queueEntry: this.queueEntry(),
+    currentQueueEntryId: this.currentQueueEntryId(),
     isLoading: this.isLoading(),
     error: this.error(),
     progress: this.calculateProgress(),
@@ -111,7 +113,7 @@ export class ClientFlowService {
   });
 
   readonly isFlowComplete = computed(() => {
-    return this.currentStep() === 'ticket' && this.queueEntry() !== null;
+    return this.currentStep() === 'ticket' && this.currentQueueEntryId() !== null;
   });
 
   // Available data
@@ -157,7 +159,7 @@ export class ClientFlowService {
   }
 
   private loadCachedData(): void {
-    const cached = this.cacheService.recoverFormData();
+    const cached = this.formCacheService.recoverFormData();
     if (cached.hasRecovery && cached.canRecover && cached.data) {
       const data = cached.data;
 
@@ -324,8 +326,8 @@ export class ClientFlowService {
   }
 
   private validateTicketStep(): StepValidation {
-    const entry = this.queueEntry();
-    if (!entry) {
+    const entryId = this.currentQueueEntryId();
+    if (!entryId) {
       return { isValid: false, errors: ['No se ha completado el registro en cola'], canProceed: false };
     }
 
@@ -388,25 +390,25 @@ export class ClientFlowService {
         customerName: user.name,
         customerPhone: this.phone(),
         serviceType: 'direct_work_order',
-        motorcycleId: this.selectedMotorcycle()!.id,
+        
         plate: this.licensePlate(),
         mileageKm: this.currentMileage()!,
         notes: `Servicio: ${this.selectedService()!.title}`
       };
 
-      // Join queue
+      // Delegate queue creation to QueueService with TTL awareness
       const queueEntryId = await this.queueService.addToQueue(queueData);
       if (!queueEntryId) {
         throw new Error('No se pudo crear la entrada en cola');
       }
 
-      // Get the created queue entry
-      const queueEntry = await this.queueService.getQueueEntry(queueEntryId).toPromise();
-      if (!queueEntry) {
-        throw new Error('No se pudo obtener la entrada en cola');
-      }
+      // Invalidate related caches after successful queue creation
+      this.cacheService.invalidateByEntity('queue', queueEntryId).catch(err =>
+        console.error('Queue cache invalidation error:', err)
+      );
 
-      this.queueEntry.set(queueEntry);
+      // Store only the queue entry ID locally
+      this.currentQueueEntryId.set(queueEntryId);
 
       // Navigate to ticket step
       this.currentStep.set('ticket');
@@ -414,16 +416,19 @@ export class ClientFlowService {
       // Save to cache for recovery
       this.saveToCache();
 
-      // Send success notification
-      this.notificationService.addSystemNotification({
-        userId: user.id,
-        title: '¡Registro exitoso!',
-        message: `Te has unido a la cola exitosamente. Tu número de turno es Q${queueEntry.position.toString().padStart(3, '0')}`,
-        meta: {
-          queueEntryId: queueEntry.id,
-          verificationCode: queueEntry.verificationCode
-        }
-      }).subscribe();
+      // Send success notification - get entry details from QueueService
+      const queueEntry = await this.queueService.getQueueEntry(queueEntryId).toPromise();
+      if (queueEntry) {
+        this.notificationService.addSystemNotification({
+          userId: user.id,
+          title: '¡Registro exitoso!',
+          message: `Te has unido a la cola exitosamente. Tu número de turno es Q${queueEntry.position.toString().padStart(3, '0')}`,
+          meta: {
+            queueEntryId: queueEntry.id,
+            verificationCode: queueEntry.verificationCode
+          }
+        }).subscribe();
+      }
 
     } catch (error: any) {
       console.error('Flow completion error:', error);
@@ -442,7 +447,7 @@ export class ClientFlowService {
   }
 
   private saveToCache(): void {
-    this.cacheService.startAutoSave(() => ({
+    this.formCacheService.startAutoSave(() => ({
       phone: this.phone(),
       phoneValidated: this.phoneValidated(),
       motorcycleId: this.selectedMotorcycle()?.id,
@@ -482,11 +487,11 @@ export class ClientFlowService {
     this.mileageValidated.set(false);
     this.selectedService.set(null);
     this.serviceValidated.set(false);
-    this.queueEntry.set(null);
+    this.currentQueueEntryId.set(null);
     this.error.set(null);
     this.entranceSource.set(null);
     this.entranceLocation.set(null);
-    this.cacheService.stopAutoSave();
+    this.formCacheService.stopAutoSave();
   }
 
   // ========== GETTERS FOR TEMPLATES ==========
@@ -509,5 +514,28 @@ export class ClientFlowService {
       ticket: '¡Ya estás en la cola! Aquí tienes tu información de turno'
     };
     return descriptions[step];
+  }
+
+  // ========== QUEUE STATE ACCESS ==========
+
+  /**
+   * Get current queue entry from QueueService by ID
+   */
+  getCurrentQueueEntry() {
+    const entryId = this.currentQueueEntryId();
+    if (!entryId) return null;
+    return this.queueService.getQueueEntry(entryId);
+  }
+
+  /**
+   * Get queue position for current entry
+   */
+  getCurrentQueuePosition(): number | null {
+    const entryId = this.currentQueueEntryId();
+    if (!entryId) return null;
+
+    const entries = this.queueService.getQueueEntries()();
+    const entry = entries.find(e => e.id === entryId);
+    return entry ? entry.position : null;
   }
 }

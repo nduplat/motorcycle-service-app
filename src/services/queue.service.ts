@@ -28,7 +28,7 @@
  */
 
 import { Injectable, signal, inject } from '@angular/core';
-import { QueueEntry, QueueStatus, Timestamp, Customer, Vehicle, Appointment, QueueJoinData, UserVehicle, QueueStatistics, QueueFilter, TechnicianMetrics } from '../models';
+import { QueueEntry, QueueStatus, Timestamp, Customer, Appointment, QueueJoinData, MotorcycleAssignment, QueueStatistics, QueueFilter, TechnicianMetrics } from '../models';
 import { Observable, from, combineLatest, firstValueFrom, BehaviorSubject } from 'rxjs';
 import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { db } from '../firebase.config';
@@ -44,6 +44,7 @@ import { CacheService } from './cache.service';
 import { OfflineDetectionService } from './offline-detection.service';
 import { LocalStorageService } from './local-storage.service';
 import { SyncMediatorService } from './sync-mediator.service';
+import { MotorcycleAssignmentService } from './motorcycle-assignment.service';
 
 const fromFirestore = <T>(snapshot: DocumentSnapshot<DocumentData, DocumentData>): T => {
   const data = snapshot.data() as any;
@@ -58,6 +59,8 @@ export class QueueService {
   private queueStatus = signal<QueueStatus | null>(null);
   private queueStatistics = signal<QueueStatistics | null>(null);
   private readonly CACHE_TTL = 5 * 1000; // 5 seconds for queue data (optimized for real-time performance)
+  private readonly CACHE_KEY_QUEUE_DATA = 'queue-data';
+  private readonly CACHE_KEY_QUEUE_STATUS = 'queue-status';
   private appointmentService = inject(AppointmentService);
   private workOrderService = inject(WorkOrderService);
   private authService = inject(AuthService);
@@ -69,9 +72,14 @@ export class QueueService {
   private offlineDetectionService = inject(OfflineDetectionService);
   private localStorageService = inject(LocalStorageService);
   private syncMediator = inject(SyncMediatorService);
+  private motorcycleAssignmentService = inject(MotorcycleAssignmentService);
 
   // Real-time subscription
   private realtimeSubscription: any = null;
+
+  // Optimistic locking and concurrency control
+  private readonly MAX_RETRY_ATTEMPTS = 3;
+  private readonly RETRY_DELAY_MS = 100;
 
   // Search and filter state
   private searchSubject = new BehaviorSubject<string>('');
@@ -89,7 +97,7 @@ export class QueueService {
   private async loadQueueData(forceRefresh = false) {
     // Check cache first
     if (!forceRefresh) {
-      const cachedData = await this.cacheService.get<{ entries: QueueEntry[]; status: QueueStatus | null }>('queue-data');
+      const cachedData = await this.cacheService.get<{ entries: QueueEntry[]; status: QueueStatus | null }>(this.CACHE_KEY_QUEUE_DATA);
       if (cachedData) {
         this.queueEntries.set(cachedData.entries);
         this.queueStatus.set(cachedData.status);
@@ -132,8 +140,8 @@ export class QueueService {
         status = defaultStatus;
       }
 
-      // Update cache
-      this.cacheService.set('queue-data', { entries, status }, this.CACHE_TTL);
+      // Update cache with proper TTL and context
+      this.cacheService.set(this.CACHE_KEY_QUEUE_DATA, { entries, status }, this.CACHE_TTL, 'queue', undefined, undefined, undefined, 'high');
 
       this.queueEntries.set(entries);
       this.queueStatus.set(status);
@@ -141,7 +149,7 @@ export class QueueService {
       console.error("Error fetching queue data:", error);
 
       // If cache exists and fetch fails, use cached data
-      const cachedData = await this.cacheService.get<{ entries: QueueEntry[]; status: QueueStatus | null }>('queue-data');
+      const cachedData = await this.cacheService.get<{ entries: QueueEntry[]; status: QueueStatus | null }>(this.CACHE_KEY_QUEUE_DATA);
       if (cachedData) {
         this.queueEntries.set(cachedData.entries);
         this.queueStatus.set(cachedData.status);
@@ -152,12 +160,18 @@ export class QueueService {
   // Method to refresh cache manually
   async refreshQueueData(): Promise<void> {
     await this.loadQueueData(true);
+    // Trigger cache warming after refresh
+    this.cacheService.warmupCriticalData().catch(err =>
+      console.error('Cache warming error:', err)
+    );
   }
 
   // Invalidate cache when data changes
   private invalidateCache(): void {
-    // Note: Cache invalidation is now handled by the new CacheService
-    // This method is kept for backward compatibility
+    // Trigger cross-service invalidation through CacheService
+    this.cacheService.invalidateByEntity('queue', 'data').catch(err =>
+      console.error('Queue cache invalidation error:', err)
+    );
   }
 
   getQueueEntries() {
@@ -298,112 +312,231 @@ export class QueueService {
 
   // ========== QUEUE ENTRY METHODS ==========
 
-   /**
-    * Agrega un cliente a la cola
-    * Verifica y crea asignación de motocicleta si no existe
-    */
-   async addToQueue(data: QueueJoinData): Promise<string> {
-     console.log('🔍 [DEBUG] QueueService.addToQueue called with data:', {
-       customerId: data.customerId,
-       serviceType: data.serviceType,
-       motorcycleId: data.motorcycleId,
-       plate: data.plate,
-       hasNotes: !!data.notes
-     });
+  /**
+   * Implements optimistic locking for concurrent queue operations
+   */
+  private async executeWithOptimisticLock<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = this.MAX_RETRY_ATTEMPTS
+  ): Promise<T> {
+    let lastError: any;
 
-     try {
-       // 1. Verificar si el usuario tiene acceso a la motocicleta (por ID o placa)
-       const hasMotorcycle = await this.checkUserHasMotorcycle(data.customerId, data.motorcycleId, data.plate);
-       console.log('🔍 [DEBUG] Motorcycle check result:', {
-         hasMotorcycle,
-         customerId: data.customerId,
-         motorcycleId: data.motorcycleId,
-         plate: data.plate
-       });
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        lastError = error;
 
-       // 2. Si no tiene acceso a la motocicleta, crear asignación
-       if (!hasMotorcycle) {
-         await this.createMotorcycleAssignment({
-           userId: data.customerId,
-           motorcycleId: data.motorcycleId,
-           plate: data.plate,
-           mileageKm: data.mileageKm,
-           notes: data.notes
-         });
-         console.log('✅ [DEBUG] Motorcycle assignment created for user:', data.customerId);
-       } else {
-         console.log('✅ [DEBUG] User already has motorcycle access:', data.motorcycleId || data.plate);
-       }
+        // Check if it's a concurrency error (document version mismatch)
+        if (error.code === 'failed-precondition' ||
+            error.message?.includes('version') ||
+            error.message?.includes('concurrent')) {
 
-      // 3. Obtener posición en la cola
-      const currentStatus = this.queueStatus();
-      const position = (currentStatus?.currentCount || 0) + 1;
+          if (attempt < maxRetries - 1) {
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY_MS * Math.pow(2, attempt)));
+            continue;
+          }
+        }
 
-      // 4. Generar código de verificación (4 dígitos)
-      const verificationCode = this.generateVerificationCode();
-      const expiresAt = serverTimestamp(); // Will be updated after creation
+        // For non-concurrency errors, throw immediately
+        throw error;
+      }
+    }
 
-      // 5. Calcular tiempo estimado de espera
-      const estimatedWaitTime = this.calculateEstimatedWaitTime(position);
+    throw lastError;
+  }
 
-      // 6. Crear entrada en la cola
-      const queueEntry: Omit<QueueEntry, 'id'> = {
-        customerId: data.customerId,
-        serviceType: data.serviceType,
-        status: 'waiting',
-        position: position,
-        joinedAt: serverTimestamp(),
-        estimatedWaitTime: estimatedWaitTime,
-        verificationCode: verificationCode,
-        expiresAt: expiresAt,
-        notes: data.notes,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      const docRef = await addDoc(collection(db, "queueEntries"), queueEntry);
-
-      // Update QR code with actual ID and set expiration to 15 minutes from now
-      const qrCodeDataUrl = this.qrCodeService.generateQrCodeDataUrl('queue-entry', docRef.id);
-      const expiresAtDate = new Date();
-      expiresAtDate.setMinutes(expiresAtDate.getMinutes() + 15);
-      await updateDoc(docRef, {
-        qrCodeDataUrl,
-        expiresAt: expiresAtDate,
-        updatedAt: serverTimestamp()
-      });
-
-      // Update local state
-      const fullQueueEntry = { ...queueEntry, id: docRef.id, qrCodeDataUrl, expiresAt: expiresAtDate };
-      this.queueEntries.update(entries => [...entries, fullQueueEntry]);
-
-      // 7. Actualizar estado de la cola
-      await this.updateQueueStatus();
-
-      // Invalidate cache
-      this.invalidateCache();
-
-      // Emit event for new queue entry
-      console.log('🔍 [DEBUG] Emitting event for new queue entry:', fullQueueEntry.id);
-      this.eventBus.emit({ type: 'queue.entry_added', entity: fullQueueEntry });
-
-      // Auto-assignment is now handled directly by the queue service
-      // No need for separate auto-assignment service
-
-      console.log('✅ [DEBUG] Queue entry created successfully:', {
-        id: docRef.id,
-        position: position,
-        verificationCode: verificationCode,
-        estimatedWaitTime: estimatedWaitTime
-      });
-      return docRef.id;
-
-    } catch (error) {
-      console.error('Error adding to queue:', error);
-      throw error;
+  /**
+   * Validates queue entry data integrity
+   */
+  private validateQueueEntryData(data: QueueJoinData): void {
+    if (!data.customerId?.trim()) {
+      throw new Error('Customer ID is required');
+    }
+    if (!data.serviceType?.trim()) {
+      throw new Error('Service type is required');
+    }
+    if (!['immediate', 'appointment', 'emergency'].includes(data.serviceType)) {
+      throw new Error('Invalid service type');
+    }
+    if (!data.plate?.trim()) {
+      throw new Error('Motorcycle plate is required');
+    }
+    if (data.mileageKm !== undefined && (data.mileageKm < 0 || data.mileageKm > 1000000)) {
+      throw new Error('Invalid mileage value');
     }
   }
 
+  /**
+   * Validates queue entry integrity after operations
+   */
+  private validateQueueEntryIntegrity(entry: QueueEntry): boolean {
+    // Check required fields
+    if (!entry.id?.trim() || !entry.customerId?.trim() || !entry.plate?.trim()) {
+      console.error('Queue entry missing required fields:', entry.id);
+      return false;
+    }
+
+    // Check status transitions are valid
+    const validStatuses = ['waiting', 'called', 'served', 'cancelled', 'no_show'];
+    if (!validStatuses.includes(entry.status)) {
+      console.error('Queue entry has invalid status:', entry.status, entry.id);
+      return false;
+    }
+
+    // Check position is valid
+    if (entry.position < 1 || entry.position > 1000) {
+      console.error('Queue entry has invalid position:', entry.position, entry.id);
+      return false;
+    }
+
+    // Check timestamps
+    if (!entry.createdAt || !entry.updatedAt) {
+      console.error('Queue entry missing timestamps:', entry.id);
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Validates queue status integrity
+   */
+  private validateQueueStatusIntegrity(status: QueueStatus): boolean {
+    if (!status.id || status.currentCount < 0) {
+      console.error('Queue status has invalid data:', status);
+      return false;
+    }
+
+    if (status.averageWaitTime !== undefined && status.averageWaitTime < 0) {
+      console.error('Queue status has negative average wait time:', status);
+      return false;
+    }
+
+    return true;
+  }
+
+   /**
+    * Agrega un cliente a la cola con bloqueo optimista
+    * Verifica y crea asignación de motocicleta si no existe
+    */
+      async addToQueue(data: QueueJoinData): Promise<string> {
+        console.log('🔍 [DEBUG] QueueService.addToQueue called with data:', {
+          customerId: data.customerId,
+          serviceType: data.serviceType,
+          plate: data.plate,
+          hasNotes: !!data.notes
+        });
+   
+        // Validate input data
+        this.validateQueueEntryData(data);
+   
+        return await this.executeWithOptimisticLock(async () => {
+          try {
+            // 1. Verificar si el usuario tiene una asignación activa para esta placa
+            const existingAssignment = await this.motorcycleAssignmentService.getAssignmentByPlate(data.plate);
+            let motorcycleId: string | null = null;
+   
+            if (existingAssignment) {
+              console.log('✅ [DEBUG] Existing motorcycle assignment found for plate:', data.plate);
+              motorcycleId = existingAssignment.motorcycleId; // Get the catalog motorcycle ID
+            } else {
+              console.log('🔍 [DEBUG] No existing assignment for plate:', data.plate, '. Creating quick assignment.');
+              // If no assignment, create a quick assignment
+              // For now, we'll use a placeholder motorcycleId if not provided
+              // In a real scenario, you might want to create a basic catalog entry first
+              const newAssignmentId = await this.motorcycleAssignmentService.createQuickAssignment({
+                userId: data.customerId,
+                motorcycleId: 'placeholder_motorcycle_id', // TODO: Replace with actual catalog ID or create one
+                plate: data.plate,
+                mileageKm: data.mileageKm,
+                cylinderCapacity: 0, // Default value, can be updated later
+                brand: 'Desconocida',
+                model: 'Desconocido',
+                year: new Date().getFullYear(),
+                displacementCc: 0,
+                category: 'Unknown',
+                type: 'Unknown',
+                isActive: true,
+                // notes: data.notes || 'Asignación rápida desde flujo de cola',
+              });
+              motorcycleId = newAssignmentId; // The plate is the ID for assignment
+            }
+   
+           // 2. Obtener posición en la cola con atomic read
+           const statusDoc = await getDoc(doc(db, "queueStatus", "singleton"));
+           const currentCount = statusDoc.exists() ? statusDoc.data()['currentCount'] || 0 : 0;
+           const position = currentCount + 1;
+   
+           // 3. Generar código de verificación (4 dígitos)
+           const verificationCode = this.generateVerificationCode();
+           const expiresAt = serverTimestamp(); // Will be updated after creation
+   
+           // 4. Calcular tiempo estimado de espera
+           const estimatedWaitTime = this.calculateEstimatedWaitTime(position);
+   
+           // 5. Crear entrada en la cola
+           const queueEntry: Omit<QueueEntry, 'id'> = {
+             customerId: data.customerId,
+             serviceType: data.serviceType,
+             status: 'waiting',
+             position: position,
+             joinedAt: serverTimestamp(),
+             estimatedWaitTime: estimatedWaitTime,
+             verificationCode: verificationCode,
+             expiresAt: expiresAt,
+             notes: data.notes,
+             createdAt: serverTimestamp(),
+             updatedAt: serverTimestamp(),
+             plate: data.plate, // Use plate from QueueJoinData
+           };
+   
+           const docRef = await addDoc(collection(db, "queueEntries"), queueEntry);
+   
+           // Update QR code with actual ID and set expiration to 15 minutes from now
+           const qrCodeDataUrl = this.qrCodeService.generateQrCodeDataUrl('queue-entry', docRef.id);
+           const expiresAtDate = new Date();
+           expiresAtDate.setMinutes(expiresAtDate.getMinutes() + 15);
+           await updateDoc(docRef, {
+             qrCodeDataUrl,
+             expiresAt: expiresAtDate,
+             updatedAt: serverTimestamp()
+           });
+   
+           // 6. Actualizar estado de la cola de forma atómica
+           await this.updateQueueStatusAtomic(currentCount + 1);
+   
+           // Validate the created entry
+           const fullQueueEntry = { ...queueEntry, id: docRef.id, qrCodeDataUrl, expiresAt: expiresAtDate };
+           if (!this.validateQueueEntryIntegrity(fullQueueEntry)) {
+             throw new Error('Created queue entry failed integrity validation');
+           }
+   
+           // Update local state
+           this.queueEntries.update(entries => [...entries, fullQueueEntry]);
+   
+           // Invalidate cache
+           this.invalidateCache();
+   
+           // Emit event for new queue entry
+           console.log('🔍 [DEBUG] Emitting event for new queue entry:', fullQueueEntry.id);
+           this.eventBus.emit({ type: 'queue.entry_added', entity: fullQueueEntry });
+   
+           console.log('✅ [DEBUG] Queue entry created successfully:', {
+             id: docRef.id,
+             position: position,
+             verificationCode: verificationCode,
+             estimatedWaitTime: estimatedWaitTime
+           });
+           return docRef.id;
+   
+         } catch (error) {
+           console.error('Error adding to queue:', error);
+           throw error;
+         }
+        });
+      }
   async updateQueueEntry(updatedEntry: QueueEntry): Promise<QueueEntry> {
     const docRef = doc(db, "queueEntries", updatedEntry.id);
     const { id, ...dataToUpdate } = updatedEntry;
@@ -421,91 +554,130 @@ export class QueueService {
     return updatedEntry;
   }
 
+  /**
+   * Atomic queue entry update for optimistic locking
+   */
+  private async updateQueueEntryAtomic(updatedEntry: QueueEntry): Promise<QueueEntry> {
+    const docRef = doc(db, "queueEntries", updatedEntry.id);
+    const { id, ...dataToUpdate } = updatedEntry;
+    await updateDoc(docRef, { ...dataToUpdate, updatedAt: serverTimestamp() });
+
+    this.queueEntries.update(entries =>
+      entries.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
+    );
+
+    // Update queue status atomically
+    const activeEntries = this.queueEntries().filter(e => e.status === 'waiting' || e.status === 'called');
+    await this.updateQueueStatusAtomic(activeEntries.length);
+
+    // Invalidate cache
+    this.invalidateCache();
+
+    return updatedEntry;
+  }
+
+  /**
+   * Get fresh queue entries from Firestore to avoid stale data
+   */
+  private async getFreshQueueEntries(): Promise<QueueEntry[]> {
+    const snapshot = await getDocs(collection(db, "queueEntries"));
+    return snapshot.docs.map(doc => fromFirestore<QueueEntry>(doc));
+  }
+
   async callNext(technicianId: string): Promise<QueueEntry | null> {
      console.log('🔍 [DEBUG] QueueService.callNext called for technician:', technicianId);
 
-      const waitingEntries = this.queueEntries().filter(e => e.status === 'waiting').sort((a, b) => a.position - b.position);
-      console.log('🔍 [DEBUG] Found waiting entries:', waitingEntries.length);
+     // Validate technician ID
+     if (!technicianId?.trim()) {
+       throw new Error('Technician ID is required');
+     }
 
-      if (waitingEntries.length === 0) {
-        console.log('🔍 [DEBUG] No waiting entries found');
-        return null;
-      }
+     return await this.executeWithOptimisticLock(async () => {
+       // Get fresh data to avoid stale reads
+       const currentEntries = await this.getFreshQueueEntries();
+       const waitingEntries = currentEntries.filter((e: QueueEntry) => e.status === 'waiting').sort((a: QueueEntry, b: QueueEntry) => a.position - b.position);
+       console.log('🔍 [DEBUG] Found waiting entries:', waitingEntries.length);
 
-      const entryToCall = waitingEntries[0];
-      console.log('🔍 [DEBUG] Calling entry:', { id: entryToCall.id, position: entryToCall.position });
+       if (waitingEntries.length === 0) {
+         console.log('🔍 [DEBUG] No waiting entries found');
+         return null;
+       }
 
-      // Check if offline - queue operation for later sync
-      if (!this.offlineDetectionService.isOnline()) {
-        this.syncMediator.notifyOfflineOperationQueued('queue_entry', {
-          ...entryToCall,
-          status: 'called' as const,
-          assignedTo: technicianId,
-          action: 'call_next'
-        });
+       const entryToCall = waitingEntries[0];
+       console.log('🔍 [DEBUG] Calling entry:', { id: entryToCall.id, position: entryToCall.position });
 
-        // Update local state immediately
-        const updatedEntry = {
-          ...entryToCall,
-          status: 'called' as const,
-          assignedTo: technicianId,
-          updatedAt: new Date()
-        };
+       // Check if offline - queue operation for later sync
+       if (!this.offlineDetectionService.isOnline()) {
+         this.syncMediator.notifyOfflineOperationQueued('queue_entry', {
+           ...entryToCall,
+           status: 'called' as const,
+           assignedTo: technicianId,
+           action: 'call_next'
+         });
 
-        this.queueEntries.update(entries =>
-          entries.map(entry => entry.id === entryToCall.id ? updatedEntry : entry)
-        );
+         // Update local state immediately
+         const updatedEntry = {
+           ...entryToCall,
+           status: 'called' as const,
+           assignedTo: technicianId,
+           updatedAt: new Date()
+         };
 
-        // Cache the updated queue entries
-        const cachedEntries = this.localStorageService.getCachedQueueEntries();
-        const updatedCache = cachedEntries.map(entry => entry.id === entryToCall.id ? updatedEntry : entry);
-        if (!updatedCache.find(entry => entry.id === entryToCall.id)) {
-          updatedCache.push(updatedEntry);
-        }
-        this.localStorageService.cacheQueueEntries(updatedCache);
+         this.queueEntries.update(entries =>
+           entries.map(entry => entry.id === entryToCall.id ? updatedEntry : entry)
+         );
 
-        // Emit event for queue called
-        const technician = this.userService.getUserById(technicianId);
-        const technicianName = technician ? technician.name : 'Técnico asignado';
+         // Cache the updated queue entries
+         const cachedEntries = this.localStorageService.getCachedQueueEntries();
+         const updatedCache = cachedEntries.map(entry => entry.id === entryToCall.id ? updatedEntry : entry);
+         if (!updatedCache.find(entry => entry.id === entryToCall.id)) {
+           updatedCache.push(updatedEntry);
+         }
+         this.localStorageService.cacheQueueEntries(updatedCache);
 
-        this.eventBus.emit({
-          type: 'queue.called',
-          entity: updatedEntry,
-          technicianName: technicianName
-        });
+         // Emit event for queue called
+         const technician = this.userService.getUserById(technicianId);
+         const technicianName = technician ? technician.name : 'Técnico asignado';
 
-        return updatedEntry;
-      }
+         this.eventBus.emit({
+           type: 'queue.called',
+           entity: updatedEntry,
+           technicianName: technicianName
+         });
 
-      // Online - proceed normally
-      const workOrder = await firstValueFrom(this.workOrderService.createWorkOrderFromQueueEntry(entryToCall, technicianId));
-      if (!workOrder) {
-        throw new Error('Failed to create work order from queue entry.');
-      }
-      console.log('✅ [DEBUG] Work order created from callNext:', workOrder.id);
+         return updatedEntry;
+       }
 
-      // Update the queue entry with the new status and the created workOrderId
-      const updatedEntry = {
-        ...entryToCall,
-        status: 'called' as const,
-        assignedTo: technicianId,
-        workOrderId: workOrder.id, // Link to the work order
-        updatedAt: serverTimestamp()
-      };
+       // Online - proceed with atomic operation
+       const workOrder = await firstValueFrom(this.workOrderService.createWorkOrderFromQueueEntry(entryToCall, technicianId));
+       if (!workOrder) {
+         throw new Error('Failed to create work order from queue entry.');
+       }
+       console.log('✅ [DEBUG] Work order created from callNext:', workOrder.id);
 
-      await this.updateQueueEntry(updatedEntry);
+       // Update the queue entry with the new status and the created workOrderId
+       const updatedEntry = {
+         ...entryToCall,
+         status: 'called' as const,
+         assignedTo: technicianId,
+         workOrderId: workOrder.id, // Link to the work order
+         updatedAt: serverTimestamp()
+       };
 
-     // Emit event for queue called
-     const technician = this.userService.getUserById(technicianId);
-     const technicianName = technician ? technician.name : 'Técnico asignado';
+       await this.updateQueueEntryAtomic(updatedEntry);
 
-     this.eventBus.emit({
-       type: 'queue.called',
-       entity: updatedEntry,
-       technicianName: technicianName
+      // Emit event for queue called
+      const technician = this.userService.getUserById(technicianId);
+      const technicianName = technician ? technician.name : 'Técnico asignado';
+
+      this.eventBus.emit({
+        type: 'queue.called',
+        entity: updatedEntry,
+        technicianName: technicianName
+      });
+
+      return updatedEntry;
      });
-
-     return updatedEntry;
    }
 
   async serveEntry(entryId: string): Promise<QueueEntry> {
@@ -564,6 +736,44 @@ export class QueueService {
       isOpen: isCurrentlyOpen,
       currentCount,
       averageWaitTime: currentCount * 15,
+      operatingHours: this.queueStatus()?.operatingHours || {
+        monday: { open: '07:00', close: '17:30', enabled: true },
+        tuesday: { open: '07:00', close: '17:30', enabled: true },
+        wednesday: { open: '07:00', close: '17:30', enabled: true },
+        thursday: { open: '07:00', close: '17:30', enabled: true },
+        friday: { open: '07:00', close: '17:30', enabled: true },
+        saturday: { open: '07:00', close: '17:30', enabled: true },
+        sunday: { open: '07:00', close: '17:30', enabled: false }
+      },
+      lastUpdated: serverTimestamp()
+    };
+
+    const docRef = doc(db, "queueStatus", "singleton");
+    const { id, ...statusData } = updatedStatus;
+    await updateDoc(docRef, statusData);
+
+    // Validate queue status integrity
+    if (!this.validateQueueStatusIntegrity(updatedStatus)) {
+      console.error('Queue status update failed integrity validation');
+    }
+
+    this.queueStatus.set(updatedStatus);
+
+    // Invalidate cache
+    this.invalidateCache();
+  }
+
+  /**
+   * Atomic queue status update for optimistic locking
+   */
+  private async updateQueueStatusAtomic(newCount: number): Promise<void> {
+    const isCurrentlyOpen = this.isQueueOpenBasedOnHours();
+
+    const updatedStatus: QueueStatus = {
+      id: "singleton",
+      isOpen: isCurrentlyOpen,
+      currentCount: newCount,
+      averageWaitTime: newCount * 15,
       operatingHours: this.queueStatus()?.operatingHours || {
         monday: { open: '07:00', close: '17:30', enabled: true },
         tuesday: { open: '07:00', close: '17:30', enabled: true },
@@ -792,147 +1002,6 @@ export class QueueService {
     }
   }
 
-  // ========== MOTORCYCLE ASSIGNMENT METHODS ==========
-
-  /**
-   * Verifica si un usuario tiene acceso a una motocicleta específica o por placa
-   */
-  private async checkUserHasMotorcycle(userId: string, motorcycleId?: string, plate?: string): Promise<boolean> {
-    try {
-      // Si se proporciona motorcycleId, verificar asignación directa
-      if (motorcycleId) {
-        // Buscar en motorcycleAssignments
-        const assignmentsQuery = query(
-          collection(db, 'motorcycleAssignments'),
-          where('userId', '==', userId),
-          where('motorcycleId', '==', motorcycleId),
-          where('status', '==', 'active')
-        );
-
-        const assignmentsSnapshot = await getDocs(assignmentsQuery);
-
-        if (!assignmentsSnapshot.empty) {
-          return true;
-        }
-
-        // También buscar en userVehicles (por compatibilidad)
-        const vehiclesQuery = query(
-          collection(db, 'userVehicles'),
-          where('userId', '==', userId),
-          where('baseVehicleId', '==', motorcycleId)
-        );
-
-        const vehiclesSnapshot = await getDocs(vehiclesQuery);
-        return !vehiclesSnapshot.empty;
-      }
-
-      // Si no hay motorcycleId pero hay placa, verificar por placa
-      if (plate) {
-        // Buscar motocicleta por placa
-        const motorcycleQuery = query(
-          collection(db, 'motorcycles'),
-          where('plate', '==', plate)
-        );
-
-        const motorcycleSnapshot = await getDocs(motorcycleQuery);
-        if (motorcycleSnapshot.empty) {
-          return false; // No existe motocicleta con esa placa
-        }
-
-        const motorcycle = motorcycleSnapshot.docs[0].data();
-        const motorcycleIdFromPlate = motorcycleSnapshot.docs[0].id;
-
-        // Verificar si el usuario tiene asignada esta motocicleta
-        const assignmentsQuery = query(
-          collection(db, 'motorcycleAssignments'),
-          where('userId', '==', userId),
-          where('motorcycleId', '==', motorcycleIdFromPlate),
-          where('status', '==', 'active')
-        );
-
-        const assignmentsSnapshot = await getDocs(assignmentsQuery);
-        return !assignmentsSnapshot.empty;
-      }
-
-      return false;
-
-    } catch (error) {
-      console.error('Error checking user motorcycle:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Crea una asignación de motocicleta para el usuario usando el servicio apropiado
-   */
-   private async createMotorcycleAssignment(data: {
-     userId: string;
-     motorcycleId?: string;
-     plate: string;
-     mileageKm: number;
-     notes?: string;
-   }): Promise<string> {
-     try {
-       console.log('🔍 [DEBUG] Creating motorcycle assignment via service:', {
-         userId: data.userId,
-         motorcycleId: data.motorcycleId,
-         plate: data.plate
-       });
-
-       const currentUser = this.authService.currentUser();
-       const assignedBy = currentUser?.id || data.userId; // Use current user ID if available
-
-       // Si no hay motorcycleId, buscar o crear motocicleta por placa
-       let finalMotorcycleId = data.motorcycleId;
-       if (!finalMotorcycleId) {
-         const motorcycle = await this.findOrCreateMotorcycleByPlate(data.plate, {
-           userId: data.userId,
-           mileageKm: data.mileageKm,
-           notes: data.notes
-         });
-         finalMotorcycleId = motorcycle.id;
-       }
-
-       const assignmentData = {
-         userId: data.userId,
-         motorcycleId: finalMotorcycleId,
-         assignedBy: assignedBy,
-         status: 'active' as const,
-         plate: data.plate,
-         mileageKm: data.mileageKm,
-         notes: data.notes || `Asignación creada durante unión a cola`
-       };
-
-       // Create assignment in motorcycleAssignments collection
-       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-       const { db } = await import('../firebase.config');
-
-       const assignmentDoc = {
-         userId: data.userId,
-         motorcycleId: finalMotorcycleId,
-         assignedBy: assignedBy,
-         status: 'active' as const,
-         plate: data.plate,
-         mileageKm: data.mileageKm,
-         notes: data.notes || `Asignación creada durante unión a cola`,
-         assignedAt: serverTimestamp(),
-         createdAt: serverTimestamp(),
-         updatedAt: serverTimestamp()
-       };
-
-       const assignmentRef = await addDoc(collection(db, 'motorcycleAssignments'), assignmentDoc);
-       console.log('✅ [DEBUG] Motorcycle assignment created with ID:', assignmentRef.id);
-       return assignmentRef.id;
-
-     } catch (error) {
-       console.error('❌ [DEBUG] Error creating motorcycle assignment via service:', error);
-       throw error;
-     }
-   }
-
-  /**
-   * Calcula tiempo estimado de espera basado en posición
-   */
   private calculateEstimatedWaitTime(position: number): number {
     const currentStatus = this.queueStatus();
     const avgWaitTime = currentStatus?.averageWaitTime || 30; // Default 30 min
@@ -946,50 +1015,6 @@ export class QueueService {
    */
   private generateVerificationCode(): string {
     return Math.floor(1000 + Math.random() * 9000).toString();
-  }
-
-  /**
-   * Busca o crea una motocicleta por placa para el flujo de cola
-   */
-  private async findOrCreateMotorcycleByPlate(plate: string, userData: {
-    userId: string;
-    mileageKm: number;
-    notes?: string;
-  }): Promise<{ id: string; plate: string }> {
-    try {
-      // Buscar motocicleta existente por placa
-      const motorcycleQuery = query(
-        collection(db, 'motorcycles'),
-        where('plate', '==', plate)
-      );
-
-      const motorcycleSnapshot = await getDocs(motorcycleQuery);
-
-      if (!motorcycleSnapshot.empty) {
-        const motorcycle = motorcycleSnapshot.docs[0];
-        return { id: motorcycle.id, plate: motorcycle.data()['plate'] };
-      }
-
-      // Si no existe, crear una nueva motocicleta básica
-      const motorcycleData = {
-        brand: 'Desconocida',
-        model: 'Desconocido',
-        year: new Date().getFullYear(),
-        plate: plate,
-        isActive: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      const docRef = await addDoc(collection(db, 'motorcycles'), motorcycleData);
-      console.log('✅ [DEBUG] Created new motorcycle for plate:', plate, 'ID:', docRef.id);
-
-      return { id: docRef.id, plate: plate };
-
-    } catch (error) {
-      console.error('❌ [DEBUG] Error finding or creating motorcycle by plate:', error);
-      throw error;
-    }
   }
 
   // Real-time updates

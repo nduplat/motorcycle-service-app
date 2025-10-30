@@ -48,7 +48,6 @@
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "@google/genai": "^1.19.0",
     "@modelcontextprotocol/sdk": "^1.18.1",
-    "@tailwindcss/postcss": "^4.1.16",
     "@zxing/browser": "0.1.5",
     "@zxing/library": "0.21.0",
     "angular-calendar": "^0.32.0",

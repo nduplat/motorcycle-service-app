@@ -14,4 +14,3 @@ export class HeroComponent {
   private authService = inject(AuthService);
   appointmentLink = computed(() => this.authService.isCustomer() ? '/appointments' : '/login');
 }
-

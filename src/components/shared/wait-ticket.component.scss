@@ -1,561 +1,133 @@
-.wait-ticket-container {
+@use '../../styles/global-imports' as *;
+@use 'sass:color';
+
+.wait-ticket {
   max-width: 600px;
   margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: $card;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-xl;
   overflow: hidden;
   position: relative;
 
-  @media (max-width: 768px) {
-    margin: 16px;
-    border-radius: 8px;
-  }
-}
-
-.ticket-header {
-  background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
-  color: white;
-  padding: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  .logo-section {
-    h1 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 700;
-    }
-
-    p {
-      margin: 4px 0 0 0;
-      opacity: 0.9;
-      font-size: 14px;
-    }
-  }
-
-  .status-badge {
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-
-    &.status-waiting {
-      background: #fbbf24;
-      color: #92400e;
-    }
-
-    &.status-called {
-      background: #3b82f6;
-      color: white;
-    }
-
-    &.status-in-service {
-      background: #10b981;
-      color: white;
-    }
-
-    &.status-served {
-      background: #6b7280;
-      color: white;
-    }
-
-    &.status-cancelled {
-      background: #ef4444;
-      color: white;
-    }
-
-    &.status-no-show {
-      background: #f59e0b;
-      color: #92400e;
-    }
-  }
-
-  @media (max-width: 768px) {
-    padding: 16px;
-    flex-direction: column;
-    gap: 12px;
-    text-align: center;
-  }
-}
-
-.ticket-content {
-  padding: 24px;
-
-  @media (max-width: 768px) {
-    padding: 16px;
-  }
-}
-
-.queue-info {
-  margin-bottom: 24px;
-
-  .info-row {
+  &__header {
+    background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+    color: white;
+    padding: $spacing-xl;
     display: flex;
-    gap: 24px;
-    margin-bottom: 16px;
+    justify-content: space-between;
+    align-items: center;
 
-    &:last-child {
-      margin-bottom: 0;
+    .wait-ticket__logo-section {
+      .wait-ticket__title {
+        margin: 0;
+        font-size: $font-size-2xl;
+        font-weight: $font-weight-bold;
+      }
+
+      .wait-ticket__subtitle {
+        margin: 4px 0 0 0;
+        opacity: 0.9;
+        font-size: $font-size-sm;
+      }
     }
 
-    @media (max-width: 768px) {
-      flex-direction: column;
-      gap: 12px;
-    }
-  }
-
-  .info-item {
-    flex: 1;
-
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #6b7280;
+    .wait-ticket__status-badge {
+      padding: $spacing-xs $spacing-md;
+      border-radius: 20px;
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 4px;
-    }
 
-    .position-number {
-      font-size: 32px;
-      font-weight: 700;
-      color: #1a365d;
-      display: block;
-    }
-
-    .wait-time {
-      font-size: 24px;
-      font-weight: 600;
-      color: #059669;
-      display: block;
-    }
-
-    .verification-code {
-      font-size: 20px;
-      font-weight: 700;
-      color: #dc2626;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 2px;
-      display: block;
-    }
-
-    .issue-time {
-      font-size: 18px;
-      font-weight: 600;
-      color: #374151;
-      display: block;
-    }
-  }
-}
-
-.qr-section {
-  text-align: center;
-  margin-bottom: 24px;
-  padding: 24px;
-  background: #f8fafc;
-  border-radius: 8px;
-
-  h3 {
-    margin: 0 0 8px 0;
-    color: #1a365d;
-    font-size: 18px;
-  }
-
-  p {
-    margin: 0 0 16px 0;
-    color: #6b7280;
-    font-size: 14px;
-  }
-
-  .qr-code-container {
-    position: relative;
-    display: inline-block;
-
-    .qr-code {
-      width: 200px;
-      height: 200px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-
-      @media (max-width: 768px) {
-        width: 150px;
-        height: 150px;
-      }
-    }
-
-    .download-qr {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: white;
-      border: 1px solid #d1d5db;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-
-      &:hover {
-        background: #f3f4f6;
-        border-color: #9ca3af;
+      &--waiting {
+        background: #fbbf24;
+        color: #92400e;
       }
 
-      i {
-        font-size: 14px;
-        color: #6b7280;
+      &--called {
+        background: #3b82f6;
+        color: white;
+      }
+
+      &--in-service {
+        background: #10b981;
+        color: white;
+      }
+
+      &--served {
+        background: #6b7280;
+        color: white;
+      }
+
+      &--cancelled {
+        background: #ef4444;
+        color: white;
+      }
+
+      &--no-show {
+        background: #f59e0b;
+        color: #92400e;
       }
     }
   }
 
-  .qr-loading {
+  &__content {
+    padding: $spacing-xl;
+  }
+
+  &__loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba($card, 0.9);
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px;
+    justify-content: center;
+    z-index: $z-index-modal;
 
-    .spinner {
+    .wait-ticket__spinner {
       width: 40px;
       height: 40px;
-      border: 4px solid #e5e7eb;
-      border-top: 4px solid #3b82f6;
-      border-radius: 50%;
+      border: 4px solid $border;
+      border-top: 4px solid $primary;
+      border-radius: $border-radius-full;
       animation: spin 1s linear infinite;
-      margin-bottom: 16px;
+      margin-bottom: $spacing-md;
     }
 
-    p {
-      color: #6b7280;
-      font-size: 14px;
-    }
-  }
-}
-
-.services-summary {
-  margin-bottom: 24px;
-
-  h3 {
-    margin: 0 0 16px 0;
-    color: #1a365d;
-    font-size: 18px;
-  }
-
-  .services-list {
-    background: #f8fafc;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
-
-    .service-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #e5e7eb;
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      .service-info {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-
-        .service-name {
-          font-weight: 600;
-          color: #1a365d;
-        }
-
-        .service-price {
-          font-size: 14px;
-          color: #059669;
-          font-weight: 500;
-        }
-      }
-
-      .service-duration {
-        font-size: 12px;
-        color: #6b7280;
-        background: #e5e7eb;
-        padding: 4px 8px;
-        border-radius: 12px;
-      }
+    .wait-ticket__loading-text {
+      color: $muted-foreground;
+      font-size: $font-size-sm;
     }
   }
 
-  .total-cost {
-    text-align: center;
-    font-size: 18px;
-    color: #1a365d;
-    padding: 16px;
-    background: #ecfdf5;
-    border-radius: 8px;
-    border: 1px solid #d1fae5;
-  }
-}
-
-.technician-assignment {
-  margin-bottom: 24px;
-  padding: 16px;
-  background: #fef3c7;
-  border-radius: 8px;
-  border: 1px solid #fde68a;
-
-  h3 {
-    margin: 0 0 12px 0;
-    color: #92400e;
-    font-size: 16px;
-  }
-
-  .technician-info {
+  &__error-message {
+    position: absolute;
+    top: $spacing-md;
+    left: $spacing-md;
+    right: $spacing-md;
+    background: $destructive-background;
+    border: $border-width-thin solid $destructive;
+    border-radius: $border-radius-md;
+    padding: $spacing-sm $spacing-md;
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: $spacing-sm;
+    z-index: $z-index-modal;
 
     i {
-      color: #d97706;
-      font-size: 18px;
+      color: $destructive;
+      font-size: $font-size-base;
     }
 
-    span {
-      font-weight: 600;
-      color: #92400e;
-    }
+    color: $destructive;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
   }
-
-  .assignment-note {
-    margin: 0;
-    font-size: 14px;
-    color: #92400e;
-  }
-}
-
-.status-updates {
-  margin-bottom: 24px;
-
-  h3 {
-    margin: 0 0 16px 0;
-    color: #1a365d;
-    font-size: 18px;
-  }
-
-  .status-timeline {
-    .timeline-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 16px;
-      opacity: 0.5;
-
-      &.active {
-        opacity: 1;
-      }
-
-      .timeline-marker {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #d1d5db;
-        margin-top: 6px;
-        flex-shrink: 0;
-
-        .active & {
-          background: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
-      }
-
-      .timeline-content {
-        h4 {
-          margin: 0 0 4px 0;
-          font-size: 14px;
-          font-weight: 600;
-          color: #1a365d;
-        }
-
-        p {
-          margin: 0;
-          font-size: 13px;
-          color: #6b7280;
-        }
-      }
-    }
-  }
-}
-
-.ticket-actions {
-  padding: 24px;
-  background: #f8fafc;
-  border-top: 1px solid #e5e7eb;
-
-  .action-buttons {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-
-    @media (max-width: 768px) {
-      flex-direction: column;
-    }
-
-    .action-btn {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.2s;
-
-      i {
-        font-size: 16px;
-      }
-
-      &:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-    }
-  }
-
-  .navigation-buttons {
-    display: flex;
-    gap: 12px;
-
-    @media (max-width: 768px) {
-      flex-direction: column;
-    }
-
-    .btn-outline {
-      flex: 1;
-      padding: 12px 24px;
-      border: 2px solid #d1d5db;
-      background: white;
-      color: #6b7280;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.2s;
-
-      &:hover {
-        border-color: #9ca3af;
-        color: #374151;
-      }
-    }
-
-    .btn-primary {
-      flex: 1;
-      padding: 12px 24px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.2s;
-
-      &:hover {
-        background: #2563eb;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-      }
-    }
-  }
-
-  @media (max-width: 768px) {
-    padding: 16px;
-  }
-}
-
-.ticket-footer {
-  text-align: center;
-  padding: 16px 24px;
-  background: #1a365d;
-  color: white;
-
-  p {
-    margin: 0 0 4px 0;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .footer-note {
-    font-size: 12px;
-    opacity: 0.8;
-  }
-
-  @media (max-width: 768px) {
-    padding: 12px 16px;
-
-    p {
-      font-size: 13px;
-    }
-
-    .footer-note {
-      font-size: 11px;
-    }
-  }
-}
-
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #e5e7eb;
-    border-top: 4px solid #3b82f6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
-  }
-
-  p {
-    color: #6b7280;
-    font-size: 14px;
-  }
-}
-
-.error-message {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  right: 16px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 10;
-
-  i {
-    color: #dc2626;
-    font-size: 16px;
-  }
-
-  color: #dc2626;
-  font-size: 14px;
-  font-weight: 500;
 }
 
 @keyframes spin {
@@ -563,28 +135,454 @@
   100% { transform: rotate(360deg); }
 }
 
-// Button base styles
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+.wait-ticket__queue-info {
+  margin-bottom: $spacing-xl;
 
-  &:hover {
-    background: #e5e7eb;
-    border-color: #9ca3af;
+  .wait-ticket__info-row {
+    display: flex;
+    gap: $spacing-xl;
+    margin-bottom: $spacing-md;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .wait-ticket__info-item {
+    flex: 1;
+
+    .wait-ticket__info-label {
+      display: block;
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      color: $muted-foreground;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .wait-ticket__position-number {
+      font-size: 32px;
+      font-weight: $font-weight-bold;
+      color: $foreground;
+      display: block;
+    }
+
+    .wait-ticket__wait-time {
+      font-size: $font-size-2xl;
+      font-weight: $font-weight-semibold;
+      color: $accent;
+      display: block;
+    }
+
+    .wait-ticket__verification-code {
+      font-size: $font-size-xl;
+      font-weight: $font-weight-bold;
+      color: $destructive;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+      display: block;
+    }
+
+    .wait-ticket__issue-time {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $foreground;
+      display: block;
+    }
   }
 }
 
-.btn-icon {
+.wait-ticket__qr-section {
+  text-align: center;
+  margin-bottom: $spacing-xl;
+  padding: $spacing-xl;
+  background: $muted;
+  border-radius: $border-radius-md;
+
+  .wait-ticket__qr-title {
+    margin: 0 0 $spacing-xs 0;
+    color: $foreground;
+    font-size: $font-size-lg;
+  }
+
+  .wait-ticket__qr-description {
+    margin: 0 0 $spacing-md 0;
+    color: $muted-foreground;
+    font-size: $font-size-sm;
+  }
+
+  .wait-ticket__qr-code-container {
+    position: relative;
+    display: inline-block;
+
+    .wait-ticket__qr-code {
+      width: 200px;
+      height: 200px;
+      border: 2px solid $border;
+      border-radius: $border-radius-md;
+    }
+
+    .wait-ticket__download-qr {
+      position: absolute;
+      top: $spacing-xs;
+      right: $spacing-xs;
+      background: $card;
+      border: $border-width-thin solid $border;
+      border-radius: $border-radius-full;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all $transition-fast;
+
+      &:hover {
+        background: $muted;
+        border-color: $border;
+      }
+
+      i {
+        font-size: $font-size-sm;
+        color: $muted-foreground;
+      }
+    }
+  }
+
+  .wait-ticket__qr-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+
+    .wait-ticket__qr-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid $border;
+      border-top: 4px solid $primary;
+      border-radius: $border-radius-full;
+      animation: spin 1s linear infinite;
+      margin-bottom: $spacing-md;
+    }
+
+    .wait-ticket__qr-loading-text {
+      color: $muted-foreground;
+      font-size: $font-size-sm;
+    }
+  }
+}
+
+.wait-ticket__services-summary {
+  margin-bottom: $spacing-xl;
+
+  .wait-ticket__services-title {
+    margin: 0 0 $spacing-md 0;
+    color: $foreground;
+    font-size: $font-size-lg;
+  }
+
+  .wait-ticket__services-list {
+    background: $muted;
+    border-radius: $border-radius-md;
+    padding: $spacing-md;
+    margin-bottom: $spacing-md;
+
+    .wait-ticket__service-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: $spacing-sm 0;
+      border-bottom: $border-width-thin solid $border;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .wait-ticket__service-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .wait-ticket__service-name {
+          font-weight: $font-weight-semibold;
+          color: $foreground;
+        }
+
+        .wait-ticket__service-price {
+          font-size: $font-size-sm;
+          color: $accent;
+          font-weight: $font-weight-medium;
+        }
+      }
+
+      .wait-ticket__service-duration {
+        font-size: $font-size-xs;
+        color: $muted-foreground;
+        background: $border;
+        padding: 4px $spacing-xs;
+        border-radius: 12px;
+      }
+    }
+  }
+
+  .wait-ticket__total-cost {
+    text-align: center;
+    font-size: $font-size-lg;
+    color: $foreground;
+    padding: $spacing-md;
+    background: rgba($primary, 0.1);
+    border-radius: $border-radius-md;
+    border: $border-width-thin solid rgba($primary, 0.2);
+  }
+}
+
+.wait-ticket__technician-assignment {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-md;
+  background: #fef3c7;
+  border-radius: $border-radius-md;
+  border: $border-width-thin solid #fde68a;
+
+  .wait-ticket__technician-title {
+    margin: 0 0 $spacing-sm 0;
+    color: #92400e;
+    font-size: $font-size-base;
+  }
+
+  .wait-ticket__technician-info {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-xs;
+
+    i {
+      color: #d97706;
+      font-size: $font-size-lg;
+    }
+
+    span {
+      font-weight: $font-weight-semibold;
+      color: #92400e;
+    }
+  }
+
+  .wait-ticket__assignment-note {
+    margin: 0;
+    font-size: $font-size-sm;
+    color: #92400e;
+  }
+}
+
+.wait-ticket__status-updates {
+  margin-bottom: $spacing-xl;
+
+  .wait-ticket__status-title {
+    margin: 0 0 $spacing-md 0;
+    color: $foreground;
+    font-size: $font-size-lg;
+  }
+
+  .wait-ticket__status-timeline {
+    .wait-ticket__timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: $spacing-sm;
+      margin-bottom: $spacing-md;
+      opacity: 0.5;
+
+      &--active {
+        opacity: 1;
+      }
+
+      .wait-ticket__timeline-marker {
+        width: 12px;
+        height: 12px;
+        border-radius: $border-radius-full;
+        background: $border;
+        margin-top: 6px;
+        flex-shrink: 0;
+
+        .wait-ticket__timeline-item--active & {
+          background: $primary;
+          box-shadow: 0 0 0 3px rgba($primary, 0.2);
+        }
+      }
+
+      .wait-ticket__timeline-content {
+        .wait-ticket__timeline-step-title {
+          margin: 0 0 4px 0;
+          font-size: $font-size-sm;
+          font-weight: $font-weight-semibold;
+          color: $foreground;
+        }
+
+        .wait-ticket__timeline-step-description {
+          margin: 0;
+          font-size: 13px;
+          color: $muted-foreground;
+        }
+      }
+    }
+  }
+}
+
+.wait-ticket__actions {
+  padding: $spacing-xl;
+  background: $muted;
+  border-top: $border-width-thin solid $border;
+
+  .wait-ticket__action-buttons {
+    display: flex;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+
+    .wait-ticket__action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: $spacing-xs;
+      padding: $spacing-sm $spacing-md;
+      border-radius: $border-radius-md;
+      font-weight: $font-weight-semibold;
+      transition: all $transition-fast;
+
+      i {
+        font-size: $font-size-base;
+      }
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: $shadow-lg;
+      }
+    }
+  }
+
+  .wait-ticket__navigation-buttons {
+    display: flex;
+    gap: $spacing-sm;
+
+    .wait-ticket__btn-outline {
+      flex: 1;
+      padding: $spacing-sm $spacing-xl;
+      border: 2px solid $border;
+      background: $card;
+      color: $muted-foreground;
+      border-radius: $border-radius-md;
+      font-weight: $font-weight-semibold;
+      transition: all $transition-fast;
+
+      &:hover {
+        border-color: $border;
+        color: $foreground;
+      }
+    }
+
+    .wait-ticket__btn-primary {
+      flex: 1;
+      padding: $spacing-sm $spacing-xl;
+      background: $primary;
+      color: $primary-foreground;
+      border: none;
+      border-radius: $border-radius-md;
+      font-weight: $font-weight-semibold;
+      transition: all $transition-fast;
+
+      &:hover {
+        background: color.adjust($primary, $lightness: -10%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba($primary, 0.3);
+      }
+    }
+  }
+}
+
+.wait-ticket__footer {
+  text-align: center;
+  padding: $spacing-md $spacing-xl;
+  background: #1a365d;
+  color: white;
+
+  .wait-ticket__footer-text {
+    margin: 0 0 4px 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+  }
+
+  .wait-ticket__footer-note {
+    font-size: $font-size-xs;
+    opacity: 0.8;
+  }
+}
+
+// Responsive design
+@include respond-to(md) {
+  .wait-ticket {
+    margin: $spacing-md;
+    border-radius: $border-radius-sm;
+
+    &__header {
+      padding: $spacing-md;
+      flex-direction: column;
+      gap: $spacing-sm;
+      text-align: center;
+    }
+
+    &__content {
+      padding: $spacing-md;
+    }
+
+    &__queue-info {
+      .wait-ticket__info-row {
+        flex-direction: column;
+        gap: $spacing-sm;
+      }
+    }
+
+    &__qr-code {
+      width: 150px;
+      height: 150px;
+    }
+
+    &__actions {
+      padding: $spacing-md;
+
+      &__action-buttons,
+      &__navigation-buttons {
+        flex-direction: column;
+      }
+    }
+
+    &__footer {
+      padding: $spacing-sm $spacing-md;
+
+      .wait-ticket__footer-text {
+        font-size: 13px;
+      }
+
+      .wait-ticket__footer-note {
+        font-size: 11px;
+      }
+    }
+  }
+}
+
+// Button styles - using existing button classes
+.wait-ticket__btn-secondary {
+  @include button-variant($secondary, $secondary-foreground);
+}
+
+.wait-ticket__btn-icon {
   border: none;
   background: none;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  padding: $spacing-xs;
+  border-radius: $border-radius-sm;
+  transition: background-color $transition-fast;
 
   &:hover {
-    background: #f3f4f6;
+    background: $muted;
   }
 }
 
@@ -594,3 +592,35 @@
 .icon-download::before { content: "⬇️"; }
 .icon-technician::before { content: "👨‍🔧"; }
 .icon-error::before { content: "⚠️"; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

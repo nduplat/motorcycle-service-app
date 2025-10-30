@@ -1,0 +1,335 @@
+// Admin Dashboard Component - BEM Methodology
+@use '../../styles/variables';
+@use '../../styles/mixins';
+// Component-specific variables
+$admin-dashboard-container-padding: constants.$spacing-lg;
+$admin-dashboard-max-width: 1200px;
+$admin-dashboard-metrics-gap: constants.$spacing-lg;
+$admin-dashboard-metrics-min-width: 250px;
+$admin-dashboard-card-border-radius: constants.$border-radius-xl;
+$admin-dashboard-card-padding: constants.$spacing-lg;
+$admin-dashboard-card-shadow: constants.$shadow-sm;
+$admin-dashboard-card-hover-shadow: constants.$shadow-lg;
+$admin-dashboard-card-hover-transform: translateY(-2px);
+$admin-dashboard-transition-duration: constants.$transition-fast;
+$admin-dashboard-metric-icon-size: 2.5rem;
+$admin-dashboard-metric-value-size: 2.5rem;
+$admin-dashboard-alert-border-width: 4px;
+$admin-dashboard-action-icon-size: 2rem;
+$admin-dashboard-action-border-radius: constants.$border-radius-md;
+
+// BEM Block: admin-dashboard
+.admin-dashboard {
+  // Element: container
+  &__container {
+    padding: $admin-dashboard-container-padding;
+    max-width: $admin-dashboard-max-width;
+    margin: 0 auto;
+
+    @include respond-to(md) {
+      padding: constants.$spacing-md;
+    }
+  }
+
+  // Element: metrics-grid
+  &__metrics-grid {
+    @include grid-cols(auto-fit, minmax($admin-dashboard-metrics-min-width, 1fr));
+    gap: $admin-dashboard-metrics-gap;
+    margin-bottom: constants.$spacing-2xl;
+  }
+
+  // Element: metric-card
+  &__metric-card {
+    @include card-base;
+    @include transition(transform $admin-dashboard-transition-duration, box-shadow $admin-dashboard-transition-duration);
+
+    &:hover {
+      transform: $admin-dashboard-card-hover-transform;
+      box-shadow: $admin-dashboard-card-hover-shadow;
+    }
+
+    // Modifier: metric-card--critical
+    &--critical {
+      border-left-color: variables.$destructive;
+    }
+
+    // Modifier: metric-card--warning
+    &--warning {
+      border-left-color: variables.$warning;
+    }
+
+    // Modifier: metric-card--success
+    &--success {
+      border-left-color: variables.$accent;
+    }
+  }
+
+  // Element: metric-header
+  &__metric-header {
+    @include flex-center;
+    gap: constants.$spacing-md;
+    margin-bottom: constants.$spacing-lg;
+
+    // Element: metric-icon
+    .metric-icon {
+      width: $admin-dashboard-metric-icon-size;
+      height: $admin-dashboard-metric-icon-size;
+      @include border-radius(constants.$border-radius-lg);
+      @include flex-center;
+      font-size: constants.$font-size-xl;
+      background: rgba(variables.$primary, 0.1);
+      color: variables.$primary;
+    }
+
+    // Element: metric-title
+    .metric-title {
+      font-size: constants.$font-size-sm;
+      font-weight: constants.$font-weight-medium;
+      color: $muted-foreground;
+      margin: 0;
+    }
+  }
+
+  // Element: metric-value
+  &__metric-value {
+    font-size: $admin-dashboard-metric-value-size;
+    font-weight: constants.$font-weight-bold;
+    color: variables.$foreground;
+    margin: 0;
+
+    @include respond-to(md) {
+      font-size: $font-size-3xl;
+    }
+  }
+
+  // Element: metric-subtitle
+  &__metric-subtitle {
+    font-size: constants.$font-size-sm;
+    color: $muted-foreground;
+    margin: constants.$spacing-xs 0 0 0;
+  }
+
+  // Element: alerts-section
+  &__alerts-section {
+    margin-bottom: constants.$spacing-2xl;
+
+    // Element: alerts-header
+    .alerts-header {
+      @include flex-center;
+      gap: constants.$spacing-md;
+      margin-bottom: constants.$spacing-lg;
+
+      h2 {
+        font-size: constants.$font-size-xl;
+        font-weight: constants.$font-weight-semibold;
+        color: variables.$foreground;
+        margin: 0;
+      }
+    }
+  }
+
+  // Element: alert-card
+  &__alert-card {
+    @include card-base;
+    margin-bottom: constants.$spacing-md;
+    border-left: $admin-dashboard-alert-border-width solid;
+
+    // Modifier: alert-card--critical
+    &--critical {
+      border-left-color: variables.$destructive;
+      background-color: rgba(variables.$destructive, 0.05);
+
+      .admin-dashboard__alert-icon {
+        color: variables.$destructive;
+      }
+    }
+
+    // Modifier: alert-card--warning
+    &--warning {
+      border-left-color: variables.$warning;
+      background-color: rgba(variables.$warning, 0.05);
+
+      .admin-dashboard__alert-icon {
+        color: variables.$warning;
+      }
+    }
+
+    // Modifier: alert-card--info
+    &--info {
+      border-left-color: variables.$primary;
+      background-color: rgba(variables.$primary, 0.05);
+
+      .admin-dashboard__alert-icon {
+        color: variables.$primary;
+      }
+    }
+  }
+
+  // Element: alert-content
+  &__alert-content {
+    @include flex-start;
+    gap: constants.$spacing-md;
+
+    // Element: alert-icon
+    .alert-icon {
+      font-size: constants.$font-size-xl;
+      margin-top: constants.$spacing-xs;
+      flex-shrink: 0;
+    }
+
+    // Element: alert-text
+    .alert-text {
+      flex: 1;
+
+      // Element: alert-title
+      .alert-title {
+        font-weight: constants.$font-weight-semibold;
+        color: variables.$foreground;
+        margin: 0 0 constants.$spacing-xs 0;
+      }
+
+      // Element: alert-message
+      .alert-message {
+        color: $muted-foreground;
+        margin: 0;
+        font-size: constants.$font-size-sm;
+        line-height: $line-height-relaxed;
+      }
+    }
+  }
+
+  // Element: quick-actions
+  &__quick-actions {
+    // Element: actions-header
+    .actions-header {
+      @include flex-center;
+      gap: constants.$spacing-md;
+      margin-bottom: constants.$spacing-xl;
+
+      h2 {
+        font-size: constants.$font-size-xl;
+        font-weight: constants.$font-weight-semibold;
+        color: variables.$foreground;
+        margin: 0;
+      }
+    }
+
+    // Element: actions-grid
+    .actions-grid {
+      @include grid-cols(auto-fit, minmax(200px, 1fr));
+      gap: constants.$spacing-md;
+    }
+
+    // Element: action-card
+    .action-card {
+      @include card-base;
+      @include transition(all $admin-dashboard-transition-duration);
+      cursor: pointer;
+
+      &:hover {
+        transform: $admin-dashboard-card-hover-transform;
+        box-shadow: $admin-dashboard-card-hover-shadow;
+        border-color: variables.$primary;
+      }
+
+      // Element: action-content
+      .action-content {
+        @include flex-center;
+        gap: constants.$spacing-md;
+
+        // Element: action-icon
+        .action-icon {
+          width: $admin-dashboard-action-icon-size;
+          height: $admin-dashboard-action-icon-size;
+          @include border-radius($admin-dashboard-action-border-radius);
+          @include flex-center;
+          background: color-change(variables.$primary, 0.1);
+          color: variables.$primary;
+          @include transition(all $admin-dashboard-transition-duration);
+        }
+
+        // Element: action-text
+        .action-text {
+          flex: 1;
+
+          // Element: action-title
+          .action-title {
+            font-weight: constants.$font-weight-medium;
+            color: variables.$foreground;
+            margin: 0 0 constants.$spacing-xs 0;
+            font-size: constants.$font-size-sm;
+          }
+
+          // Element: action-description
+          .action-description {
+            color: $muted-foreground;
+            margin: 0;
+            font-size: constants.$font-size-xs;
+            line-height: $line-height-snug;
+          }
+        }
+      }
+    }
+  }
+
+  // Element: loading
+  &__loading {
+    text-align: center;
+    padding: $spacing-3xl;
+
+    .mat-icon {
+      font-size: $font-size-4xl;
+      width: $font-size-4xl;
+      height: $font-size-4xl;
+      margin-bottom: constants.$spacing-lg;
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+// Responsive design
+@include respond-to(md) {
+  .admin-dashboard {
+    &__metrics-grid {
+      @include grid-cols(1);
+      gap: constants.$spacing-md;
+    }
+
+    &__quick-actions .actions-grid {
+      @include grid-cols(1);
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .admin-dashboard {
+    &__metric-card {
+      &--critical {
+        background-color: rgba(variables.$destructive, 0.1);
+      }
+
+      &--warning {
+        background-color: rgba(variables.$warning, 0.1);
+      }
+
+      &--success {
+        background-color: rgba(variables.$accent, 0.1);
+      }
+    }
+
+    &__alert-card {
+      &--critical {
+        background-color: rgba(variables.$destructive, 0.15);
+      }
+
+      &--warning {
+        background-color: rgba(variables.$warning, 0.15);
+      }
+
+      &--info {
+        background-color: rgba(variables.$primary, 0.15);
+      }
+    }
+  }
+}

@@ -1,0 +1,63 @@
+<div class="admin-layout">
+  <!-- Hamburger Menu Button -->
+  <button
+    (click)="toggleMenu()"
+    class="hamburger-btn"
+    [class.active]="isMenuOpen()"
+    [attr.aria-expanded]="isMenuOpen()"
+    aria-label="Toggle navigation menu"
+    aria-controls="main-navigation"
+    type="button">
+    <span class="hamburger-line" aria-hidden="true"></span>
+    <span class="hamburger-line" aria-hidden="true"></span>
+    <span class="hamburger-line" aria-hidden="true"></span>
+  </button>
+
+  <!-- Collapsible Menu -->
+  <nav
+    class="collapsible-menu"
+    [class.open]="isMenuOpen()"
+    id="main-navigation"
+    role="navigation"
+    aria-label="Main navigation">
+    <ul class="nav-list" role="menubar">
+      <li *ngFor="let item of navigationItems" class="nav-item" role="none">
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="nav-link"
+          (click)="closeMenu()"
+          role="menuitem"
+          [attr.aria-label]="item.label">
+          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      </li>
+      <li class="nav-item" role="none">
+        <button
+          (click)="navigateToEmployee()"
+          class="nav-link employee-btn"
+          role="menuitem"
+          aria-label="Navigate to employee panel">
+          <span class="nav-icon" aria-hidden="true">👷</span>
+          <span class="nav-label">Panel de Empleado</span>
+        </button>
+      </li>
+      <li class="nav-item" role="none">
+        <button
+          (click)="logout()"
+          class="nav-link logout-btn"
+          role="menuitem"
+          aria-label="Logout from the system">
+          <span class="nav-icon" aria-hidden="true">🚪</span>
+          <span class="nav-label">Cerrar Sesión</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" role="main">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
-import { Appointment, WorkOrder, QueueEntry, UserProfile } from '../models';
+import { Appointment, WorkOrder, QueueEntry, UserProfile, Job } from '../models';
 
 export interface MaintenanceReminderEvent {
   dueType: 'overdue' | 'due_soon' | 'upcoming';
   serviceName: string;
-  vehicleId: string;
+  plate: string;
   serviceId?: string;
   dueDate?: Date;
   priority: 'low' | 'medium' | 'high' | 'critical';
@@ -24,6 +24,11 @@ export type NotificationEvent =
   | { type: 'queue.auto_assigned', entity: QueueEntry, technician: UserProfile }
   | { type: 'queue.qr_validated', entity: QueueEntry, timerStarted: boolean }
   | { type: 'maintenance.reminder_created', reminder: MaintenanceReminderEvent, customer: UserProfile }
+  | { type: 'job.queued', entity: Job }
+  | { type: 'job.processing', entity: { id: string; status: string; [key: string]: any } }
+  | { type: 'job.completed', entity: { id: string; status: string; result?: any; [key: string]: any } }
+  | { type: 'job.failed', entity: { id: string; status: string; error?: string; [key: string]: any } }
+  | { type: 'job.retry', entity: { id: string; retryCount: number; [key: string]: any } }
   | { type: 'sync.work_order_operation', operation: 'create' | 'update', data: any }
   | { type: 'sync.queue_operation', operation: 'create' | 'update', data: any }
   | { type: 'sync.offline_operation_queued', operationType: string, data: any }

@@ -1,0 +1,308 @@
+// Motorcycle Registration Component - BEM Methodology
+@use '../../styles/variables';
+@use '../../styles/mixins';
+// Component-specific variables
+$motorcycle-registration-max-width: 600px;
+$motorcycle-registration-padding: constants.$spacing-lg;
+$motorcycle-registration-padding-mobile: constants.$spacing-md;
+$motorcycle-registration-margin-mobile: constants.$spacing-sm;
+$motorcycle-registration-min-height: 300px;
+$motorcycle-registration-spinner-size: 40px;
+$motorcycle-registration-spinner-border-width: 4px;
+$motorcycle-registration-success-icon-size: 48px;
+$motorcycle-registration-ownership-notice-bg: #fff3cd;
+$motorcycle-registration-ownership-notice-border: #ffeaa7;
+$motorcycle-registration-ownership-notice-text-color: #856404;
+
+// BEM Block: motorcycle-registration
+.motorcycle-registration {
+  max-width: $motorcycle-registration-max-width;
+  margin: 0 auto;
+  padding: $motorcycle-registration-padding;
+  background: variables.$card;
+  @include border-radius(constants.$border-radius-md);
+  box-shadow: constants.$shadow-md;
+
+  // Element: header
+  &__header {
+    text-align: center;
+    margin-bottom: constants.$spacing-2xl;
+
+    // Element: title
+    .motorcycle-registration__title {
+      color: variables.$foreground;
+      margin-bottom: constants.$spacing-xs;
+      font-size: $font-size-2xl;
+    }
+
+    // Element: description
+    .motorcycle-registration__description {
+      color: $muted-foreground;
+      margin: 0;
+    }
+  }
+
+  // Element: error-message, success-message
+  &__error-message,
+  &__success-message {
+    padding: constants.$spacing-sm constants.$spacing-md;
+    @include border-radius(constants.$border-radius-sm);
+    margin-bottom: constants.$spacing-lg;
+    @include flex-center;
+    gap: constants.$spacing-sm;
+
+    i {
+      font-size: constants.$font-size-lg;
+    }
+  }
+
+  // Element: error-message
+  &__error-message {
+    background-color: color-change(variables.$destructive, 0.1);
+    border: constants.$border-width-thin solid variables.$destructive;
+    color: variables.$destructive;
+  }
+
+  // Element: success-message
+  &__success-message {
+    background-color: rgba(variables.$accent, 0.1);
+    border: constants.$border-width-thin solid variables.$accent;
+    color: variables.$accent;
+  }
+
+  // Element: loading-overlay
+  &__loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(variables.$card, 0.9);
+    @include flex-column;
+    @include flex-center;
+    @include border-radius(constants.$border-radius-md);
+    z-index: constants.$z-index-modal;
+
+    // Element: spinner
+    .motorcycle-registration__spinner {
+      width: $motorcycle-registration-spinner-size;
+      height: $motorcycle-registration-spinner-size;
+      border: $motorcycle-registration-spinner-border-width solid variables.$muted;
+      border-top: $motorcycle-registration-spinner-border-width solid variables.$primary;
+      @include border-radius(constants.$border-radius-full);
+      animation: spin 1s linear infinite;
+      margin-bottom: constants.$spacing-sm;
+    }
+
+    // Element: loading-text
+    .motorcycle-registration__loading-text {
+      color: $muted-foreground;
+      margin: 0;
+    }
+  }
+
+  // Element: step-content
+  &__step-content {
+    min-height: $motorcycle-registration-min-height;
+  }
+
+  // Element: plate-form, new-motorcycle-form
+  &__plate-form,
+  &__new-motorcycle-form {
+    // Element: form-group
+    .motorcycle-registration__form-group {
+      margin-bottom: constants.$spacing-lg;
+
+      // Element: form-label
+      .motorcycle-registration__form-label {
+        @include label-base;
+      }
+
+      // Element: form-input
+      .motorcycle-registration__form-input {
+        @include input-base;
+
+        // Modifier: form-input--error
+        &--error {
+          border-color: variables.$destructive;
+
+          &:focus {
+            border-color: variables.$destructive;
+            box-shadow: 0 0 0 2px rgba(variables.$destructive, 0.2);
+          }
+        }
+      }
+
+      // Element: error-text
+      .motorcycle-registration__error-text {
+        @include form-error;
+      }
+
+      // Element: help-text
+      .motorcycle-registration__help-text {
+        color: $muted-foreground;
+        font-size: constants.$font-size-sm;
+        margin-top: constants.$spacing-xs;
+        display: block;
+      }
+    }
+
+    // Element: form-actions
+    .motorcycle-registration__form-actions {
+      @include flex-between;
+      gap: constants.$spacing-sm;
+      margin-top: constants.$spacing-2xl;
+    }
+  }
+
+  // Element: motorcycle-info-card, success-card, error-card
+  &__motorcycle-info-card,
+  &__success-card,
+  &__error-card {
+    text-align: center;
+    padding: constants.$spacing-2xl;
+    border: constants.$border-width-thin solid variables.$border;
+    @include border-radius(constants.$border-radius-md);
+    background: variables.$muted;
+
+    // Element: card-title
+    .motorcycle-registration__card-title {
+      color: variables.$foreground;
+      margin-bottom: constants.$spacing-md;
+      font-size: constants.$font-size-xl;
+    }
+
+    // Element: card-description
+    .motorcycle-registration__card-description {
+      color: $muted-foreground;
+      margin-bottom: constants.$spacing-lg;
+      line-height: $line-height-relaxed;
+    }
+  }
+
+  // Element: motorcycle-details, registered-motorcycle-info
+  &__motorcycle-details,
+  &__registered-motorcycle-info {
+    background: variables.$card;
+    border: constants.$border-width-thin solid variables.$border;
+    @include border-radius(constants.$border-radius-sm);
+    padding: constants.$spacing-lg;
+    margin: constants.$spacing-lg 0;
+    text-align: left;
+
+    // Element: detail-row
+    .motorcycle-registration__detail-row {
+      @include flex-between;
+      padding: constants.$spacing-xs 0;
+      border-bottom: constants.$border-width-thin solid variables.$muted;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      strong {
+        color: variables.$foreground;
+      }
+    }
+  }
+
+  // Element: ownership-notice
+  &__ownership-notice {
+    background: $motorcycle-registration-ownership-notice-bg;
+    border: constants.$border-width-thin solid $motorcycle-registration-ownership-notice-border;
+    @include border-radius(constants.$border-radius-sm);
+    padding: constants.$spacing-md;
+    margin: constants.$spacing-lg 0;
+
+    // Element: notice-text
+    .motorcycle-registration__notice-text {
+      margin: 0;
+      color: $motorcycle-registration-ownership-notice-text-color;
+      font-size: constants.$font-size-sm;
+    }
+  }
+
+  // Element: form-row
+  &__form-row {
+    @include grid-cols(2);
+    margin-bottom: constants.$spacing-lg;
+  }
+
+  // Element: success-card
+  &__success-card {
+    // Element: success-icon
+    .motorcycle-registration__success-icon {
+      color: variables.$accent;
+      font-size: $motorcycle-registration-success-icon-size;
+      margin-bottom: constants.$spacing-md;
+    }
+  }
+
+  // Element: error-card
+  &__error-card {
+    // Element: error-icon
+    .motorcycle-registration__error-icon {
+      color: variables.$destructive;
+      font-size: $motorcycle-registration-success-icon-size;
+      margin-bottom: constants.$spacing-md;
+    }
+  }
+
+  // Element: btn-outline
+  &__btn-outline {
+    @include button-variant(transparent, variables.$primary, variables.$primary);
+
+    &:hover:not(:disabled) {
+      background-color: variables.$primary;
+      color: $primary-foreground;
+    }
+  }
+}
+
+// Keyframes
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Responsive design
+@include respond-to(md) {
+  .motorcycle-registration {
+    margin: $motorcycle-registration-margin-mobile;
+    padding: $motorcycle-registration-padding-mobile;
+
+    &__form-actions {
+      @include flex-column;
+
+      .btn {
+        width: 100%;
+      }
+    }
+
+    &__motorcycle-details,
+    &__registered-motorcycle-info {
+      .motorcycle-registration__detail-row {
+        @include flex-column;
+        gap: constants.$spacing-xs;
+      }
+    }
+  }
+}
+
+@include respond-to(sm) {
+  .motorcycle-registration {
+    &__form-row {
+      @include grid-cols(1);
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .motorcycle-registration {
+    &__ownership-notice {
+      background: darken($motorcycle-registration-ownership-notice-bg, 20%);
+      border-color: darken($motorcycle-registration-ownership-notice-border, 20%);
+    }
+  }
+}

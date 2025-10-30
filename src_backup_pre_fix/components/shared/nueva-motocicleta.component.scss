@@ -1,0 +1,612 @@
+/* Nueva Motocicleta Component Styles */
+/* Modern, elegant, and fully responsive design following BEM methodology */
+
+.nueva-motocicleta {
+  &__container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: constants.$spacing-xl;
+    background: linear-gradient(135deg, variables.$muted 0%, variables.$card 100%);
+    min-height: 100vh;
+    font-family: constants.$font-family-base;
+  }
+
+  &__form-header {
+    text-align: center;
+    margin-bottom: constants.$spacing-2xl;
+
+    &__title {
+      @include heading(1);
+      color: variables.$foreground;
+      margin-bottom: constants.$spacing-xs;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    &__subtitle {
+      font-size: constants.$font-size-lg;
+      color: $muted-foreground;
+      margin: 0;
+      font-weight: constants.$font-weight-medium;
+    }
+  }
+
+  &__assignment-form {
+    @include mixins.flex-column;
+    gap: constants.$spacing-xl;
+  }
+
+  &__form-section {
+    @include mixins.card-base;
+    padding: constants.$spacing-xl;
+    border-radius: constants.$border-radius-2xl;
+    transition: all constants.$transition-normal;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: constants.$shadow-lg;
+    }
+
+    &__title {
+      font-size: constants.$font-size-xl;
+      font-weight: constants.$font-weight-bold;
+      color: variables.$foreground;
+      margin-bottom: constants.$spacing-lg;
+      @include flex-start;
+      gap: constants.$spacing-xs;
+    }
+  }
+
+  &__phone-section {
+    background: linear-gradient(135deg, variables.$warning 0%, lighten(variables.$warning, 10%) 100%);
+    border-color: variables.$warning;
+
+    .nueva-motocicleta__form-section__title {
+      color: color.adjust(variables.$warning, 30%, $lightness: -variables.$warning, 30);
+    }
+  }
+
+  &__data-section {
+    &__form-grid {
+      @include grid-cols(2, constants.$spacing-lg);
+
+      @include respond-to(md) {
+        @include grid-cols(1, constants.$spacing-lg);
+      }
+    }
+  }
+
+  &__selection-section {
+    &__selected-motorcycle {
+      background: linear-gradient(135deg, lighten(variables.$destructive, 45%) 0%, lighten(variables.$destructive, 40%) 100%);
+      border: 2px solid variables.$destructive;
+      border-radius: constants.$border-radius-lg;
+      padding: constants.$spacing-lg;
+      margin-bottom: constants.$spacing-lg;
+
+      &__header {
+        @include mixins.flex-between;
+        margin-bottom: constants.$spacing-md;
+
+        &__title {
+          font-size: constants.$font-size-lg;
+          font-weight: constants.$font-weight-bold;
+          color: color.adjust(variables.$destructive, 40%, $lightness: -variables.$destructive, 40);
+          margin: 0;
+        }
+
+        &__change-button {
+          @include button-base;
+          @include button-variant(variables.$destructive, $destructive-foreground);
+          @include button-size(constants.$spacing-xs, constants.$spacing-md, constants.$font-size-sm);
+          transition: all constants.$transition-normal;
+
+          &:hover {
+            transform: scale(1.05);
+          }
+        }
+      }
+
+      &__details {
+        &__name {
+          font-size: constants.$font-size-xl;
+          font-weight: constants.$font-weight-bold;
+          color: color.adjust(variables.$destructive, 40%, $lightness: -variables.$destructive, 40);
+          display: block;
+          margin-bottom: constants.$spacing-xs;
+        }
+
+        &__specs {
+          @include flex-start;
+          gap: constants.$spacing-md;
+
+          &__item {
+            background: variables.$card;
+            padding: constants.$spacing-xs constants.$spacing-sm;
+            border-radius: constants.$border-radius-full;
+            font-size: constants.$font-size-sm;
+            font-weight: constants.$font-weight-semibold;
+            color: color.adjust(variables.$destructive, 40%, $lightness: -variables.$destructive, 40);
+            border: 1px solid variables.$destructive;
+          }
+        }
+      }
+    }
+
+    &__search-button {
+      width: 100%;
+      @include button-base;
+      @include button-variant(variables.$primary, $primary-foreground);
+      @include button-size(constants.$spacing-xl, constants.$spacing-xl, constants.$font-size-lg);
+      border: 2px dashed variables.$primary;
+      border-radius: constants.$border-radius-lg;
+      transition: all constants.$transition-normal;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: constants.$shadow-lg;
+      }
+
+      &__content {
+        @include mixins.flex-column;
+        align-items: center;
+        gap: constants.$spacing-md;
+
+        &__icon {
+          font-size: constants.$font-size-5xl;
+        }
+
+        &__text {
+          text-align: center;
+
+          &__title {
+            display: block;
+            font-size: constants.$font-size-xl;
+            margin-bottom: constants.$spacing-xs;
+          }
+
+          &__subtitle {
+            font-size: constants.$font-size-base;
+            opacity: 0.9;
+            margin: 0;
+          }
+        }
+      }
+    }
+
+    &__motorcycle-grid-container {
+      background: variables.$muted;
+      border-radius: constants.$border-radius-lg;
+      padding: constants.$spacing-lg;
+      margin-top: constants.$spacing-lg;
+      border: 2px solid variables.$border;
+    }
+
+    &__model-filter {
+      margin-bottom: constants.$spacing-lg;
+
+      &__label {
+        display: block;
+        font-weight: constants.$font-weight-bold;
+        color: variables.$foreground;
+        margin-bottom: constants.$spacing-xs;
+        font-size: constants.$font-size-base;
+      }
+
+      &__select {
+        @include input-base;
+        padding: constants.$spacing-sm constants.$spacing-md;
+        border: 2px solid variables.$border;
+        border-radius: constants.$border-radius-md;
+        font-size: constants.$font-size-base;
+        background: variables.$card;
+        transition: border-color constants.$transition-fast;
+
+        &:focus {
+          outline: none;
+          border-color: variables.$primary;
+          box-shadow: 0 0 0 3px rgba(variables.$primary, 0.1);
+        }
+      }
+    }
+
+    &__empty-state {
+      text-align: center;
+      padding: constants.$spacing-3xl constants.$spacing-md;
+
+      &__icon {
+        font-size: constants.$font-size-5xl;
+        margin-bottom: constants.$spacing-md;
+      }
+
+      &__title {
+        font-size: constants.$font-size-xl;
+        font-weight: constants.$font-weight-bold;
+        color: $muted-foreground;
+        margin-bottom: constants.$spacing-xs;
+      }
+
+      &__subtitle {
+        color: $muted-foreground;
+        margin: 0;
+      }
+    }
+
+    &__motorcycle-grid {
+      @include grid-auto-fit(280px, constants.$spacing-md);
+      margin-bottom: constants.$spacing-lg;
+
+      @include respond-to(md) {
+        @include grid-cols(1, constants.$spacing-md);
+      }
+    }
+
+    &__motorcycle-card {
+      @include mixins.card-base;
+      padding: constants.$spacing-lg;
+      cursor: pointer;
+      @include flex-start;
+      gap: constants.$spacing-md;
+      transition: all constants.$transition-normal;
+
+      &:hover {
+        border-color: variables.$primary;
+        background: lighten(variables.$primary, 48%);
+        transform: translateY(-2px);
+        box-shadow: constants.$shadow-md;
+      }
+
+      &__icon {
+        font-size: constants.$font-size-2xl;
+        flex-shrink: 0;
+      }
+
+      &__info {
+        flex: 1;
+
+        &__name {
+          font-size: constants.$font-size-lg;
+          font-weight: constants.$font-weight-bold;
+          color: variables.$foreground;
+          margin-bottom: constants.$spacing-xs;
+        }
+
+        &__year {
+          font-size: constants.$font-size-sm;
+          color: $muted-foreground;
+          margin-bottom: constants.$spacing-xs;
+        }
+
+        &__specs {
+          &__item {
+            display: inline-block;
+            background: variables.$muted;
+            padding: constants.$spacing-xs constants.$spacing-sm;
+            border-radius: constants.$border-radius-lg;
+            font-size: constants.$font-size-xs;
+            font-weight: constants.$font-weight-semibold;
+            color: variables.$foreground;
+            margin-right: constants.$spacing-xs;
+          }
+        }
+
+        &__description {
+          font-size: constants.$font-size-sm;
+          color: $muted-foreground;
+          margin: constants.$spacing-xs 0 0 0;
+          line-height: constants.$line-height-relaxed;
+        }
+      }
+    }
+
+    &__grid-actions {
+      text-align: center;
+
+      &__close-button {
+        @include button-base;
+        @include button-variant($muted-foreground, variables.$card);
+        @include button-size(constants.$spacing-sm, constants.$spacing-lg, constants.$font-size-base);
+
+        &:hover {
+          background-color: color.adjust($muted-foreground, 10%, $lightness: -$muted-foreground, 10);
+        }
+      }
+    }
+
+    &__section-error {
+      text-align: center;
+      margin-top: constants.$spacing-md;
+    }
+  }
+
+  &__extras-section {
+    &__extras-grid {
+      @include grid-cols(2, constants.$spacing-lg);
+
+      @include respond-to(md) {
+        @include grid-cols(1, constants.$spacing-lg);
+      }
+    }
+  }
+
+  &__info-section {
+    &__info-card {
+      background: linear-gradient(135deg, variables.$warning 0%, lighten(variables.$warning, 10%) 100%);
+      border: 2px solid variables.$warning;
+      border-radius: constants.$border-radius-lg;
+      padding: constants.$spacing-lg;
+      @include flex-start;
+      align-items: flex-start;
+      gap: constants.$spacing-md;
+
+      &__icon {
+        font-size: constants.$font-size-2xl;
+        flex-shrink: 0;
+      }
+
+      &__content {
+        flex: 1;
+
+        &__title {
+          font-size: constants.$font-size-lg;
+          font-weight: constants.$font-weight-bold;
+          color: color.adjust(variables.$warning, 30%, $lightness: -variables.$warning, 30);
+          margin-bottom: constants.$spacing-xs;
+        }
+
+        &__list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+
+          li {
+            color: color.adjust(variables.$warning, 30%, $lightness: -variables.$warning, 30);
+            margin-bottom: constants.$spacing-xs;
+            font-size: constants.$font-size-base;
+            @include flex-start;
+            gap: constants.$spacing-xs;
+          }
+        }
+      }
+    }
+  }
+
+  &__form-actions {
+    text-align: center;
+    padding-top: constants.$spacing-md;
+
+    &__submit-button {
+      @include button-base;
+      @include button-variant(variables.$destructive, $destructive-foreground);
+      @include button-size(constants.$spacing-lg, constants.$spacing-3xl, constants.$font-size-xl);
+      font-weight: constants.$font-weight-bold;
+      @include mixins.flex-center;
+      gap: constants.$spacing-sm;
+      box-shadow: constants.$shadow-lg;
+      min-width: 250px;
+      transition: all constants.$transition-normal;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: constants.$shadow-xl;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      &__loading-spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid transparent;
+        border-top: 3px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+
+  &__form-group {
+    @include form-group;
+
+    &__label {
+      @include label-base;
+      font-weight: constants.$font-weight-bold;
+      color: variables.$foreground;
+      margin-bottom: constants.$spacing-sm;
+      font-size: constants.$font-size-base;
+    }
+
+    &__input {
+      @include input-base;
+      padding: constants.$spacing-md;
+      border: 2px solid variables.$border;
+      border-radius: constants.$border-radius-md;
+      font-size: constants.$font-size-lg;
+      font-weight: constants.$font-weight-semibold;
+      background: variables.$muted;
+      transition: all constants.$transition-normal;
+
+      &:focus {
+        outline: none;
+        border-color: variables.$primary;
+        box-shadow: 0 0 0 3px rgba(variables.$primary, 0.1);
+        background: variables.$card;
+      }
+
+      &::placeholder {
+        color: $muted-foreground;
+        font-weight: constants.$font-weight-normal;
+      }
+
+      &--phone {
+        text-align: center;
+        font-size: constants.$font-size-lg;
+        font-weight: constants.$font-weight-bold;
+        letter-spacing: 1px;
+      }
+
+      &--plate {
+        text-align: center;
+        text-transform: uppercase;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+        font-size: constants.$font-size-xl;
+        font-weight: constants.$font-weight-bold;
+      }
+    }
+
+    &__mileage-input-group {
+      @include mixins.flex-center;
+
+      &__input {
+        flex: 1;
+        text-align: center;
+        font-size: constants.$font-size-lg;
+        font-weight: constants.$font-weight-bold;
+      }
+
+      &__unit {
+        margin-left: constants.$spacing-xs;
+        font-size: constants.$font-size-lg;
+        font-weight: constants.$font-weight-bold;
+        color: variables.$foreground;
+      }
+    }
+
+    &__textarea {
+      @include input-base;
+      padding: constants.$spacing-md;
+      border: 2px solid variables.$border;
+      border-radius: constants.$border-radius-md;
+      font-size: constants.$font-size-base;
+      background: variables.$muted;
+      resize: vertical;
+      min-height: 100px;
+      transition: all constants.$transition-normal;
+
+      &:focus {
+        outline: none;
+        border-color: variables.$primary;
+        box-shadow: 0 0 0 3px rgba(variables.$primary, 0.1);
+        background: variables.$card;
+      }
+
+      &::placeholder {
+        color: $muted-foreground;
+      }
+    }
+
+    &__file-input {
+      width: 100%;
+      padding: constants.$spacing-md;
+      border: 2px dashed variables.$border;
+      border-radius: constants.$border-radius-md;
+      background: variables.$muted;
+      cursor: pointer;
+      transition: all constants.$transition-normal;
+
+      &:hover {
+        border-color: variables.$primary;
+        background: lighten(variables.$primary, 48%);
+      }
+    }
+
+    &__file-hint {
+      font-size: constants.$font-size-sm;
+      color: $muted-foreground;
+      margin-top: constants.$spacing-xs;
+    }
+
+    &__error-message {
+      @include form-error;
+      margin-top: constants.$spacing-xs;
+      padding: constants.$spacing-xs;
+      background: rgba(variables.$destructive, 0.1);
+      color: variables.$destructive;
+      border-radius: constants.$border-radius-sm;
+      font-size: constants.$font-size-sm;
+      font-weight: constants.$font-weight-semibold;
+      @include flex-start;
+      gap: constants.$spacing-xs;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Responsive Design
+@include respond-to(md) {
+  .nueva-motocicleta {
+    &__container {
+      padding: constants.$spacing-md;
+    }
+
+    &__form-header {
+      &__title {
+        font-size: constants.$font-size-4xl;
+      }
+
+      &__subtitle {
+        font-size: constants.$font-size-base;
+      }
+    }
+
+    &__form-section {
+      padding: constants.$spacing-lg;
+    }
+
+    &__selection-section {
+      &__motorcycle-card {
+        @include mixins.flex-column;
+        text-align: center;
+        gap: constants.$spacing-sm;
+
+        &__icon {
+          font-size: constants.$font-size-2xl;
+        }
+      }
+    }
+
+    &__form-actions {
+      &__submit-button {
+        font-size: constants.$font-size-lg;
+        padding: constants.$spacing-md constants.$spacing-xl;
+        min-width: 200px;
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

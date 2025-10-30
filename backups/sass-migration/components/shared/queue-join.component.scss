@@ -1,0 +1,504 @@
+// Queue Join Component - BEM Methodology
+@use '../../styles/variables';
+@use '../../styles/mixins';
+.queue-join {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: constants.$spacing-lg;
+  font-family: $font-family-base;
+  background: variables.$background;
+  min-height: 100vh;
+
+  &__header {
+    text-align: center;
+    margin-bottom: constants.$spacing-2xl;
+
+    .queue-join__title {
+      color: variables.$foreground;
+      margin-bottom: constants.$spacing-lg;
+      font-size: $font-size-3xl;
+    }
+  }
+
+  &__step-indicator {
+    display: flex;
+    justify-content: center;
+    gap: constants.$spacing-sm;
+    margin-bottom: constants.$spacing-lg;
+
+    .queue-join__step {
+      width: 40px;
+      height: 40px;
+      border-radius: constants.$border-radius-full;
+      background: variables.$muted;
+      color: $muted-foreground;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: constants.$font-weight-bold;
+      transition: all constants.$transition-normal;
+
+      &--active {
+        background: variables.$primary;
+        color: $primary-foreground;
+      }
+    }
+  }
+
+  &__step-content {
+    @include card-base;
+    margin-bottom: constants.$spacing-lg;
+
+    .queue-join__step-title {
+      color: $card-foreground;
+      margin-bottom: constants.$spacing-md;
+      font-size: constants.$font-size-xl;
+    }
+
+    .queue-join__step-description {
+      color: $muted-foreground;
+      margin-bottom: constants.$spacing-lg;
+      line-height: $line-height-relaxed;
+    }
+  }
+
+  &__error-message {
+    background: $destructive-background;
+    color: variables.$destructive;
+    padding: constants.$spacing-md;
+    border-radius: constants.$border-radius-md;
+    margin-bottom: constants.$spacing-lg;
+    display: flex;
+    align-items: center;
+    gap: constants.$spacing-sm;
+    border: constants.$border-width-thin solid variables.$destructive;
+  }
+
+  &__loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: constants.$z-index-modal;
+
+    .queue-join__spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid variables.$primary;
+      border-radius: constants.$border-radius-full;
+      animation: spin 1s linear infinite;
+      margin-bottom: constants.$spacing-lg;
+    }
+
+    .queue-join__loading-text {
+      color: white;
+      font-size: constants.$font-size-lg;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// QR Scan Step
+.queue-join__qr-scan {
+  text-align: center;
+
+  .queue-join__qr-placeholder {
+    margin: constants.$spacing-2xl 0;
+
+    .queue-join__qr-camera {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto constants.$spacing-lg;
+      border: 2px dashed variables.$border;
+      border-radius: constants.$border-radius-lg;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: variables.$muted;
+
+      .queue-join__qr-icon {
+        font-size: 3rem;
+        color: $muted-foreground;
+        margin-bottom: constants.$spacing-sm;
+      }
+
+      .queue-join__qr-text {
+        color: $muted-foreground;
+        margin: 0;
+      }
+    }
+  }
+}
+
+// User Detection Step
+.queue-join__user-info,
+.queue-join__new-user-info {
+  text-align: center;
+
+  .queue-join__user-title {
+    color: variables.$primary;
+    margin-bottom: constants.$spacing-md;
+  }
+}
+
+// Motorcycle Step
+.queue-join__motorcycle-form {
+  @include form-group;
+
+  .queue-join__form-group {
+    margin-bottom: constants.$spacing-lg;
+
+    .queue-join__form-label {
+      display: block;
+      margin-bottom: constants.$spacing-xs;
+      font-weight: constants.$font-weight-semibold;
+      color: variables.$foreground;
+    }
+
+    .queue-join__form-input {
+      @include input-base;
+
+      &.queue-join__form-input--error {
+        border-color: variables.$destructive;
+
+        &:focus {
+          border-color: variables.$destructive;
+          box-shadow: 0 0 0 2px rgba(variables.$destructive, 0.2);
+        }
+      }
+    }
+
+    .queue-join__error-text {
+      color: variables.$destructive;
+      font-size: constants.$font-size-sm;
+      margin-top: constants.$spacing-xs;
+      display: block;
+    }
+  }
+
+  .queue-join__form-actions {
+    @include flex-between;
+    gap: constants.$spacing-md;
+    margin-top: constants.$spacing-2xl;
+  }
+}
+
+.queue-join__motorcycle-info {
+  background: rgba(variables.$primary, 0.1);
+  padding: constants.$spacing-lg;
+  border-radius: constants.$border-radius-md;
+  margin-top: constants.$spacing-lg;
+  border: constants.$border-width-thin solid variables.$primary;
+
+  .queue-join__motorcycle-title {
+    color: variables.$primary;
+    margin-bottom: constants.$spacing-sm;
+  }
+
+  .queue-join__motorcycle-detail {
+    margin: constants.$spacing-xs 0;
+    color: variables.$primary;
+  }
+}
+
+// Phone Step
+.queue-join__phone-form {
+  .queue-join__form-group {
+    margin-bottom: constants.$spacing-lg;
+
+    .queue-join__form-label {
+      @include label-base;
+    }
+
+    .queue-join__form-input {
+      @include input-base;
+
+      &.queue-join__form-input--error {
+        border-color: variables.$destructive;
+
+        &:focus {
+          border-color: variables.$destructive;
+          box-shadow: 0 0 0 2px color-change(variables.$destructive, 0.2);
+        }
+      }
+    }
+
+    .queue-join__error-text {
+      @include form-error;
+    }
+  }
+
+  .queue-join__form-actions {
+    @include flex-between;
+    gap: constants.$spacing-md;
+    margin-top: constants.$spacing-2xl;
+  }
+}
+
+// Service Selection Step
+.queue-join__services-grid {
+  @include grid-auto-fit(250px, constants.$spacing-lg);
+  margin-bottom: constants.$spacing-2xl;
+}
+
+.queue-join__service-card {
+  @include card-base;
+  cursor: pointer;
+  transition: all constants.$transition-normal;
+
+  &:hover {
+    border-color: variables.$primary;
+    transform: translateY(-2px);
+    box-shadow: constants.$shadow-lg;
+  }
+
+  &--selected {
+    border-color: variables.$primary;
+    background: rgba(variables.$primary, 0.1);
+    box-shadow: constants.$shadow-lg;
+  }
+
+  .queue-join__service-title {
+    margin: 0 0 constants.$spacing-sm 0;
+    color: $card-foreground;
+    font-size: constants.$font-size-lg;
+  }
+
+  .queue-join__service-description {
+    margin: 0 0 constants.$spacing-md 0;
+    color: $muted-foreground;
+    line-height: $line-height-relaxed;
+  }
+
+  .queue-join__service-price {
+    font-size: constants.$font-size-lg;
+    font-weight: constants.$font-weight-bold;
+    color: variables.$primary;
+  }
+}
+
+.queue-join__service-form {
+  .queue-join__form-group {
+    margin-bottom: constants.$spacing-lg;
+
+    .queue-join__form-label {
+      @include label-base;
+    }
+
+    .queue-join__form-textarea {
+      @include input-base;
+      min-height: 80px;
+      resize: vertical;
+    }
+  }
+
+  .queue-join__form-actions {
+    @include flex-between;
+    gap: constants.$spacing-md;
+    margin-top: constants.$spacing-2xl;
+  }
+}
+
+// Confirmation Step
+.queue-join__confirmation-summary {
+  background: variables.$muted;
+  padding: constants.$spacing-lg;
+  border-radius: constants.$border-radius-md;
+  margin-bottom: constants.$spacing-2xl;
+}
+
+.queue-join__summary-item {
+  margin-bottom: constants.$spacing-sm;
+  padding: constants.$spacing-xs 0;
+  border-bottom: constants.$border-width-thin solid variables.$border;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  strong {
+    color: variables.$foreground;
+  }
+}
+
+.queue-join__form-actions {
+  @include flex-between;
+  gap: constants.$spacing-md;
+}
+
+// Success Step
+.queue-join__success-step {
+  text-align: center;
+
+  .queue-join__success-title {
+    color: variables.$primary;
+    margin-bottom: constants.$spacing-md;
+  }
+}
+
+.queue-join__success-info {
+  margin: constants.$spacing-2xl 0;
+}
+
+.queue-join__queue-details {
+  background: rgba(variables.$primary, 0.1);
+  padding: constants.$spacing-lg;
+  border-radius: constants.$border-radius-md;
+  margin-bottom: constants.$spacing-2xl;
+  border: constants.$border-width-thin solid variables.$primary;
+}
+
+.queue-join__detail-item {
+  margin-bottom: constants.$spacing-sm;
+  padding: constants.$spacing-xs 0;
+  border-bottom: constants.$border-width-thin solid variables.$primary;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  strong {
+    color: variables.$primary;
+  }
+}
+
+.queue-join__qr-code-section {
+  margin: constants.$spacing-2xl 0;
+
+  .queue-join__qr-code-title {
+    color: variables.$foreground;
+    margin-bottom: constants.$spacing-sm;
+  }
+
+  .queue-join__qr-code-description {
+    color: $muted-foreground;
+    margin-bottom: constants.$spacing-lg;
+  }
+
+  .queue-join__qr-code-image {
+    max-width: 200px;
+    height: auto;
+    border: 2px solid variables.$border;
+    border-radius: constants.$border-radius-md;
+    margin: 0 auto;
+    display: block;
+  }
+}
+
+.queue-join__instructions {
+  text-align: left;
+  background: #fff3cd;
+  padding: constants.$spacing-lg;
+  border-radius: constants.$border-radius-md;
+  border: constants.$border-width-thin solid #ffeaa7;
+
+  .queue-join__instructions-title {
+    color: #856404;
+    margin-bottom: constants.$spacing-md;
+  }
+
+  .queue-join__instructions-list {
+    margin: 0;
+    padding-left: constants.$spacing-lg;
+
+    .queue-join__instruction-item {
+      color: #856404;
+      margin-bottom: constants.$spacing-xs;
+      line-height: $line-height-relaxed;
+    }
+  }
+}
+
+// Buttons - Using existing button classes
+.queue-join__btn {
+  @include button-base;
+}
+
+.queue-join__btn--primary {
+  @include button-variant(variables.$primary, $primary-foreground);
+}
+
+.queue-join__btn--secondary {
+  @include button-variant(variables.$secondary, $secondary-foreground);
+}
+
+// Navigation
+.queue-join__navigation {
+  text-align: center;
+  margin-top: constants.$spacing-lg;
+}
+
+// Responsive Design
+@include respond-to(md) {
+  .queue-join {
+    padding: constants.$spacing-md;
+
+    &__step-content {
+      padding: constants.$spacing-lg;
+    }
+
+    &__services-grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__form-actions {
+      flex-direction: column;
+
+      .queue-join__btn {
+        width: 100%;
+        margin-bottom: constants.$spacing-sm;
+      }
+    }
+
+    &__step-indicator {
+      .queue-join__step {
+        width: 30px;
+        height: 30px;
+        font-size: constants.$font-size-sm;
+      }
+    }
+
+    &__qr-camera {
+      width: 150px !important;
+      height: 150px !important;
+
+      .queue-join__qr-icon {
+        font-size: 2rem !important;
+      }
+    }
+  }
+}
+
+@include respond-to(sm) {
+  .queue-join {
+    &__header {
+      .queue-join__title {
+        font-size: constants.$font-size-xl;
+      }
+    }
+
+    &__step-content {
+      .queue-join__step-title {
+        font-size: constants.$font-size-lg;
+      }
+    }
+
+    &__btn {
+      @include button-size(constants.$spacing-sm, constants.$spacing-lg, constants.$font-size-sm);
+    }
+  }
+}

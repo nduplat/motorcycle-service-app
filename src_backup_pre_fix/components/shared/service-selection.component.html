@@ -1,0 +1,141 @@
+<div class="service-selection">
+  <!-- Header with search and filters -->
+  <div class="service-selection__header">
+    <h3 class="service-selection__title">Selecciona los Servicios</h3>
+
+    <!-- Search bar -->
+    <div class="service-selection__search-container">
+      <input
+        type="text"
+        placeholder="Buscar servicios..."
+        [value]="searchQuery()"
+        (input)="onSearchChange($any($event.target).value)"
+        class="service-selection__search-input"
+      >
+      <span class="service-selection__search-icon">🔍</span>
+    </div>
+
+    <!-- Category filters -->
+    <div class="service-selection__category-filters">
+      <button
+        *ngFor="let category of categories"
+        [class.service-selection__category-button--active]="selectedCategory() === category.id"
+        (click)="onCategoryChange(category.id)"
+        class="service-selection__category-button"
+      >
+        <span *ngIf="category.icon">{{ category.icon }}</span>
+        {{ category.name }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Services grid -->
+  <div class="service-selection__services-grid">
+    <div
+      *ngFor="let service of filteredServices()"
+      class="service-selection__service-card"
+      [class.service-selection__service-card--selected]="isServiceSelected(service)"
+      (click)="onServiceToggle(service)"
+    >
+      <div class="service-selection__service-header">
+        <div class="service-selection__service-checkbox">
+          <input
+            type="checkbox"
+            [checked]="isServiceSelected(service)"
+            (change)="onServiceToggle(service)"
+            (click)="$event.stopPropagation()"
+          >
+        </div>
+        <div class="service-selection__service-info">
+          <h4 class="service-selection__service-title">{{ service.title }}</h4>
+          <div class="service-selection__service-meta">
+            <span class="service-selection__service-price">{{ formatCurrency(service.price || 0) }}</span>
+            <span class="service-selection__service-duration" *ngIf="service.estimatedHours">
+              {{ formatTime(service.estimatedHours) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-selection__service-description" *ngIf="service.description">
+        {{ service.description }}
+      </div>
+
+      <!-- Service parts information -->
+      <div class="service-parts" *ngIf="service.partsSuggested && service.partsSuggested.length > 0">
+        <small class="parts-info">{{ getServicePartsInfo(service) }}</small>
+      </div>
+
+      <!-- Service dependencies -->
+      <div class="service-selection__service-dependencies" *ngIf="getServiceDependencies(service).length > 0">
+        <small class="service-selection__dependency-label">Requiere:</small>
+        <div class="service-selection__dependency-list">
+          <span
+            *ngFor="let dep of getServiceDependencies(service)"
+            class="service-selection__dependency-item"
+          >
+            {{ dep.title }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Service recommendations -->
+      <div class="service-selection__service-recommendations" *ngIf="getRecommendedServices(service).length > 0 && !isServiceSelected(service)">
+        <small class="service-selection__recommendation-label">Recomendado con:</small>
+        <div class="service-selection__recommendation-list">
+          <button
+            *ngFor="let rec of getRecommendedServices(service)"
+            (click)="onAddRecommended(rec); $event.stopPropagation()"
+            class="service-selection__recommendation-item"
+          >
+            + {{ rec.title }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- No services found -->
+    <div *ngIf="filteredServices().length === 0" class="service-selection__no-services">
+      <p>No se encontraron servicios que coincidan con tu búsqueda.</p>
+    </div>
+  </div>
+
+  <!-- Selection summary -->
+  <div class="service-selection__selection-summary" *ngIf="selectedServicesData().length > 0">
+    <div class="service-selection__summary-header">
+      <h4 class="service-selection__summary-title">Servicios Seleccionados ({{ selectedServicesData().length }})</h4>
+    </div>
+
+    <div class="service-selection__selected-services-list">
+      <div *ngFor="let service of selectedServicesData()" class="service-selection__selected-service-item">
+        <div class="service-details">
+          <span class="service-selection__service-name">{{ service.title }}</span>
+          <div class="service-breakdown" *ngIf="service.partsSuggested && service.partsSuggested.length > 0">
+            <small class="parts-breakdown">{{ getServicePartsInfo(service) }}</small>
+          </div>
+        </div>
+        <div class="service-pricing">
+          <span class="service-selection__service-price">{{ formatCurrency(service.price || 0) }}</span>
+          <button
+            (click)="onServiceToggle(service)"
+            class="service-selection__remove-service"
+            title="Remover servicio"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-selection__summary-totals">
+      <div class="service-selection__total-row">
+        <span class="service-selection__total-label">Tiempo estimado:</span>
+        <span class="service-selection__total-value">{{ formatTime(estimatedTime()) }}</span>
+      </div>
+      <div class="service-selection__total-row service-selection__total-row--total-cost">
+        <span class="service-selection__total-label">Costo total:</span>
+        <span class="service-selection__total-value">{{ formatCurrency(totalCost()) }}</span>
+      </div>
+    </div>
+  </div>
+</div>

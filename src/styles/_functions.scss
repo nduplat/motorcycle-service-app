@@ -1,0 +1,65 @@
+// Functions
+// Define your SCSS functions here
+
+// Color manipulation functions
+@use 'sass:color';
+
+@function color-change($color, $alpha: null, $space: null) {
+  @if $alpha != null and $space != null {
+    @return color.change($color, $alpha: $alpha, $space: $space);
+  } @else if $alpha != null {
+    @return color.change($color, $alpha: $alpha);
+  } @else {
+    @return $color;
+  }
+}
+
+@function color-adjust($color, $lightness: null, $space: null) {
+  @if $lightness != null and $space != null {
+    @return color.adjust($color, $lightness: $lightness, $space: $space);
+  } @else if $lightness != null {
+    @return color.adjust($color, $lightness: $lightness);
+  } @else {
+    @return $color;
+  }
+}
+
+@function rgba($color, $alpha) {
+  @return color.change($color, $alpha: $alpha);
+}
+
+// Legacy rgba function for direct RGB values (backward compatibility)
+@function rgba($r, $g, $b, $a) {
+  @return color.change(rgb($r, $g, $b), $alpha: $a);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

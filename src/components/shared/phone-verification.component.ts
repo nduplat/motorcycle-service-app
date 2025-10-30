@@ -13,7 +13,6 @@ export interface PhoneVerificationResult {
 @Component({
   selector: 'app-phone-verification',
   templateUrl: './phone-verification.component.html',
-  styleUrls: ['./phone-verification.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, CommonModule],
 })
@@ -22,6 +21,8 @@ export class PhoneVerificationComponent implements OnInit, OnDestroy {
 
   @Input() flow: 'registration' | 'login' = 'registration';
   @Input() initialPhoneNumber = '';
+  @Input() isNewUser: boolean = false; // ← AGREGAR
+  @Input() existingPhone: string = ''; // ← AGREGAR
 
   @Output() verificationSuccess = new EventEmitter<PhoneVerificationResult>();
   @Output() verificationFailure = new EventEmitter<PhoneVerificationResult>();
@@ -32,6 +33,7 @@ export class PhoneVerificationComponent implements OnInit, OnDestroy {
   otpSent = signal(false);
   countdown = signal(0);
   confirmationResult: ConfirmationResult | null = null;
+  showConfirmation = signal(false); // ← AGREGAR estado
 
   // Forms
   phoneForm = this.fb.group({
@@ -54,6 +56,14 @@ export class PhoneVerificationComponent implements OnInit, OnDestroy {
   private recaptchaVerifier: RecaptchaVerifier | null = null;
 
   ngOnInit() {
+    if (this.existingPhone) {
+      // Cliente frecuente: pre-llenar y confirmar
+      this.phoneForm.patchValue({ phone: this.existingPhone });
+      this.showConfirmation.set(true); // ← AGREGAR estado
+    } else {
+      // Cliente nuevo: solicitar teléfono
+      this.showConfirmation.set(false);
+    }
     if (this.initialPhoneNumber) {
       this.phoneForm.patchValue({ phone: this.initialPhoneNumber });
     }
@@ -281,5 +291,13 @@ export class PhoneVerificationComponent implements OnInit, OnDestroy {
     this.phoneForm.reset();
     this.otpForm.reset();
     this.confirmationResult = null;
+  }
+
+  // ← AGREGAR lógica de confirmación rápida
+  confirmExistingPhone() {
+    this.verificationSuccess.emit({
+      success: true,
+      phoneNumber: this.existingPhone
+    });
   }
 }

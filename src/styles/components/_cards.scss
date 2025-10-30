@@ -1,0 +1,53 @@
+// Card component styles
+
+// Base card class
+.card {
+  @include card-base;
+}
+
+// Card variants
+.card-elevated {
+  @include card-base;
+  box-shadow: constants.$shadow-lg;
+}
+
+.card-outlined {
+  @include card-base;
+  border: constants.$border-width-medium solid variables.$border;
+  box-shadow: none;
+}
+
+.card-filled {
+  @include card-base;
+  background-color: variables.$muted;
+  border: none;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

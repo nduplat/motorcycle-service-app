@@ -25,9 +25,9 @@ import { Timestamp, ServiceType, Priority, AppointmentStatus } from './types';
 export interface WorkOrder {
   id: string;
   clientId: string;
-  vehicleId: string;
+  plate: string; // Unique identifier for the motorcycle assignment
   services: string[]; // Array of Service IDs - Array de IDs de Servicio
-  products: string[]; // Array of Product IDs - Array de IDs de Producto
+  products: string[]; // Array de IDs de Producto
   status: import('./types').WorkOrderStatus;
   totalPrice: number;
   createdAt: Timestamp;
@@ -65,7 +65,7 @@ export interface Appointment {
   id: string;
   number: string; // "APT-2025-0001"
   clientId?: string;
-  vehicleId: string;
+  plate: string; // Unique identifier for the motorcycle assignment
   serviceId?: string;
   date?: Timestamp;
   scheduledAt: Timestamp;
@@ -261,7 +261,7 @@ export interface ServiceRecord {
   id: string;
   workOrderId: string;
   customerId: string;
-  vehicleId: string;
+  plate: string;
   serviceId: string;
   serviceName: string;
   performedAt: Timestamp;
@@ -303,7 +303,7 @@ export interface ServiceRecord {
 export interface MaintenanceReminder {
   id: string;
   customerId: string;
-  vehicleId: string;
+  plate: string;
   serviceId: string;
   serviceName: string;
   dueType: "overdue" | "due_soon" | "upcoming";
@@ -359,7 +359,7 @@ export interface WorkOrderFilter {
   status?: import('./types').WorkOrderStatus[];
   assignedTo?: string[];
   clientId?: string;
-  vehicleId?: string;
+  plate?: string;
   dateRange?: {
     start: Date;
     end: Date;

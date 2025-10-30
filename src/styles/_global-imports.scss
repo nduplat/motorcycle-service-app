@@ -1,0 +1,8 @@
+// Global Imports - Forwards all SASS partials
+
+@forward 'sass:color';
+@forward 'variables';
+@forward 'functions';
+@forward 'breakpoints';
+@forward 'constants';
+@forward 'mixins';

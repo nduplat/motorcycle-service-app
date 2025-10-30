@@ -1,0 +1,320 @@
+// Time Blocks Manager Component - BEM Methodology
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/_constants' as constants;
+@use 'mixins' as mixins;
+
+// Component-specific variables
+$time-blocks-manager-min-height: 100vh;
+$time-blocks-manager-background: linear-gradient(135deg, variables.$background 0%, variables.$muted 100%);
+$time-blocks-manager-padding: constants.$spacing-2xl;
+$time-blocks-manager-padding-mobile: constants.$spacing-lg;
+$time-blocks-manager-max-width: 1200px;
+$time-blocks-manager-transition-duration: constants.$transition-fast;
+$time-blocks-manager-modal-z-index: 1000;
+$time-blocks-manager-modal-max-width: 800px;
+$time-blocks-manager-modal-max-width-approval: 600px;
+$time-blocks-manager-modal-border-radius: constants.$border-radius-xl;
+$time-blocks-manager-loading-padding: 4rem constants.$spacing-2xl;
+
+// BEM Block: time-blocks-manager
+.time-blocks-manager {
+  min-height: $time-blocks-manager-min-height;
+  background: $time-blocks-manager-background;
+  padding: $time-blocks-manager-padding;
+
+  @include mixins.respond-to(md) {
+    padding: $time-blocks-manager-padding-mobile;
+  }
+
+  // Element: header
+  &__header {
+    margin-bottom: constants.$spacing-2xl;
+  }
+
+  // Element: filters
+  &__filters {
+    // Modifier: filters--active
+    .active {
+      background: variables.$primary;
+      color: $primary-foreground;
+      border-color: variables.$primary;
+    }
+  }
+
+  // Element: content
+  &__content {
+    max-width: $time-blocks-manager-max-width;
+    margin: 0 auto;
+  }
+
+  // Element: time-blocks-grid
+  &__time-blocks-grid {
+    // Element: loading-state
+    .loading-state {
+      @include mixins.flex-column;
+      @include mixins.flex-center;
+      padding: $time-blocks-manager-loading-padding;
+      text-align: center;
+
+      // Element: animate-spin
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+
+      p {
+        margin-top: constants.$spacing-lg;
+      }
+    }
+
+    // Element: empty-state
+    .empty-state {
+      @include mixins.flex-column;
+      @include mixins.flex-center;
+      padding: $time-blocks-manager-loading-padding;
+      text-align: center;
+
+      svg {
+        margin-bottom: constants.$spacing-lg;
+      }
+
+      h3 {
+        margin-bottom: constants.$spacing-sm;
+      }
+    }
+
+    // Element: time-block-card
+    .time-block-card {
+      @include mixins.transition(all $time-blocks-manager-transition-duration);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: constants.$shadow-xl;
+      }
+    }
+  }
+
+  // Element: modal-overlay
+  &__modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    @include mixins.flex-center;
+    z-index: $time-blocks-manager-modal-z-index;
+    padding: constants.$spacing-2xl;
+
+    @include mixins.respond-to(md) {
+      padding: constants.$spacing-lg;
+    }
+  }
+
+  // Element: modal-content
+  &__modal-content {
+    background: variables.$card;
+    @include mixins.border-radius($time-blocks-manager-modal-border-radius);
+    box-shadow: constants.$shadow-2xl;
+    max-width: $time-blocks-manager-modal-max-width;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    // Modifier: modal-content--approval-modal
+    &--approval-modal {
+      max-width: $time-blocks-manager-modal-max-width-approval;
+    }
+
+    @include mixins.respond-to(md) {
+      max-width: 100%;
+      margin: 0;
+    }
+
+    // Element: modal-header
+    .modal-header {
+      @include mixins.flex-between;
+      align-items: center;
+      padding: constants.$spacing-xl constants.$spacing-2xl;
+      border-bottom: constants.$border-width-thin solid variables.$border;
+
+      h2 {
+        margin: 0;
+      }
+
+      button {
+        padding: constants.$spacing-sm;
+        @include mixins.border-radius(constants.$border-radius-md);
+        @include mixins.transition(background-color constants.$transition-fast);
+      }
+
+      @include mixins.respond-to(md) {
+        padding: constants.$spacing-lg;
+      }
+    }
+
+    // Element: modal-body
+    .modal-body {
+      padding: constants.$spacing-2xl;
+
+      @include mixins.respond-to(md) {
+        padding: constants.$spacing-lg;
+      }
+    }
+
+    // Element: modal-footer
+    .modal-footer {
+      @include flex-end;
+      gap: constants.$spacing-lg;
+      padding: constants.$spacing-xl constants.$spacing-2xl;
+      border-top: constants.$border-width-thin solid variables.$border;
+
+      button {
+        padding: constants.$spacing-md constants.$spacing-xl;
+        @include mixins.border-radius(constants.$border-radius-lg);
+        font-weight: constants.$font-weight-medium;
+        @include mixins.transition(all constants.$transition-fast);
+
+        &:first-child {
+          background: transparent;
+          border: constants.$border-width-thin solid variables.$border;
+          color: variables.$foreground;
+
+          &:hover {
+            background: variables.$muted;
+          }
+        }
+
+        &:last-child {
+          background: variables.$primary;
+          color: $primary-foreground;
+
+          &:hover:not(:disabled) {
+            background: color-adjust(variables.$primary, -10%, oklch);
+          }
+
+          // Modifier: disabled
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+        }
+      }
+
+      @include mixins.respond-to(md) {
+        padding: constants.$spacing-lg;
+      }
+    }
+
+    // Element: review-card
+    .review-card {
+      margin-bottom: constants.$spacing-2xl;
+    }
+
+    // Element: action-buttons
+    .action-buttons {
+      button {
+        min-width: 120px;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+// Keyframes
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive design
+@include mixins.respond-to(md) {
+  .time-blocks-manager {
+    &__filters {
+      .flex {
+        @include mixins.flex-column;
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+
+    &__modal-content {
+      .modal-header,
+      .modal-body,
+      .modal-footer {
+        padding: constants.$spacing-lg;
+      }
+    }
+
+    .action-buttons {
+      @include mixins.flex-column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .time-blocks-manager {
+    background: linear-gradient(135deg, variables.$background 0%, variables.$muted 100%);
+
+    &__modal-content {
+      background: variables.$card;
+    }
+  }
+}
+
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .time-blocks-manager {
+    &__time-blocks-grid .time-block-card {
+      transition: none;
+
+      &:hover {
+        transform: none;
+      }
+    }
+
+    &__modal-content .modal-footer button {
+      transition: none;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

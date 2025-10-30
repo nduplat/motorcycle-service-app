@@ -1,0 +1,177 @@
+<!-- Wait Ticket Component Template -->
+
+<div class="wait-ticket-container">
+  <!-- Success Header -->
+  <div class="success-header">
+    <div class="success-icon">
+      <span class="icon">🎉</span>
+    </div>
+    <h1 class="success-title">¡Registro exitoso!</h1>
+    <p class="success-subtitle">Te has unido exitosamente a la cola de servicio</p>
+  </div>
+
+  <!-- Main Ticket Card -->
+  <div class="ticket-card">
+    <div class="ticket-header">
+      <div class="ticket-icon">
+        <span class="icon">{{ getTicketIcon() }}</span>
+      </div>
+      <div class="ticket-info">
+        <h2 class="ticket-number">{{ ticketNumber() }}</h2>
+        <p class="ticket-label">Número de turno</p>
+      </div>
+    </div>
+
+    <!-- Status Badge -->
+    <div class="status-section">
+      <div class="status-badge" [style.background-color]="getStatusColor()">
+        <span class="status-text">{{ getStatusMessage() }}</span>
+      </div>
+    </div>
+
+    <!-- Verification Code -->
+    <div class="verification-section">
+      <h3>Código de verificación</h3>
+      <div class="verification-code">
+        <span class="code-display">{{ formatVerificationCode(verificationCode()) }}</span>
+        <p class="code-instruction">Presenta este código cuando te llamen</p>
+      </div>
+    </div>
+
+    <!-- QR Code -->
+    @if (qrCodeDataUrl()) {
+      <div class="qr-section">
+        <h3>Código QR</h3>
+        <div class="qr-container">
+          <img
+            [src]="qrCodeDataUrl()"
+            alt="QR Code del turno"
+            class="qr-code">
+          <p class="qr-instruction">Escanea para verificar tu turno</p>
+        </div>
+        <div class="qr-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="onDownloadQRCode()">
+            <span class="download-icon">⬇️</span>
+            Descargar QR
+          </button>
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="onShareTicket()">
+            <span class="share-icon">📤</span>
+            Compartir
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Wait Time -->
+    <div class="wait-time-section">
+      <h3>Tiempo estimado de espera</h3>
+      <div class="wait-time-display">
+        <span class="wait-time">{{ formattedWaitTime() }}</span>
+        @if (isUrgent()) {
+          <span class="urgent-badge">Espera prolongada</span>
+        }
+      </div>
+      <p class="wait-note">
+        Este tiempo es aproximado y puede variar según la demanda del servicio.
+      </p>
+    </div>
+  </div>
+
+  <!-- Service Summary -->
+  <div class="summary-card">
+    <h3>Resumen de tu solicitud</h3>
+    <div class="summary-details">
+      <div class="summary-item">
+        <span class="summary-label">Motocicleta:</span>
+        <span class="summary-value">{{ serviceSummary().motorcycle }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Placa:</span>
+        <span class="summary-value">{{ serviceSummary().plate }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Kilometraje:</span>
+        <span class="summary-value">{{ serviceSummary().mileage }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Servicio:</span>
+        <span class="summary-value">{{ serviceSummary().service }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions Card -->
+  <div class="instructions-card">
+    <h3>¿Qué hacer ahora?</h3>
+    <div class="instructions-list">
+      <div class="instruction-item">
+        <span class="instruction-number">1</span>
+        <div class="instruction-content">
+          <h4>Espera tu turno</h4>
+          <p>Recibirás una notificación cuando sea tu turno. Mantén tu teléfono cerca.</p>
+        </div>
+      </div>
+      <div class="instruction-item">
+        <span class="instruction-number">2</span>
+        <div class="instruction-content">
+          <h4>Presenta el código</h4>
+          <p>Muestra el código de verificación o el código QR al técnico cuando te llamen.</p>
+        </div>
+      </div>
+      <div class="instruction-item">
+        <span class="instruction-number">3</span>
+        <div class="instruction-content">
+          <h4>Disfruta el servicio</h4>
+          <p>Nuestro equipo te atenderá de manera profesional y eficiente.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="actions-section">
+    <div class="primary-actions">
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="onViewQueueStatus()">
+        Ver estado de cola
+      </button>
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="onGoHome()">
+        Ir al inicio
+      </button>
+    </div>
+
+    <div class="secondary-actions">
+      <button
+        type="button"
+        class="btn-link"
+        (click)="onStartNewRequest()">
+        Solicitar otro servicio
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress Completion -->
+  <div class="completion-section">
+    <div class="completion-message">
+      <span class="completion-icon">✅</span>
+      <span class="completion-text">¡Proceso completado!</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: 100%"></div>
+    </div>
+    <div class="progress-text">
+      Paso 4 de 4 - 100% completado
+    </div>
+  </div>
+</div>

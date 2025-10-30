@@ -1,94 +1,116 @@
-/* Client Flow Container Component Styles */
+// Client Flow Container Component - BEM Methodology
+@use 'sass:color';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/functions';
+@use '../../../styles/_constants' as constants;
 
+// Component-specific variables
+$client-flow-min-height: 100vh;
+$client-flow-background: linear-gradient(to bottom right, color.change(variables.$primary, $alpha: 0.1), color.change(variables.$primary, $alpha: 0.15));
+$client-flow-overlay-z-index: 1000;
+$client-flow-overlay-backdrop-blur: 5px;
+$client-flow-modal-max-width: 400px;
+$client-flow-modal-padding: constants.$spacing-2xl;
+$client-flow-modal-padding-mobile: constants.$spacing-xl;
+$client-flow-modal-border-radius: constants.$border-radius-2xl;
+$client-flow-spinner-size: 40px;
+$client-flow-spinner-border-width: 4px;
+
+// BEM Block: client-flow-container
 .client-flow-container {
-  min-height: 100vh;
-  background: linear-gradient(to bottom right, #dbeafe, #e0e7ff);
+  min-height: $client-flow-min-height;
+  background: $client-flow-background;
   position: relative;
-}
 
-/* Loading Overlay */
-.loading-overlay,
-.error-overlay,
-.auth-required {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
+  // Element: loading-overlay, error-overlay, auth-required
+  &__loading-overlay,
+  &__error-overlay,
+  &__auth-required {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: color.change(#000000, $alpha: 0.8);
+    @include mixins.flex-center;
+    z-index: $client-flow-overlay-z-index;
+    backdrop-filter: blur($client-flow-overlay-backdrop-blur);
 
-  .loading-content,
-  .error-content,
-  .auth-content {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    // Element: loading-content, error-content, auth-content
+    .loading-content,
+    .error-content,
+    .auth-content {
+      background: variables.$card;
+      @include mixins.border-radius($client-flow-modal-border-radius);
+      padding: $client-flow-modal-padding;
+      text-align: center;
+      max-width: $client-flow-modal-max-width;
+      width: 90%;
+      box-shadow: constants.$shadow-2xl;
 
-    @media (max-width: 768px) {
-      padding: 1.5rem;
-      margin: 1rem;
+      @include mixins.respond-to(md) {
+        padding: $client-flow-modal-padding-mobile;
+        margin: constants.$spacing-lg;
+      }
     }
   }
-}
 
-.loading-content {
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 1rem auto;
-  }
-
-  p {
-    margin: 0;
-    color: #666;
-    font-size: 1.1rem;
-  }
-}
-
-.auth-required,
-.error-overlay {
-  .auth-content,
-  .error-content {
-    .auth-icon,
-    .error-icon {
-      font-size: 3rem;
-      display: block;
-      margin-bottom: 1rem;
-    }
-
-    h2 {
-      margin: 0 0 1rem 0;
-      color: #2c3e50;
-      font-size: 1.5rem;
+  // Element: loading-content
+  &__loading-content {
+    // Element: loading-spinner
+    .loading-spinner {
+      width: $client-flow-spinner-size;
+      height: $client-flow-spinner-size;
+      border: $client-flow-spinner-border-width solid variables.$muted;
+      border-top: $client-flow-spinner-border-width solid variables.$primary;
+      @include mixins.border-radius(constants.$border-radius-full);
+      animation: spin 1s linear infinite;
+      margin: 0 auto constants.$spacing-lg auto;
     }
 
     p {
-      margin: 0 0 1.5rem 0;
-      color: #7f8c8d;
-      line-height: 1.5;
+      margin: 0;
+      color: constants.$muted-foreground;
+      font-size: constants.$font-size-lg;
     }
+  }
 
-    .auth-actions,
-    .error-actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
+  // Element: auth-required, error-overlay
+  &__auth-required,
+  &__error-overlay {
+    // Element: auth-content, error-content
+    .auth-content,
+    .error-content {
+      // Element: auth-icon, error-icon
+      .auth-icon,
+      .error-icon {
+        font-size: 3rem;
+        display: block;
+        margin-bottom: constants.$spacing-lg;
+      }
 
-      @media (max-width: 480px) {
-        flex-direction: column;
+      h2 {
+        margin: 0 0 constants.$spacing-lg 0;
+        color: variables.$foreground;
+        font-size: constants.$font-size-2xl;
+      }
+
+      p {
+        margin: 0 0 constants.$spacing-xl 0;
+        color: constants.$muted-foreground;
+        line-height: constants.$line-height-relaxed;
+      }
+
+      // Element: auth-actions, error-actions
+      .auth-actions,
+      .error-actions {
+        @include mixins.flex-center;
+        gap: constants.$spacing-lg;
+
+        @include mixins.respond-to(xs) {
+          @include mixins.flex-column;
+        }
       }
     }
   }
@@ -100,7 +122,7 @@
 }
 
 .shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px color.change(#000000, $alpha: 0.1), 0 4px 6px -2px color.change(#000000, $alpha: 0.05);
 }
 
 .sticky {
@@ -734,3 +756,33 @@
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

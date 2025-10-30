@@ -2,6 +2,7 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
 import { Appointment, ServiceItem, User, AppointmentStatus, WorkOrder } from '../models';
 import { Timestamp } from 'firebase/firestore';
+import { map, catchError } from 'rxjs/operators';
 import { of, delay, Observable, from } from 'rxjs';
 import { UserService } from './user.service';
 import { EventBusService } from './event-bus.service';
@@ -11,6 +12,7 @@ import { collection, getDocs, doc, addDoc, updateDoc, serverTimestamp, query, wh
 import { SchedulingService } from './scheduling.service';
 import { AuthService } from './auth.service';
 import { CostMonitoringService } from './cost-monitoring.service';
+import { ApiService } from './api.service';
 
 
 
@@ -39,6 +41,7 @@ export class AppointmentService {
   private schedulingService = inject(SchedulingService);
   private authService = inject(AuthService);
   private costMonitoringService = inject(CostMonitoringService);
+  private apiService = inject(ApiService);
 
   private appointments = signal<Appointment[]>([]);
 
@@ -320,94 +323,41 @@ export class AppointmentService {
   }
 
   createAppointment(data: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt' | 'number'>): Observable<Appointment> {
-    return from(new Promise<Appointment>(async (resolve, reject) => {
-      try {
-        // Check authentication
-        const currentUser = this.authService.currentUser();
-        if (!currentUser) {
-          reject(new Error('User not authenticated'));
-          return;
-        }
+    const currentUser = this.authService.currentUser();
+    if (!currentUser) {
+      return new Observable(observer => observer.error(new Error('User not authenticated')));
+    }
 
-        const assignedTechnicianId = this.autoAssignTechnician(data as Appointment);
+    // Data sent to the backend is simplified
+    const payload = {
+      ...data,
+      scheduledAt: data.scheduledAt.toDate().toISOString(), // Send as ISO string
+    };
 
-        const newAppointmentData: any = {
-           ...data,
-           scheduledAt: data.scheduledAt.toDate(), // Convert mock Timestamp to Date for Firestore
-           number: `APT-${Date.now().toString().slice(-6)}`,
-           status: assignedTechnicianId ? AppointmentStatus.SCHEDULED : AppointmentStatus.PENDING_APPROVAL,
-           createdAt: serverTimestamp(),
-           updatedAt: serverTimestamp(),
-         };
+    return this.apiService.callFunction<{ id: string, number: string, status: AppointmentStatus }>('createAppointment', payload).pipe(
+      map(result => {
+        const newAppointment: Appointment = {
+          ...data,
+          id: result.id,
+          number: result.number,
+          status: result.status,
+          createdAt: toTimestamp(new Date()), // Mock timestamp for immediate UI update
+          updatedAt: toTimestamp(new Date())
+        };
 
-        // Only include assignedTo if it has a value (Firestore doesn't allow undefined)
-        if (assignedTechnicianId) {
-          newAppointmentData.assignedTo = assignedTechnicianId;
-        }
-
-        const docRef = await addDoc(collection(db, "appointments"), newAppointmentData);
-        this.costMonitoringService.trackFirestoreWrite();
-        
-        const createdAppointment: Appointment = {
-             ...data,
-             id: docRef.id,
-             number: newAppointmentData.number,
-             status: newAppointmentData.status,
-             assignedTo: newAppointmentData.assignedTo,
-             createdAt: toTimestamp(new Date()), // Use mock timestamp for immediate UI update
-             updatedAt: toTimestamp(new Date())
-         };
-        
-        this.appointments.update(apts => [...apts, createdAppointment]);
-
+        this.appointments.update(apts => [...apts, newAppointment]);
         this.invalidateCache();
 
-        // Use the new NotificationManagerService
-        if (createdAppointment.assignedTo) {
-          this.eventBus.emit({ type: 'appointment.assigned', entity: createdAppointment });
-        } else {
-          this.eventBus.emit({ type: 'appointment.created', entity: createdAppointment });
-        }
+        this.eventBus.emit({ type: 'appointment.created', entity: newAppointment });
 
-        resolve(createdAppointment);
-      } catch (e: any) {
-        console.error('AppointmentService: Error creating appointment:', {
-          message: e.message,
-          code: e.code,
-          networkOnline: navigator.onLine,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          url: window.location.href
-        });
-
-        // Handle specific Firebase errors
-        switch (e.code) {
-          case 'permission-denied':
-            console.warn('AppointmentService: PERMISSION_DENIED - User lacks permission to create appointments');
-            reject(new Error('No tienes permisos para crear citas'));
-            break;
-          case 'unavailable':
-            console.warn('AppointmentService: SERVICE_UNAVAILABLE - Firestore service temporarily unavailable');
-            reject(new Error('Servicio temporalmente no disponible'));
-            break;
-          case 'internal':
-            console.error('AppointmentService: FIREBASE_INTERNAL_ERROR - Firebase internal error occurred');
-            reject(new Error('Error interno del servicio'));
-            break;
-          case 'deadline-exceeded':
-            console.warn('AppointmentService: DEADLINE_EXCEEDED - Request timed out');
-            reject(new Error('La solicitud ha expirado'));
-            break;
-          case 'resource-exhausted':
-            console.warn('AppointmentService: RESOURCE_EXHAUSTED - Quota exceeded or rate limited');
-            reject(new Error('Límite de recursos excedido'));
-            break;
-          default:
-            console.warn('AppointmentService: UNKNOWN_ERROR - Unknown error creating appointment');
-            reject(new Error(e.message || 'Error desconocido al crear la cita'));
-        }
-      }
-    }));
+        return newAppointment;
+      }),
+      catchError(error => {
+        console.error('AppointmentService: Error creating appointment via API:', error);
+        // The ApiService already logs the error, here we can transform it for the UI
+        throw new Error('Failed to create appointment. Please try again later.');
+      })
+    );
   }
 
   private autoAssignTechnician(appointment: Appointment): string | undefined {
@@ -416,253 +366,69 @@ export class AppointmentService {
   }
   
   assignTechnician(appointmentId: string, technicianId: string): Observable<Appointment | undefined> {
-     return from(new Promise<Appointment | undefined>(async (resolve, reject) => {
-        try {
-          // Check authentication
-          const currentUser = this.authService.currentUser();
-          if (!currentUser) {
-            reject(new Error('User not authenticated'));
-            return;
-          }
-
-          const docRef = doc(db, "appointments", appointmentId);
-         await updateDoc(docRef, { assignedTo: technicianId, status: AppointmentStatus.SCHEDULED });
-         this.costMonitoringService.trackFirestoreWrite();
-
+    return this.apiService.callFunction<{ success: boolean }>('assignTechnician', { appointmentId, technicianId }).pipe(
+      map(result => {
+        if (result.success) {
           let updatedAppointment: Appointment | undefined;
           this.appointments.update(apts => apts.map(apt => {
-              if (apt.id === appointmentId) {
-                  updatedAppointment = { ...apt, assignedTo: technicianId, status: AppointmentStatus.SCHEDULED };
-                  return updatedAppointment;
-              }
-              return apt;
-          }) as Appointment[]);
-
-            this.invalidateCache();
-
-            if (updatedAppointment) {
-              this.eventBus.emit({ type: 'appointment.assigned', entity: updatedAppointment });
+            if (apt.id === appointmentId) {
+              updatedAppointment = { ...apt, assignedTo: technicianId, status: AppointmentStatus.SCHEDULED };
+              return updatedAppointment;
             }
+            return apt;
+          }));
 
-            resolve(updatedAppointment);
-        } catch(e: any) {
-            console.error('AppointmentService: Error assigning technician:', {
-              message: e.message,
-              code: e.code,
-              networkOnline: navigator.onLine,
-              timestamp: new Date().toISOString(),
-              userAgent: navigator.userAgent,
-              url: window.location.href
-            });
+          this.invalidateCache();
 
-            // Handle specific Firebase errors
-            switch (e.code) {
-              case 'permission-denied':
-                console.warn('AppointmentService: PERMISSION_DENIED - User lacks permission to assign technicians');
-                reject(new Error('No tienes permisos para asignar técnicos'));
-                break;
-              case 'unavailable':
-                console.warn('AppointmentService: SERVICE_UNAVAILABLE - Firestore service temporarily unavailable');
-                reject(new Error('Servicio temporalmente no disponible'));
-                break;
-              case 'internal':
-                console.error('AppointmentService: FIREBASE_INTERNAL_ERROR - Firebase internal error occurred');
-                reject(new Error('Error interno del servicio'));
-                break;
-              case 'deadline-exceeded':
-                console.warn('AppointmentService: DEADLINE_EXCEEDED - Request timed out');
-                reject(new Error('La solicitud ha expirado'));
-                break;
-              case 'resource-exhausted':
-                console.warn('AppointmentService: RESOURCE_EXHAUSTED - Quota exceeded or rate limited');
-                reject(new Error('Límite de recursos excedido'));
-                break;
-              default:
-                console.warn('AppointmentService: UNKNOWN_ERROR - Unknown error assigning technician');
-                reject(new Error(e.message || 'Error desconocido al asignar técnico'));
-            }
-        }
-     }));
-  }
-
-  // Method to convert appointment to work order when technician starts working
-  convertAppointmentToWorkOrder(appointmentId: string): Observable<WorkOrder> {
-    return from(new Promise<WorkOrder>(async (resolve, reject) => {
-      try {
-        // Check authentication
-        const currentUser = this.authService.currentUser();
-        if (!currentUser) {
-          reject(new Error('User not authenticated'));
-          return;
-        }
-
-        // Get the appointment
-        const appointment = this.appointments().find(apt => apt.id === appointmentId);
-        if (!appointment) {
-          reject(new Error('Appointment not found'));
-          return;
-        }
-
-        // Check if already converted
-        if (appointment.workOrderId) {
-          reject(new Error('Appointment already converted to work order'));
-          return;
-        }
-
-        // Import WorkOrderService here to avoid circular dependency
-        const { WorkOrderService } = await import('./work-order.service');
-        const workOrderService = inject(WorkOrderService);
-
-        // Create work order from appointment
-        const workOrderObservable = workOrderService.createWorkOrderFromAppointment(appointment);
-
-        workOrderObservable.subscribe({
-          next: (workOrder) => {
-            console.log('AppointmentService: Successfully converted appointment to work order', {
-              appointmentId,
-              workOrderId: workOrder.id
-            });
-            resolve(workOrder);
-          },
-          error: (error) => {
-            console.error('AppointmentService: Failed to convert appointment to work order', {
-              appointmentId,
-              error: error.message
-            });
-            reject(error);
+          if (updatedAppointment) {
+            this.eventBus.emit({ type: 'appointment.assigned', entity: updatedAppointment });
           }
-        });
-
-      } catch (error: any) {
-        console.error('AppointmentService: Error converting appointment to work order:', {
-          appointmentId,
-          message: error.message,
-          code: error.code,
-          networkOnline: navigator.onLine,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          url: window.location.href
-        });
-        reject(error);
-      }
-    }));
+          return updatedAppointment;
+        }
+        return undefined;
+      }),
+      catchError(error => {
+        console.error('AppointmentService: Error assigning technician via API:', error);
+        throw new Error('Failed to assign technician. Please try again later.');
+      })
+    );
   }
+
+
 
   updateAppointmentStatus(appointmentId: string, status: Appointment['status'], workOrderId?: string): Observable<Appointment | undefined> {
-      return from(new Promise<Appointment | undefined>(async (resolve, reject) => {
-           try {
-             // Check authentication
-             const currentUser = this.authService.currentUser();
-             if (!currentUser) {
-               reject(new Error('User not authenticated'));
-               return;
-             }
+    const payload = { appointmentId, status, workOrderId };
 
-             console.log('AppointmentService: Updating appointment status', {
-               appointmentId,
-               newStatus: status,
-               workOrderId,
-               currentUser: currentUser.id
-             });
+    return this.apiService.callFunction<{ success: boolean }>('updateAppointmentStatus', payload).pipe(
+      map(result => {
+        if (result.success) {
+          let updatedAppointment: Appointment | undefined;
+          const oldStatus = this.appointments().find(a => a.id === appointmentId)?.status;
 
-             const docRef = doc(db, "appointments", appointmentId);
-             const dataToUpdate: any = { status, updatedAt: serverTimestamp() };
-             if (workOrderId) {
-                 dataToUpdate.workOrderId = workOrderId;
-             }
-             await updateDoc(docRef, dataToUpdate);
-             this.costMonitoringService.trackFirestoreWrite();
+          this.appointments.update(apts => apts.map(apt => {
+            if (apt.id === appointmentId) {
+              updatedAppointment = { ...apt, status, workOrderId: workOrderId || apt.workOrderId };
+              return updatedAppointment;
+            }
+            return apt;
+          }));
 
-               let updatedAppointment: Appointment | undefined;
-               this.appointments.update(apts => apts.map(apt => {
-                   if (apt.id === appointmentId) {
-                       updatedAppointment = { ...apt, status, workOrderId: workOrderId || apt.workOrderId };
-                       return updatedAppointment;
-                   }
-                   return apt;
-               }));
+          this.invalidateCache();
 
-               this.invalidateCache();
+          if (updatedAppointment) {
+            this.eventBus.emit({ type: 'appointment.status_changed', entity: updatedAppointment, oldStatus: oldStatus, newStatus: status });
+          }
 
-               // Auto-convert to work order when status changes to IN_PROGRESS and no work order exists
-               if (status === AppointmentStatus.IN_PROGRESS && updatedAppointment && !updatedAppointment.workOrderId) {
-                 console.log('AppointmentService: Auto-converting appointment to work order on status change to IN_PROGRESS', {
-                   appointmentId
-                 });
-
-                 // Trigger conversion asynchronously
-                 setTimeout(() => {
-                   this.convertAppointmentToWorkOrder(appointmentId).subscribe({
-                     next: (workOrder) => {
-                       console.log('AppointmentService: Auto-conversion successful', {
-                         appointmentId,
-                         workOrderId: workOrder.id
-                       });
-                     },
-                     error: (error) => {
-                       console.error('AppointmentService: Auto-conversion failed', {
-                         appointmentId,
-                         error: error.message
-                       });
-                     }
-                   });
-                 }, 100); // Small delay to ensure status update completes
-               }
-
-               // Emit event for status change
-               if (updatedAppointment) {
-                 console.log('AppointmentService: Status update successful', {
-                   appointmentId,
-                   oldStatus: updatedAppointment.status,
-                   newStatus: status,
-                   workOrderId: updatedAppointment.workOrderId
-                 });
-                 this.eventBus.emit({ type: 'appointment.status_changed', entity: updatedAppointment, oldStatus: updatedAppointment.status, newStatus: status });
-               }
-
-               resolve(updatedAppointment);
-             } catch (e: any) {
-               console.error('AppointmentService: Error updating appointment status:', {
-                 appointmentId,
-                 newStatus: status,
-                 workOrderId,
-                 message: e.message,
-                 code: e.code,
-                 networkOnline: navigator.onLine,
-                 timestamp: new Date().toISOString(),
-                 userAgent: navigator.userAgent,
-                 url: window.location.href
-               });
-
-               // Handle specific Firebase errors
-               switch (e.code) {
-                 case 'permission-denied':
-                   console.warn('AppointmentService: PERMISSION_DENIED - User lacks permission to update appointment status');
-                   reject(new Error('No tienes permisos para actualizar el estado de la cita'));
-                   break;
-                 case 'unavailable':
-                   console.warn('AppointmentService: SERVICE_UNAVAILABLE - Firestore service temporarily unavailable');
-                   reject(new Error('Servicio temporalmente no disponible'));
-                   break;
-                 case 'internal':
-                   console.error('AppointmentService: FIREBASE_INTERNAL_ERROR - Firebase internal error occurred');
-                   reject(new Error('Error interno del servicio'));
-                   break;
-                 case 'deadline-exceeded':
-                   console.warn('AppointmentService: DEADLINE_EXCEEDED - Request timed out');
-                   reject(new Error('La solicitud ha expirado'));
-                   break;
-                 case 'resource-exhausted':
-                   console.warn('AppointmentService: RESOURCE_EXHAUSTED - Quota exceeded or rate limited');
-                   reject(new Error('Límite de recursos excedido'));
-                   break;
-                 default:
-                   console.warn('AppointmentService: UNKNOWN_ERROR - Unknown error updating appointment status');
-                   reject(new Error(e.message || 'Error desconocido al actualizar el estado de la cita'));
-               }
-             }
-           }));
-         }
+          return updatedAppointment;
+        }
+        return undefined;
+      }),
+      catchError(error => {
+        console.error('AppointmentService: Error updating appointment status via API:', error);
+        throw new Error('Failed to update appointment status. Please try again later.');
+      })
+    );
+  }
      
        private invalidateCache(): void {
          this.cache = null;

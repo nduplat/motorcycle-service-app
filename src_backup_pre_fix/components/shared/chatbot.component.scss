@@ -1,0 +1,384 @@
+// Chatbot Component - BEM Methodology
+@use 'variables';
+@use 'mixins' as mixins;
+@use '_constants' as constants;
+
+// Component-specific variables
+$chatbot-container-width: 400px;
+$chatbot-container-width-mobile: 350px;
+$chatbot-wrapper-height: 600px;
+$chatbot-wrapper-height-mobile: 500px;
+$chatbot-max-width-mobile: 95vw;
+$chatbot-max-width-mobile-sm: 90vw;
+$chatbot-scrollbar-width: 6px;
+$chatbot-scrollbar-width-input: 4px;
+$chatbot-message-animation-duration: 0.4s;
+$chatbot-message-slide-distance: 20px;
+$chatbot-bubble-max-width: 85%;
+$chatbot-bubble-tail-size: 6px;
+$chatbot-input-min-height: 44px;
+$chatbot-input-max-height: 128px;
+$chatbot-spinner-size: 20px;
+$chatbot-spinner-size-small: 16px;
+$chatbot-spinner-border-width: 2px;
+$chatbot-ripple-size: 300px;
+
+// BEM Block: chatbot
+.chatbot {
+  // Element: floating-container
+  &__floating-container {
+    position: relative;
+  }
+
+  // Element: container
+  &__container {
+    width: $chatbot-container-width;
+    max-width: $chatbot-max-width-mobile;
+
+    @include mixins.respond-to(md) {
+      width: $chatbot-container-width-mobile;
+      max-width: $chatbot-max-width-mobile-sm;
+    }
+  }
+
+  // Element: wrapper
+  &__wrapper {
+    height: $chatbot-wrapper-height;
+    max-height: 80vh;
+    @include mixins.flex-column;
+    overflow: hidden;
+
+    @include mixins.respond-to(md) {
+      height: $chatbot-wrapper-height-mobile;
+      max-height: 70vh;
+    }
+  }
+
+  // Element: header
+  &__header {
+    flex-shrink: 0;
+  }
+
+  // Element: messages
+  &__messages {
+    padding: constants.$spacing-lg;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(variables.$primary, 0.5) transparent;
+
+    &::-webkit-scrollbar {
+      width: $chatbot-scrollbar-width;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba(variables.$card, 0.05);
+      @include mixins.border-radius(constants.$border-radius-sm);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(variables.$primary, 0.5);
+      @include mixins.border-radius(constants.$border-radius-sm);
+      @include mixins.transition(background constants.$transition-fast);
+
+      &:hover {
+        background: rgba(variables.$primary, 0.7);
+      }
+    }
+  }
+
+  // Element: message-wrapper
+  &__message-wrapper {
+    opacity: 0;
+    animation: messageSlideIn $chatbot-message-animation-duration ease-out forwards;
+
+    // Modifier: message-wrapper--ai
+    &--ai {
+      animation-delay: 0.1s;
+    }
+
+    // Modifier: message-wrapper--user
+    &--user {
+      animation-delay: 0.05s;
+    }
+  }
+
+  // Element: message-avatar
+  &__message-avatar {
+    position: relative;
+  }
+
+  // Element: message-bubble
+  &__message-bubble {
+    max-width: $chatbot-bubble-max-width;
+    word-wrap: break-word;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      border: $chatbot-bubble-tail-size solid transparent;
+    }
+
+    .chatbot__message-wrapper--user & {
+      &::before {
+        right: -$chatbot-bubble-tail-size;
+        border-left-color: variables.$primary;
+        border-right: 0;
+        border-bottom: 0;
+      }
+    }
+
+    .chatbot__message-wrapper--ai & {
+      &::before {
+        left: -$chatbot-bubble-tail-size;
+        border-right-color: rgba(variables.$card, 0.1);
+        border-left: 0;
+        border-bottom: 0;
+      }
+    }
+  }
+
+  // Element: message-text
+  &__message-text {
+    white-space: pre-wrap;
+  }
+
+  // Element: message-options
+  &__message-options {
+    margin-top: constants.$spacing-lg;
+  }
+
+  // Element: option-button
+  &__option-button {
+    width: 100%;
+    text-align: left;
+    @include mixins.transition(all constants.$transition-fast);
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    // Modifier: option-button--disabled
+    &--disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+  }
+
+  // Element: product-card
+  &__product-card {
+    border: constants.$border-width-thin solid rgba($card-foreground, 0.2);
+    @include mixins.transition(all constants.$transition-fast);
+
+    &:hover {
+      background: rgba(variables.$card, 0.1);
+      transform: translateY(-1px);
+    }
+  }
+
+  // Element: offer-card
+  &__offer-card {
+    background: linear-gradient(135deg, rgba(variables.$warning, 0.1), rgba(variables.$accent, 0.1));
+    border: constants.$border-width-thin solid rgba(variables.$warning, 0.2);
+  }
+
+  // Element: message-input-container
+  &__message-input-container {
+    position: sticky;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: constants.$border-width-thin solid rgba(variables.$card, 0.1);
+
+    @include mixins.respond-to(md) {
+      margin: 0 (-constants.$spacing-lg);
+      @include mixins.border-radius(0);
+      border-left: none;
+      border-right: none;
+    }
+  }
+
+  // Element: message-input-wrapper
+  &__message-input-wrapper {
+    max-width: 100%;
+  }
+
+  // Element: message-input
+  &__message-input {
+    font-size: 16px; // Prevent zoom on iOS
+    line-height: constants.$line-height-relaxed;
+    scrollbar-width: thin;
+    scrollbar-color: color-change(variables.$primary, 0.5) transparent;
+    field-sizing: content;
+    min-height: $chatbot-input-min-height;
+    max-height: $chatbot-input-max-height;
+
+    &::-webkit-scrollbar {
+      width: $chatbot-scrollbar-width-input;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba(variables.$card, 0.05);
+      @include mixins.border-radius($border-radius-xs);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(variables.$primary, 0.5);
+      @include mixins.border-radius($border-radius-xs);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(variables.$primary, 0.2);
+    }
+  }
+
+  // Element: btn-google-enhanced, btn-apple-enhanced
+  &__btn-google-enhanced,
+  &__btn-apple-enhanced {
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(variables.$card, 0.1);
+      @include mixins.border-radius(constants.$border-radius-full);
+      transform: translate(-50%, -50%);
+      @include mixins.transition(width 0.6s, height 0.6s);
+    }
+
+    &:hover::after {
+      width: $chatbot-ripple-size;
+      height: $chatbot-ripple-size;
+    }
+  }
+
+  // Element: loading-spinner
+  &__loading-spinner {
+    width: $chatbot-spinner-size;
+    height: $chatbot-spinner-size;
+    border: $chatbot-spinner-border-width solid rgba(variables.$card, 0.3);
+    @include mixins.border-radius(constants.$border-radius-full);
+    border-top-color: variables.$card;
+    animation: spin 1s ease-in-out infinite;
+
+    // Modifier: loading-spinner--small
+    &--small {
+      width: $chatbot-spinner-size-small;
+      height: $chatbot-spinner-size-small;
+    }
+  }
+
+  // Element: typing-indicator
+  &__typing-indicator {
+    @include mixins.flex-center;
+    min-height: 20px;
+  }
+}
+
+// Keyframes
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY($chatbot-message-slide-distance);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-custom {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Utility classes
+.animate-pulse-custom {
+  animation: pulse-custom 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+// Responsive design
+@include mixins.respond-to(md) {
+  .chatbot {
+    &__message-bubble {
+      max-width: $chatbot-bubble-max-width;
+    }
+  }
+}
+
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .chatbot * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid variables.$primary;
+  outline-offset: 2px;
+}
+
+// Touch improvements
+@media (hover: none) and (pointer: coarse) {
+  .chatbot {
+    &__btn-google-enhanced:hover::after,
+    &__btn-apple-enhanced:hover::after,
+    &__option-button:hover,
+    &__product-card:hover,
+    &__message-bubble:hover {
+      transform: none;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

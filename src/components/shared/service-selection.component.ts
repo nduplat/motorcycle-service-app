@@ -18,7 +18,6 @@ export interface ServiceCategory {
 @Component({
   selector: 'app-service-selection',
   templateUrl: './service-selection.component.html',
-  styleUrls: ['./service-selection.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
 })

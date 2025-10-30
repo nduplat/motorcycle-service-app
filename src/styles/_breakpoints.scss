@@ -1,0 +1,47 @@
+// Breakpoints - Official breakpoint system
+
+// Mobile-first approach
+$breakpoint-xs: 475px;   // Extra small devices (phones, < 475px)
+$breakpoint-sm: 640px;   // Small devices (phones, 640px and up)
+$breakpoint-md: 768px;   // Medium devices (tablets, 768px and up)
+$breakpoint-lg: 1024px;  // Large devices (desktops, 1024px and up)
+$breakpoint-xl: 1280px;  // Extra large devices (large desktops, 1280px and up)
+$breakpoint-2xl: 1536px; // 2X large devices (larger desktops, 1536px and up)
+
+// Breakpoint names for semantic use
+$mobile: $breakpoint-sm;
+$tablet: $breakpoint-md;
+$desktop: $breakpoint-lg;
+$desktop-large: $breakpoint-xl;
+$desktop-xl: $breakpoint-2xl;
+
+// Media query mixins (defined in _mixins.scss)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

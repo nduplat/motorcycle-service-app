@@ -1,265 +1,319 @@
+// Queue Management Component - BEM Methodology
+@use 'src/styles/global-imports' as g;
+
+// Component-specific variables
+$queue-management-padding: g.$spacing-lg;
+$queue-management-padding-mobile: g.$spacing-sm;
+$queue-management-max-width: 1200px;
+$queue-management-stats-gap: g.$spacing-lg;
+$queue-management-stats-min-width: 200px;
+$queue-management-stats-icon-size: 48px;
+$queue-management-stats-value-size: 24px;
+$queue-management-card-border-width: 4px;
+$queue-management-transition-duration: 0.3s;
+$queue-management-empty-padding: 48px g.$spacing-lg;
+$queue-management-empty-icon-size: 48px;
+
+// BEM Block: queue-management
 .queue-management {
-  padding: 16px;
-  max-width: 1200px;
+  padding: $queue-management-padding;
+  max-width: $queue-management-max-width;
   margin: 0 auto;
-}
 
-.queue-statistics-panel {
-  margin-bottom: 24px;
-
-  .stats-card {
-    mat-card-content {
-      padding: 16px !important;
-    }
+  @include g.respond-to(md) {
+    padding: $queue-management-padding-mobile;
   }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+  // Element: statistics-panel
+  &__statistics-panel {
+    margin-bottom: g.$spacing-2xl;
 
-    .stat-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: #f5f5f5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        mat-icon {
-          color: #666;
-        }
-      }
-
-      .stat-info {
-        .stat-value {
-          display: block;
-          font-size: 24px;
-          font-weight: 500;
-          color: #333;
-          line-height: 1;
-        }
-
-        .stat-label {
-          font-size: 12px;
-          color: #666;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-      }
-    }
-  }
-}
-
-.queue-filters-section {
-  margin-bottom: 16px;
-
-  mat-chip-set {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-
-    mat-chip {
-      cursor: pointer;
-
-      &.selected {
-        background-color: #1976d2;
-        color: white;
-      }
-    }
-  }
-}
-
-.queue-search-section {
-  margin-bottom: 24px;
-
-  .search-field {
-    width: 100%;
-    max-width: 400px;
-  }
-}
-
-.queue-entries-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 16px;
-
-  .queue-entry-card {
-    transition: all 0.3s ease;
-
-    &.called {
-      border-left: 4px solid #1976d2;
-      background-color: #e3f2fd;
-    }
-
-    &.waiting {
-      border-left: 4px solid #ff9800;
-    }
-
-    mat-card-header {
-      padding-bottom: 8px;
-
-      .entry-header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-
-        .entry-position {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-
-          .position-badge {
-            background: #1976d2;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-          }
-
-          .wait-time {
-            font-size: 11px;
-            color: #666;
-            margin-top: 2px;
-          }
-        }
-
-        .status-chip {
-          font-size: 11px;
-        }
+    // Element: stats-card
+    .stats-card {
+      mat-card-content {
+        padding: g.$spacing-lg !important;
       }
     }
 
-    mat-card-content {
-      padding-top: 0;
+    // Element: stats-grid
+    .stats-grid {
+      @include g.grid-cols(auto-fit, minmax($queue-management-stats-min-width, 1fr));
+      gap: $queue-management-stats-gap;
 
-      .client-info,
-      .service-info,
-      .notes-section,
-      .technician-info {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        margin-bottom: 8px;
+      // Element: stat-item
+      .stat-item {
+        @include g.flex-center;
+        gap: g.$spacing-md;
 
-        mat-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
-          color: #666;
-        }
-
-        .client-details,
-        .service-details {
-          flex: 1;
-
-          .client-name,
-          .service-type {
-            display: block;
-            font-weight: 500;
-            color: #333;
-          }
-
-          .client-email,
-          .joined-time {
-            display: block;
-            font-size: 12px;
-            color: #666;
-          }
-        }
-
-        .notes-text,
-        .technician-name {
-          font-size: 14px;
-          color: #555;
-        }
-      }
-    }
-
-    mat-card-actions {
-      padding-top: 0;
-
-      .queue-action-buttons {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-
-        button {
-          font-size: 12px;
+        // Element: stat-icon
+        .stat-icon {
+          width: $queue-management-stats-icon-size;
+          height: $queue-management-stats-icon-size;
+          @include g.border-radius(g.$border-radius-full);
+          background: g.$muted;
+          @include g.flex-center;
 
           mat-icon {
-            font-size: 16px;
-            width: 16px;
-            height: 16px;
+            color: g.$muted-foreground;
+          }
+        }
+
+        // Element: stat-info
+        .stat-info {
+          // Element: stat-value
+          .stat-value {
+            display: block;
+            font-size: $queue-management-stats-value-size;
+            font-weight: g.$font-weight-medium;
+            color: g.$foreground;
+            line-height: 1;
+          }
+
+          // Element: stat-label
+          .stat-label {
+            font-size: g.$font-size-xs;
+            color: g.$muted-foreground;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
           }
         }
       }
     }
   }
-}
 
-.empty-queue-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 48px 16px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 2px dashed #ddd;
+  // Element: filters-section
+  &__filters-section {
+    margin-bottom: g.$spacing-lg;
 
-  .empty-icon {
-    font-size: 48px;
-    width: 48px;
-    height: 48px;
-    color: #ccc;
-    margin-bottom: 16px;
+    mat-chip-set {
+      @include g.flex-start;
+      flex-wrap: wrap;
+      gap: g.$spacing-sm;
+
+      mat-chip {
+        cursor: pointer;
+
+        // Modifier: selected
+        &.selected {
+          background-color: g.$primary;
+          color: g.$primary-foreground;
+        }
+      }
+    }
   }
 
-  h3 {
-    color: #666;
-    margin-bottom: 8px;
+  // Element: search-section
+  &__search-section {
+    margin-bottom: g.$spacing-2xl;
+
+    // Element: search-field
+    .search-field {
+      width: 100%;
+      max-width: 400px;
+    }
   }
 
-  p {
-    color: #999;
-    margin: 0;
+  // Element: entries-grid
+  &__entries-grid {
+    @include g.grid-cols(auto-fill, minmax(350px, 1fr));
+    gap: g.$spacing-lg;
+
+    // Element: entry-card
+    .queue-entry-card {
+      @include g.transition(all $queue-management-transition-duration);
+
+      // Modifier: entry-card--called
+      &.called {
+        border-left: $queue-management-card-border-width solid g.$primary;
+        background-color: g.color.change(g.$primary, 0.05);
+      }
+
+      // Modifier: entry-card--waiting
+      &.waiting {
+        border-left: $queue-management-card-border-width solid g.$warning;
+      }
+
+      mat-card-header {
+        padding-bottom: g.$spacing-sm;
+
+        // Element: entry-header-content
+        .entry-header-content {
+          @include g.flex-between;
+          align-items: center;
+          width: 100%;
+
+          // Element: entry-position
+          .entry-position {
+            @include g.flex-column;
+            align-items: flex-start;
+
+            // Element: position-badge
+            .position-badge {
+              background: g.$primary;
+              color: g.$primary-foreground;
+              padding: g.$spacing-xs g.$spacing-sm;
+              @include g.border-radius(g.$border-radius-xl);
+              font-size: g.$font-size-xs;
+              font-weight: g.$font-weight-medium;
+            }
+
+            // Element: wait-time
+            .wait-time {
+              font-size: 11px;
+              color: g.$muted-foreground;
+              margin-top: g.$spacing-xs;
+            }
+          }
+
+          // Element: status-chip
+          .status-chip {
+            font-size: 11px;
+          }
+        }
+      }
+
+      mat-card-content {
+        padding-top: 0;
+
+        // Elements: client-info, service-info, notes-section, technician-info
+        .client-info,
+        .service-info,
+        .notes-section,
+        .technician-info {
+          @include g.flex-start;
+          gap: g.$spacing-sm;
+          margin-bottom: g.$spacing-sm;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            color: g.$muted-foreground;
+          }
+
+          // Elements: client-details, service-details
+          .client-details,
+          .service-details {
+            flex: 1;
+
+            // Elements: client-name, service-type
+            .client-name,
+            .service-type {
+              display: block;
+              font-weight: g.$font-weight-medium;
+              color: g.$foreground;
+            }
+
+            // Elements: client-email,
+            .client-email,
+            .joined-time {
+              display: block;
+              font-size: g.$font-size-xs;
+              color: g.$muted-foreground;
+            }
+          }
+
+          // Elements: notes-text, technician-name
+          .notes-text,
+          .technician-name {
+            font-size: g.$font-size-sm;
+            color: g.$foreground;
+          }
+        }
+      }
+
+      mat-card-actions {
+        padding-top: 0;
+
+        // Element: queue-action-buttons
+        .queue-action-buttons {
+          @include g.flex-start;
+          gap: g.$spacing-sm;
+          flex-wrap: wrap;
+
+          button {
+            font-size: g.$font-size-xs;
+
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Element: empty-queue-state
+  &__empty-queue-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: $queue-management-empty-padding;
+    background: g.$muted;
+    @include g.border-radius(g.$border-radius-lg);
+    border: 2px dashed g.$border;
+
+    // Element: empty-icon
+    .empty-icon {
+      font-size: $queue-management-empty-icon-size;
+      width: $queue-management-empty-icon-size;
+      height: $queue-management-empty-icon-size;
+      color: g.$muted-foreground;
+      margin-bottom: g.$spacing-lg;
+    }
+
+    h3 {
+      color: g.$muted-foreground;
+      margin-bottom: g.$spacing-sm;
+    }
+
+    p {
+      color: g.$muted-foreground;
+      margin: 0;
+    }
   }
 }
 
 // Responsive design
-@media (max-width: 768px) {
+@include g.respond-to(md) {
   .queue-management {
-    padding: 8px;
-  }
+    &__entries-grid {
+      @include g.grid-cols(1);
 
-  .queue-entries-grid {
-    grid-template-columns: 1fr;
+      .queue-entry-card {
+        mat-card-actions .queue-action-buttons {
+          @include g.flex-column;
 
-    .queue-entry-card {
-      mat-card-actions .queue-action-buttons {
-        flex-direction: column;
-
-        button {
-          width: 100%;
-          margin-bottom: 4px;
+          button {
+            width: 100%;
+            margin-bottom: g.$spacing-xs;
+          }
         }
       }
     }
+
+    &__statistics-panel .stats-grid {
+      @include g.grid-cols(1);
+
+      .stat-item {
+        justify-content: center;
+        text-align: center;
+      }
+    }
   }
+}
 
-  .queue-statistics-panel .stats-grid {
-    grid-template-columns: 1fr;
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .queue-management {
+    &__empty-queue-state {
+      background: g.$muted;
+      border-color: g.$border;
+    }
 
-    .stat-item {
-      justify-content: center;
-      text-align: center;
+    &__statistics-panel .stats-grid .stat-item .stat-icon {
+      background: g.$muted;
     }
   }
 }

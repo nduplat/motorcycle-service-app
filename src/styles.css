@@ -1,53 +1,6 @@
-/* Global styles for lazy image loading */
-img.lazy-loading {
-  opacity: 0.6;
-  filter: blur(2px);
-  transition: opacity 0.3s ease, filter 0.3s ease;
-}
+/* styles.css */
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
 
-img.lazy-loaded {
-  opacity: 1;
-  filter: blur(0);
-}
-
-img.lazy-error {
-  opacity: 1;
-  border: 1px solid var(--destructive);
-  background-color: var(--destructive-background);
-}
-
-/* Smooth transitions for image loading states */
-img[appLazyImage] {
-  transition: opacity 0.3s ease, filter 0.3s ease;
-}
-
-/* Placeholder styling */
-img[appLazyImage][src*="data:image/svg+xml"] {
-  background: linear-gradient(90deg, var(--muted) 25%, var(--secondary) 50%, var(--muted) 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-/* Toast overlay styles */
-.toast-overlay {
-  z-index: var(--z-index-toast);
-}
-
-/* Confirm dialog backdrop */
-.confirm-dialog-backdrop {
-  background-color: var(--backdrop-background);
-}
-
-.confirm-dialog-panel {
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

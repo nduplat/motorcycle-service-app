@@ -36,8 +36,15 @@ export class WaitTicketComponent implements OnInit, OnDestroy {
   // Flow state
   readonly flowState = this.flowService.flowState;
 
-  // Queue entry details
-  readonly queueEntry = computed(() => this.flowState().queueEntry);
+  // Queue entry details - get from QueueService via ClientFlowService
+  readonly queueEntry = computed(() => {
+    const entryId = this.flowState().currentQueueEntryId;
+    if (!entryId) return null;
+
+    // Get entry synchronously from QueueService
+    const entries = this.queueService.getQueueEntries()();
+    return entries.find(e => e.id === entryId) || null;
+  });
   readonly ticketNumber = computed(() => {
     const entry = this.queueEntry();
     return entry ? `Q${entry.position.toString().padStart(3, '0')}` : '';
@@ -87,6 +94,7 @@ export class WaitTicketComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.startRealTimeUpdates();
+    this.subscribeToNotifications(); // AGREGAR
   }
 
   ngOnDestroy(): void {
@@ -94,16 +102,32 @@ export class WaitTicketComponent implements OnInit, OnDestroy {
   }
 
   private startRealTimeUpdates(): void {
-    // Update queue status every 30 seconds
+    const position = this.queueEntry()?.position || 999;
+
+    // Si está en top 5, actualizar cada 10 segundos, de lo contrario cada 30 segundos
+    const interval = position <= 5 ? 10000 : 30000;
+
     this.updateInterval = setInterval(() => {
       this.queueService.refreshQueueData();
-    }, 30000);
+    }, interval);
   }
 
   private stopRealTimeUpdates(): void {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
       this.updateInterval = null;
+    }
+  }
+
+  // ← AGREGAR: Notificaciones push
+  private async subscribeToNotifications() {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        // Suscribir a FCM
+        // Enviar token al backend
+        console.log('Notification permission granted. Implement FCM subscription here.');
+      }
     }
   }
 

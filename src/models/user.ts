@@ -40,6 +40,9 @@ export interface User {
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  isQrUser?: boolean; // ← AGREGAR
+  phoneVerifiedAt?: Timestamp; // ← AGREGAR
+  enteredViaQr?: boolean; // ← AGREGAR
 }
 
 /**

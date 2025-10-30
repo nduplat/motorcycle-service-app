@@ -584,10 +584,10 @@ const sampleEmployeeSchedules = [
 ];
 
 const sampleAppSettings = {
-  id: 'singleton',
+  id: 'OuSOGRGQtVFyIXFG2eAC',
   companyName: 'Blue Dragon Motors',
-  address: 'Carrera 15 # 89-12, Bogotá, Colombia',
-  phone: '+57 601 234 5678',
+  address: 'Carrera 58d #129b-19, Barrio Ciudad Jardín Norte, Bogotá, D.C., Colombia',
+  phone: '+57 312 824 7162',
   email: 'info@blued-motors.com',
   taxRates: [
     { name: 'IVA', percent: 19 }

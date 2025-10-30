@@ -1,0 +1,31 @@
+<div class="bg-secondary/30 py-16">
+  <div class="container mx-auto px-4">
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-3xl font-bold">Productos Destacados</h2>
+      <a routerLink="/inventory" class="text-sm font-medium text-primary hover:underline">
+        Ver todo el inventario
+      </a>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+       @for (product of products(); track product.id) {
+        <div class="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col group">
+          <div class="aspect-square w-full overflow-hidden">
+            <img [appLazyImage]="product.images?.[0] || 'https://picsum.photos/400/400'" [alt]="product.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+          </div>
+          <div class="p-4 flex flex-col flex-grow">
+            <h3 class="text-base font-semibold text-foreground truncate">{{ product.name }}</h3>
+            <p class="text-sm text-muted-foreground mb-4">{{ product.brand }}</p>
+            <div class="mt-auto flex justify-between items-center">
+                <span class="text-lg font-bold text-primary">{{ formatCurrency(product.sellingPrice) }}</span>
+                <button class="px-3 py-1.5 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 text-sm">
+                    Agregar
+                </button>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <p class="col-span-full text-center text-muted-foreground">No hay productos destacados disponibles.</p>
+      }
+    </div>
+  </div>
+</div>

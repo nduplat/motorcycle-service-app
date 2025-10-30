@@ -1,27 +1,25 @@
-<div class="service-selection-container">
+<div class="w-full max-w-7xl mx-auto p-4 bg-white rounded-lg shadow-md">
   <!-- Header with search and filters -->
-  <div class="service-selection-header">
-    <h3>Selecciona los Servicios</h3>
+  <div class="flex flex-col gap-4 mb-6">
+    <h3 class="text-2xl font-semibold text-gray-800">Selecciona los Servicios</h3>
 
     <!-- Search bar -->
-    <div class="search-container">
-      <input
-        type="text"
-        placeholder="Buscar servicios..."
-        [value]="searchQuery()"
-        (input)="onSearchChange($any($event.target).value)"
-        class="search-input"
-      >
-      <span class="search-icon">🔍</span>
+    <div class="relative w-full">
+              <input
+                type="text"
+                placeholder="Buscar servicios..."
+                [value]="searchQuery()"
+                (input)="onSearchChange($any($event.target).value)"
+                class="w-full py-3 px-4 pl-10 border border-gray-300 rounded-lg text-base"
+              >      <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
     </div>
 
     <!-- Category filters -->
-    <div class="category-filters">
+    <div class="flex flex-wrap gap-2">
       <button
         *ngFor="let category of categories"
-        [class.active]="selectedCategory() === category.id"
+        [ngClass]="{'bg-primary text-white border-primary hover:bg-blue-700': selectedCategory() === category.id, 'px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-pointer transition-all duration-200 ease-in-out hover:bg-gray-200': selectedCategory() !== category.id}"
         (click)="onCategoryChange(category.id)"
-        class="category-button"
       >
         <span *ngIf="category.icon">{{ category.icon }}</span>
         {{ category.name }}
@@ -30,15 +28,14 @@
   </div>
 
   <!-- Services grid -->
-  <div class="services-grid">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     <div
       *ngFor="let service of filteredServices()"
-      class="service-card"
-      [class.selected]="isServiceSelected(service)"
+      [ngClass]="{'border-primary ring-2 ring-primary': isServiceSelected(service), 'bg-white border border-gray-200 rounded-lg p-4 cursor-pointer transition-all duration-200 ease-in-out shadow-sm hover:shadow-md hover:-translate-y-0.5': true}"
       (click)="onServiceToggle(service)"
     >
-      <div class="service-header">
-        <div class="service-checkbox">
+      <div class="flex items-center gap-2 mb-2">
+        <div>
           <input
             type="checkbox"
             [checked]="isServiceSelected(service)"
@@ -46,33 +43,33 @@
             (click)="$event.stopPropagation()"
           >
         </div>
-        <div class="service-info">
-          <h4 class="service-title">{{ service.title }}</h4>
-          <div class="service-meta">
-            <span class="service-price">{{ formatCurrency(service.price || 0) }}</span>
-            <span class="service-duration" *ngIf="service.estimatedHours">
+        <div class="flex-grow">
+          <h4 class="font-semibold text-base">{{ service.title }}</h4>
+          <div class="flex gap-2 text-sm text-gray-600">
+            <span class="font-semibold text-primary">{{ formatCurrency(service.price || 0) }}</span>
+            <span class="text-gray-500" *ngIf="service.estimatedHours">
               {{ formatTime(service.estimatedHours) }}
             </span>
           </div>
         </div>
       </div>
 
-      <div class="service-description" *ngIf="service.description">
+      <div class="text-sm text-gray-700 mt-2" *ngIf="service.description">
         {{ service.description }}
       </div>
 
       <!-- Service parts information -->
-      <div class="service-parts" *ngIf="service.partsSuggested && service.partsSuggested.length > 0">
-        <small class="parts-info">{{ getServicePartsInfo(service) }}</small>
+      <div class="mt-2" *ngIf="service.partsSuggested && service.partsSuggested.length > 0">
+        <small class="text-xs text-gray-500">{{ getServicePartsInfo(service) }}</small>
       </div>
 
       <!-- Service dependencies -->
-      <div class="service-dependencies" *ngIf="getServiceDependencies(service).length > 0">
-        <small class="dependency-label">Requiere:</small>
-        <div class="dependency-list">
+      <div class="mt-2 pt-2 border-t border-dashed border-gray-200" *ngIf="getServiceDependencies(service).length > 0">
+        <small class="text-xs text-gray-500 mb-1 block">Requiere:</small>
+        <div class="flex flex-wrap gap-1">
           <span
             *ngFor="let dep of getServiceDependencies(service)"
-            class="dependency-item"
+            class="bg-cyan-100 text-cyan-800 px-2 py-1 rounded text-xs"
           >
             {{ dep.title }}
           </span>
@@ -80,13 +77,13 @@
       </div>
 
       <!-- Service recommendations -->
-      <div class="service-recommendations" *ngIf="getRecommendedServices(service).length > 0 && !isServiceSelected(service)">
-        <small class="recommendation-label">Recomendado con:</small>
-        <div class="recommendation-list">
+      <div class="mt-2 pt-2 border-t border-dashed border-gray-200" *ngIf="getRecommendedServices(service).length > 0 && !isServiceSelected(service)">
+        <small class="text-xs text-gray-500 mb-1 block">Recomendado con:</small>
+        <div class="flex flex-wrap gap-1">
           <button
             *ngFor="let rec of getRecommendedServices(service)"
             (click)="onAddRecommended(rec); $event.stopPropagation()"
-            class="recommendation-item"
+            class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs cursor-pointer border-none hover:bg-green-200"
           >
             + {{ rec.title }}
           </button>
@@ -95,30 +92,30 @@
     </div>
 
     <!-- No services found -->
-    <div *ngIf="filteredServices().length === 0" class="no-services">
+    <div *ngIf="filteredServices().length === 0" class="text-center p-8 text-gray-500">
       <p>No se encontraron servicios que coincidan con tu búsqueda.</p>
     </div>
   </div>
 
   <!-- Selection summary -->
-  <div class="selection-summary" *ngIf="selectedServicesData().length > 0">
-    <div class="summary-header">
-      <h4>Servicios Seleccionados ({{ selectedServicesData().length }})</h4>
+  <div class="mt-6 pt-6 border-t border-gray-200" *ngIf="selectedServicesData().length > 0">
+    <div class="mb-4">
+      <h4 class="text-lg font-semibold">Servicios Seleccionados ({{ selectedServicesData().length }})</h4>
     </div>
 
-    <div class="selected-services-list">
-      <div *ngFor="let service of selectedServicesData()" class="selected-service-item">
-        <div class="service-details">
-          <span class="service-name">{{ service.title }}</span>
-          <div class="service-breakdown" *ngIf="service.partsSuggested && service.partsSuggested.length > 0">
-            <small class="parts-breakdown">{{ getServicePartsInfo(service) }}</small>
+    <div class="flex flex-col gap-2">
+      <div *ngFor="let service of selectedServicesData()" class="flex justify-between items-center py-2 border-b border-dashed border-gray-200">
+        <div class="flex flex-col">
+          <span class="font-medium">{{ service.title }}</span>
+          <div class="text-xs text-gray-500" *ngIf="service.partsSuggested && service.partsSuggested.length > 0">
+            <small>{{ getServicePartsInfo(service) }}</small>
           </div>
         </div>
-        <div class="service-pricing">
-          <span class="service-price">{{ formatCurrency(service.price || 0) }}</span>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-primary">{{ formatCurrency(service.price || 0) }}</span>
           <button
             (click)="onServiceToggle(service)"
-            class="remove-service"
+            class="bg-transparent border-none text-gray-500 text-xl cursor-pointer px-1 hover:text-red-600"
             title="Remover servicio"
           >
             ×
@@ -127,14 +124,14 @@
       </div>
     </div>
 
-    <div class="summary-totals">
-      <div class="total-row">
-        <span class="total-label">Tiempo estimado:</span>
-        <span class="total-value">{{ formatTime(estimatedTime()) }}</span>
+    <div class="mt-4 pt-4 border-t border-gray-200">
+      <div class="flex justify-between mb-2">
+        <span class="font-medium text-gray-700">Tiempo estimado:</span>
+        <span class="font-semibold text-gray-800">{{ formatTime(estimatedTime()) }}</span>
       </div>
-      <div class="total-row total-cost">
-        <span class="total-label">Costo total:</span>
-        <span class="total-value">{{ formatCurrency(totalCost()) }}</span>
+      <div class="flex justify-between mb-2 text-lg font-bold text-primary border-t border-gray-200 pt-2 mt-2">
+        <span class="font-medium text-gray-700">Costo total:</span>
+        <span class="font-semibold text-gray-800">{{ formatCurrency(totalCost()) }}</span>
       </div>
     </div>
   </div>

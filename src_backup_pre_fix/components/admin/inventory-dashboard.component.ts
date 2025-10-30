@@ -1,0 +1,183 @@
+import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { ProductService } from '../../services/product.service';
+import { CategoryService } from '../../services/category.service';
+import { LowStockNotificationService } from '../../services/low-stock-notification.service';
+import { StockMovementService } from '../../services/stock-movement.service';
+
+@Component({
+  selector: 'app-inventory-dashboard',
+  template: `
+    <div class="space-y-6">
+      <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold">Dashboard de Inventario</h1>
+        <div class="flex gap-2">
+          <a routerLink="/admin/products/new" class="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90">
+            Añadir Producto
+          </a>
+          <a routerLink="/admin/stock-movements" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/90">
+            Movimientos de Stock
+          </a>
+        </div>
+      </div>
+
+      <!-- Alertas de Stock -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-card rounded-xl border border-border p-6">
+          <div class="flex items-center">
+            <div class="p-2 bg-red-100 rounded-lg">
+              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-semibold">Productos Agotados</h3>
+              <p class="text-2xl font-bold text-red-600">{{ criticalStockCount() }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-card rounded-xl border border-border p-6">
+          <div class="flex items-center">
+            <div class="p-2 bg-yellow-100 rounded-lg">
+              <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-semibold">Stock Bajo</h3>
+              <p class="text-2xl font-bold text-yellow-600">{{ lowStockCount() }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-card rounded-xl border border-border p-6">
+          <div class="flex items-center">
+            <div class="p-2 bg-green-100 rounded-lg">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-semibold">Total Productos</h3>
+              <p class="text-2xl font-bold text-green-600">{{ totalProducts() }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Productos con Stock Bajo -->
+      @if(lowStockProducts().length > 0) {
+        <div class="bg-card rounded-xl border border-border shadow-sm">
+          <div class="p-6 border-b border-border">
+            <h2 class="text-xl font-semibold">Productos que requieren atención</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-foreground">
+              <thead class="bg-secondary/50">
+                <tr>
+                  <th class="px-6 py-3 font-medium">Producto</th>
+                  <th class="px-6 py-3 font-medium">Categoría</th>
+                  <th class="px-6 py-3 font-medium text-center">Stock Actual</th>
+                  <th class="px-6 py-3 font-medium text-center">Stock Mínimo</th>
+                  <th class="px-6 py-3 font-medium text-center">Estado</th>
+                  <th class="px-6 py-3 font-medium text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for(product of lowStockProducts(); track product.id) {
+                  <tr class="border-b border-border hover:bg-secondary/50">
+                    <td class="px-6 py-4 font-medium">{{ product.name }}</td>
+                    <td class="px-6 py-4">{{ getCategoryName(product.categoryId) }}</td>
+                    <td class="px-6 py-4 text-center">
+                      <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + getStockBadgeClass(product.stock, product.minStock)">
+                        {{ product.stock }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">{{ product.minStock || 0 }}</td>
+                    <td class="px-6 py-4 text-center">
+                      @if(product.stock === 0) {
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-200 text-red-800">Agotado</span>
+                      } @else {
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-200 text-yellow-800">Stock Bajo</span>
+                      }
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                      <div class="flex gap-2 justify-end">
+                        <a [routerLink]="['/admin/products', product.id, 'edit']" class="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90">
+                          Editar
+                        </a>
+                        <a [routerLink]="['/admin/stock-movements', 'new']" [queryParams]="{ productId: product.id }" class="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded hover:bg-secondary/90">
+                          Ajustar Stock
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Resumen por Categorías -->
+      <div class="bg-card rounded-xl border border-border shadow-sm">
+        <div class="p-6 border-b border-border">
+          <h2 class="text-xl font-semibold">Resumen por Categorías</h2>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @for(category of categories(); track category.id) {
+              <div class="text-center p-4 bg-secondary/20 rounded-lg">
+                <h3 class="font-medium text-sm text-muted-foreground">{{ category.name }}</h3>
+                <p class="text-2xl font-bold">{{ getProductsInCategory(category.id) }}</p>
+                <p class="text-xs text-muted-foreground">productos</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink],
+})
+export class InventoryDashboardComponent {
+  productService = inject(ProductService);
+  categoryService = inject(CategoryService);
+  lowStockService = inject(LowStockNotificationService);
+  stockMovementService = inject(StockMovementService);
+
+  products = this.productService.getProducts();
+  categories = this.categoryService.getCategories();
+  lowStockProducts = this.lowStockService.getLowStockProducts();
+
+  totalProducts = computed(() => this.products().length);
+  lowStockCount = this.lowStockService.getLowStockCount();
+  criticalStockCount = this.lowStockService.getCriticalStockCount();
+
+  private categoryMap = computed(() => {
+    const map = new Map<string, string>();
+    for (const cat of this.categories()) {
+      map.set(cat.id, cat.name);
+    }
+    return map;
+  });
+
+  getCategoryName(id: string | undefined): string {
+    if (!id) return 'N/A';
+    return this.categoryMap().get(id) || 'Desconocida';
+  }
+
+  getStockBadgeClass(stock: number | undefined, minStock: number | undefined): string {
+    const s = stock ?? 0;
+    const m = minStock ?? 0;
+    if(s <= 0) return 'bg-red-200 text-red-800';
+    if(s < m) return 'bg-yellow-200 text-yellow-800';
+    return 'bg-green-200 text-green-800';
+  }
+
+  getProductsInCategory(categoryId: string): number {
+    return this.products().filter(p => p.categoryId === categoryId).length;
+  }
+}

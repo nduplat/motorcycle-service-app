@@ -1,7 +1,7 @@
 <div class="max-w-4xl mx-auto space-y-6">
   <div class="flex justify-between items-center">
     <h1 class="text-3xl font-bold">Mi Cuenta</h1>
-    <button (click)="logout()" class="px-4 py-2 bg-red-100 text-red-800 rounded-md font-medium hover:bg-red-200">
+    <button (click)="logout()" class="px-4 py-2 bg-destructive/10 text-red-800 rounded-md font-medium hover:bg-destructive/20">
       Cerrar Sesión
     </button>
   </div>
@@ -66,11 +66,11 @@
             </p>
           </div>
 
-          <!-- Motorcycle Registration Component -->
-          <app-motorcycle-registration
-            (motorcycleRegistered)="onMotorcycleRegistered($event)"
-            (registrationCancelled)="onRegistrationCancelled()">
-          </app-motorcycle-registration>
+          <!-- Motorcycle Assignment Component -->
+          <app-nueva-motocicleta
+            (motorcycleAssigned)="onMotorcycleAssigned()"
+            (cancel)="onAssignmentCancelled()">
+          </app-nueva-motocicleta>
 
           <!-- User's Assigned Motorcycles List -->
           @if (userMotorcycles().length > 0) {
@@ -148,7 +148,7 @@
                       </button>
                       <button
                         (click)="manageAssignment(motorcycle)"
-                        class="flex-1 px-3 py-2 bg-gray-50 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors">
+                        class="flex-1 px-3 py-2 bg-gray-50 text-muted-foreground rounded-md text-sm font-medium hover:bg-gray-100 transition-colors">
                         <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -339,7 +339,7 @@
                 <span class="text-sm">Notificaciones push</span>
                 <button class="relative inline-flex h-6 w-11 items-center rounded-full bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         (click)="togglePushNotifications()">
-                  <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                  <span class="inline-block h-4 w-4 transform rounded-full bg-background transition-transform"
                         [class.translate-x-6]="pushNotificationsEnabled()"
                         [class.translate-x-1]="!pushNotificationsEnabled()"></span>
                 </button>
@@ -348,7 +348,7 @@
                 <span class="text-sm">Recordatorios de mantenimiento</span>
                 <button class="relative inline-flex h-6 w-11 items-center rounded-full bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         (click)="toggleMaintenanceReminders()">
-                  <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                  <span class="inline-block h-4 w-4 transform rounded-full bg-background transition-transform"
                         [class.translate-x-6]="maintenanceRemindersEnabled()"
                         [class.translate-x-1]="!maintenanceRemindersEnabled()"></span>
                 </button>

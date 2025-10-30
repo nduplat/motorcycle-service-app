@@ -38,6 +38,7 @@ export interface QueueEntry {
   expiresAt?: Timestamp | FieldValue | Date; // when the verification code expires (15 minutes from creation) - cuando expira el código de verificación (15 minutos desde creación)
   createdAt: Timestamp | FieldValue | Date;
   updatedAt: Timestamp | FieldValue | Date;
+  plate: string; // AGREGAR
 }
 
 /**
@@ -105,7 +106,6 @@ export interface QueueJoinData {
   customerName?: string;
   customerPhone?: string;
   serviceType: 'appointment' | 'direct_work_order';
-  motorcycleId?: string; // ID del catálogo de motocicletas (opcional para identificación por placa)
   plate: string;
   mileageKm: number;
   notes?: string;
